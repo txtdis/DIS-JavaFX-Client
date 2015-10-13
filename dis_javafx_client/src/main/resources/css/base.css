@@ -1,0 +1,6 @@
+.root {
+    -fx-font-size: 11pt;
+    -fx-accent: -fx-base;
+    -fx-focus-color: #ffffff;
+    -fx-faint-focus-color: #ffffff22;
+} 
