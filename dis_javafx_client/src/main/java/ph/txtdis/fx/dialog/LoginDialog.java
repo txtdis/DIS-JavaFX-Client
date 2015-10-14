@@ -28,7 +28,7 @@ import ph.txtdis.fx.control.AppField;
 import ph.txtdis.fx.control.LabelFactory;
 import ph.txtdis.fx.control.PasswordInput;
 import ph.txtdis.util.LoginService;
-import ph.txtdis.util.ServerService;
+import ph.txtdis.util.Server;
 
 @Component("loginDialog")
 public class LoginDialog extends Stage {
@@ -36,10 +36,10 @@ public class LoginDialog extends Stage {
 	private static int tries;
 
 	@Autowired
-	private LoginService login;
+	private Server server;
 
 	@Autowired
-	private ServerService server;
+	private LoginService login;
 
 	@Autowired
 	private LabelFactory label;
@@ -195,7 +195,7 @@ public class LoginDialog extends Stage {
 	}
 
 	private void setTitle() {
-		setTitle("Welcome to txtDIS@" + server.name() + "!");
+		setTitle("Welcome to txtDIS@" + server.getLocation() + "!");
 	}
 
 	private Node spinningBalls() {
@@ -223,6 +223,6 @@ public class LoginDialog extends Stage {
 	}
 
 	private void validate() throws Exception {
-		login.validate(server.name(), userField.getText(), passwordField.getText());
+		login.validate(userField.getText(), passwordField.getText());
 	}
 }

@@ -17,7 +17,7 @@ import ph.txtdis.exception.InvalidException;
 import ph.txtdis.exception.NoServerConnectionException;
 import ph.txtdis.exception.StoppedServerException;
 import ph.txtdis.util.HttpHeader;
-import ph.txtdis.util.ServerService;
+import ph.txtdis.util.Server;
 import ph.txtdis.util.TypeMap;
 
 @Service
@@ -30,7 +30,7 @@ public class ReadOnlyService<T> {
 	private RestService restService;
 
 	@Autowired
-	private ServerService server;
+	private Server server;
 
 	@Autowired
 	private TypeMap response;
@@ -47,6 +47,10 @@ public class ReadOnlyService<T> {
 
 	private String single() {
 		return module;
+	}
+
+	private String url() {
+		return "https://" + server.address() + ":" + server.getPort() + "/" + plural();
 	}
 
 	@SuppressWarnings("unchecked")
@@ -72,7 +76,7 @@ public class ReadOnlyService<T> {
 		try {
 			return restService.exchange(url() + endpoint, HttpMethod.GET, httpEntity(null), response.type(path));
 		} catch (ResourceAccessException e) {
-			throw new NoServerConnectionException(server.name());
+			throw new NoServerConnectionException(server.location());
 		} catch (HttpClientErrorException e) {
 			if (e.getStatusCode() == HttpStatus.UNAUTHORIZED) {
 				if (e.getResponseBodyAsString().contains("This connection has been closed"))
@@ -82,9 +86,5 @@ public class ReadOnlyService<T> {
 			}
 			throw new InvalidException(e.getMessage());
 		}
-	}
-
-	protected String url() {
-		return "https://" + server.address() + ":8443/" + plural();
 	}
 }

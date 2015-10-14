@@ -13,7 +13,7 @@ import ph.txtdis.exception.InvalidException;
 import ph.txtdis.exception.NoServerConnectionException;
 import ph.txtdis.exception.StoppedServerException;
 import ph.txtdis.util.HttpHeader;
-import ph.txtdis.util.ServerService;
+import ph.txtdis.util.Server;
 
 @Service("savingService")
 public class SavingService<T> {
@@ -25,7 +25,7 @@ public class SavingService<T> {
 	private RestService restService;
 
 	@Autowired
-	private ServerService server;
+	private Server server;
 
 	private String module;
 
@@ -35,7 +35,7 @@ public class SavingService<T> {
 			return entity == null ? null : (T) restService.postForObject(url(), httpEntity(entity), entity.getClass());
 		} catch (ResourceAccessException e) {
 			e.printStackTrace();
-			throw new NoServerConnectionException(server.name());
+			throw new NoServerConnectionException(server.location());
 		} catch (HttpClientErrorException e) {
 			e.printStackTrace();
 			if (e.getStatusCode() == HttpStatus.UNAUTHORIZED)
@@ -56,7 +56,7 @@ public class SavingService<T> {
 	}
 
 	private String url() {
-		return "https://" + server.address() + ":8443/" + plural();
+		return "https://" + server.address() + ":" + server.getPort() + "/" + plural();
 	}
 
 	protected SavingService<T> module(String module) {
