@@ -6,6 +6,7 @@ import static ph.txtdis.type.Type.TEXT;
 import java.math.BigDecimal;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import ph.txtdis.app.AccountApp;
@@ -13,6 +14,7 @@ import ph.txtdis.app.CustomerApp;
 import ph.txtdis.app.CustomerReceivableApp;
 import ph.txtdis.dto.AgingReceivable;
 
+@Lazy
 @Component("agingReceivableTable")
 public class AgingReceivableTable extends AppTable<AgingReceivable> {
 

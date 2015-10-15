@@ -7,12 +7,14 @@ import java.time.LocalDate;
 import java.time.ZonedDateTime;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import ph.txtdis.dto.Routing;
 import ph.txtdis.fx.dialog.RoutingDialog;
 import ph.txtdis.type.Type;
 
+@Lazy
 @Component("routingTable")
 public class RoutingTable extends AppTable<Routing> {
 

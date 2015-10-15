@@ -8,12 +8,14 @@ import static ph.txtdis.type.Type.TIMESTAMP;
 import java.time.ZonedDateTime;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import ph.txtdis.dto.InvoiceBooklet;
 import ph.txtdis.dto.User;
 import ph.txtdis.fx.dialog.InvoiceBookletDialog;
 
+@Lazy
 @Component("invoiceBookletTable")
 public class InvoiceBookletTable extends AppTable<InvoiceBooklet> {
 

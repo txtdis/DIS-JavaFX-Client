@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import javafx.beans.binding.BooleanBinding;
@@ -25,7 +26,8 @@ import ph.txtdis.service.CustomerService;
 import ph.txtdis.type.CustomerType;
 import ph.txtdis.type.VisitFrequency;
 
-@Component
+@Lazy
+@Component("customerTab")
 public class CustomerTab extends AbstractTab {
 
 	@Autowired
@@ -140,40 +142,6 @@ public class CustomerTab extends AbstractTab {
 		return typeCombo.isEmpty();
 	}
 
-	@Override
-	protected List<Node> mainVerticalPaneNodes() {
-		try {
-			gridPane.getChildren().clear();
-			gridPane.add(label.field("ID No."), 0, 0);
-			gridPane.add(customerBox(), 1, 0, 4, 1);
-			gridPane.add(parentBox(), 6, 0, 2, 1);
-
-			gridPane.add(label.field("Street"), 0, 1);
-			gridPane.add(streetField.build(TEXT), 1, 1, 4, 1);
-			gridPane.add(parentDisplay.readOnly().build(TEXT), 6, 1, 2, 1);
-
-			gridPane.add(label.field("Province"), 0, 2);
-			gridPane.add(provinceCombo.width(180).items(service.listProvinces()), 1, 2, 2, 1);
-			gridPane.add(label.field("City/Town"), 3, 2);
-			gridPane.add(cityCombo.width(200), 4, 2, 2, 1);
-			gridPane.add(label.field("Barangay"), 6, 2);
-			gridPane.add(barangayCombo.width(280), 7, 2);
-
-			gridPane.add(label.field("Type"), 0, 3);
-			gridPane.add(typeCombo.items(CustomerType.values()), 1, 3, 2, 1);
-			gridPane.add(label.field("Channel"), 3, 3);
-			gridPane.add(channelCombo.items(service.listChannels()), 4, 3);
-			gridPane.add(label.field("Visit per Month"), 5, 3, 2, 1);
-			gridPane.add(visitCombo.items(VisitFrequency.values()), 7, 3);
-
-			return Arrays.asList(gridPane, box.hpane(tablePane()));
-		} catch (Exception e) {
-			dialog.show(e).addParent(this).start();
-			e.printStackTrace();
-			return null;
-		}
-	}
-
 	private void clearNextControls() {
 		channelCombo.clear();
 		visitCombo.clear();
@@ -259,6 +227,40 @@ public class CustomerTab extends AbstractTab {
 		} catch (Exception e) {
 			parentDisplay.clear();
 			handleError(parentIdField, e);
+		}
+	}
+
+	@Override
+	protected List<Node> mainVerticalPaneNodes() {
+		try {
+			gridPane.getChildren().clear();
+			gridPane.add(label.field("ID No."), 0, 0);
+			gridPane.add(customerBox(), 1, 0, 4, 1);
+			gridPane.add(parentBox(), 6, 0, 2, 1);
+
+			gridPane.add(label.field("Street"), 0, 1);
+			gridPane.add(streetField.build(TEXT), 1, 1, 4, 1);
+			gridPane.add(parentDisplay.readOnly().build(TEXT), 6, 1, 2, 1);
+
+			gridPane.add(label.field("Province"), 0, 2);
+			gridPane.add(provinceCombo.width(180).items(service.listProvinces()), 1, 2, 2, 1);
+			gridPane.add(label.field("City/Town"), 3, 2);
+			gridPane.add(cityCombo.width(200), 4, 2, 2, 1);
+			gridPane.add(label.field("Barangay"), 6, 2);
+			gridPane.add(barangayCombo.width(280), 7, 2);
+
+			gridPane.add(label.field("Type"), 0, 3);
+			gridPane.add(typeCombo.items(CustomerType.values()), 1, 3, 2, 1);
+			gridPane.add(label.field("Channel"), 3, 3);
+			gridPane.add(channelCombo.items(service.listChannels()), 4, 3);
+			gridPane.add(label.field("Visit per Month"), 5, 3, 2, 1);
+			gridPane.add(visitCombo.items(VisitFrequency.values()), 7, 3);
+
+			return Arrays.asList(gridPane, box.hpane(tablePane()));
+		} catch (Exception e) {
+			dialog.show(e).addParent(this).start();
+			e.printStackTrace();
+			return null;
 		}
 	}
 }

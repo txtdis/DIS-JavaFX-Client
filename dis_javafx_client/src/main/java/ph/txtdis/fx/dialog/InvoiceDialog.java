@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import ph.txtdis.dto.SoldDetail;
@@ -19,6 +20,7 @@ import ph.txtdis.service.InvoiceService;
 import ph.txtdis.type.QualityType;
 import ph.txtdis.type.UomType;
 
+@Lazy
 @Component("invoiceDialog")
 public class InvoiceDialog extends FieldDialog<SoldDetail> {
 

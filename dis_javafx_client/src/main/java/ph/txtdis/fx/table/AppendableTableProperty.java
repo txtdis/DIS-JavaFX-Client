@@ -1,5 +1,6 @@
 package ph.txtdis.fx.table;
 
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import javafx.scene.Scene;
@@ -11,6 +12,7 @@ import javafx.stage.Stage;
 import ph.txtdis.app.Startable;
 import ph.txtdis.fx.dialog.Inputted;
 
+@Lazy
 @Component("appendableTableProperty")
 public final class AppendableTableProperty<S> {
 

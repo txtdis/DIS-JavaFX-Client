@@ -12,12 +12,14 @@ import java.time.LocalDate;
 import java.time.ZonedDateTime;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import ph.txtdis.dto.CustomerDiscount;
 import ph.txtdis.dto.ItemFamily;
 import ph.txtdis.fx.dialog.CustomerDiscountDialog;
 
+@Lazy
 @Component("customerDiscountTable")
 public class CustomerDiscountTable extends AppTable<CustomerDiscount> {
 

@@ -7,12 +7,14 @@ import static ph.txtdis.type.Type.TIMESTAMP;
 import java.time.ZonedDateTime;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import ph.txtdis.app.AccountApp;
 import ph.txtdis.dto.Route;
 import ph.txtdis.fx.dialog.RouteDialog;
 
+@Lazy
 @Component("routeTable")
 public class RouteTable extends NameListTable<Route, RouteDialog> {
 

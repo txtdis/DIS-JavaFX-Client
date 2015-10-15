@@ -3,12 +3,14 @@ package ph.txtdis.fx.dialog;
 import java.io.File;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
 import ph.txtdis.service.BackupService;
 
+@Lazy
 @Component("backupApp")
 public class BackupApp {
 

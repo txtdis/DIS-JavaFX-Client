@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import ph.txtdis.dto.CreditDetail;
@@ -16,6 +17,7 @@ import ph.txtdis.fx.control.LabeledDatePicker;
 import ph.txtdis.fx.control.LabeledField;
 import ph.txtdis.service.CustomerService;
 
+@Lazy
 @Component("creditDialog")
 public class CreditDialog extends FieldDialog<CreditDetail> {
 

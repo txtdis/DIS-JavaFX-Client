@@ -1,5 +1,6 @@
 package ph.txtdis.fx.table;
 
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import javafx.beans.binding.Bindings;
@@ -8,6 +9,7 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 
+@Lazy
 @Component("reducableTableProperty")
 public final class ReducableTableProperty<S> {
 

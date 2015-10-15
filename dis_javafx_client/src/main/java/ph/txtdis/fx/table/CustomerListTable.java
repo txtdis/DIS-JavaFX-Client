@@ -5,6 +5,7 @@ import static ph.txtdis.type.Type.OTHERS;
 import static ph.txtdis.type.Type.TEXT;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import ph.txtdis.dto.Customer;
@@ -12,6 +13,7 @@ import ph.txtdis.dto.Location;
 import ph.txtdis.dto.Route;
 import ph.txtdis.type.Type;
 
+@Lazy
 @Component("customerListTable")
 public class CustomerListTable extends AppTable<Customer> {
 

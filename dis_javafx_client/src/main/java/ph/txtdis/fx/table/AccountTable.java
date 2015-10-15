@@ -7,12 +7,14 @@ import java.time.LocalDate;
 import java.time.ZonedDateTime;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import ph.txtdis.dto.Account;
 import ph.txtdis.fx.dialog.AccountDialog;
 import ph.txtdis.type.Type;
 
+@Lazy
 @Component("accountTable")
 public class AccountTable extends AppTable<Account> {
 

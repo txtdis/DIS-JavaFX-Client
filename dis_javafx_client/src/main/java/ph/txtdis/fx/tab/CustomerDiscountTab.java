@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import javafx.geometry.Pos;
@@ -12,7 +13,8 @@ import javafx.scene.layout.VBox;
 import ph.txtdis.fx.table.CustomerDiscountTable;
 import ph.txtdis.service.CustomerService;
 
-@Component
+@Lazy
+@Component("customerDiscountTab")
 public class CustomerDiscountTab extends AbstractTab {
 
 	@Autowired

@@ -1,11 +1,13 @@
 package ph.txtdis.app;
 
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import ph.txtdis.dto.Account;
 import ph.txtdis.fx.table.AccountTable;
 import ph.txtdis.service.RouteService;
 
+@Lazy
 @Component("accountApp")
 public class AccountApp extends AbstractTableApp<AccountTable, RouteService, Account> implements Launchable {
 

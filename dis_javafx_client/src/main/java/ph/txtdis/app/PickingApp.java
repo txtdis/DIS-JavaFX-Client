@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import javafx.scene.Node;
@@ -23,6 +24,7 @@ import ph.txtdis.fx.table.PickTable;
 import ph.txtdis.info.Information;
 import ph.txtdis.service.PickService;
 
+@Lazy
 @Component("pickingApp")
 public class PickingApp extends AbstractIdApp<Picking, PickService, Long> {
 

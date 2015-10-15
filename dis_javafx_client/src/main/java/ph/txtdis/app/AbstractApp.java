@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -33,6 +34,7 @@ public abstract class AbstractApp extends Stage implements Startable {
 	@Autowired
 	protected TypeMap typeMap;
 
+	@Lazy
 	@Autowired
 	protected MessageDialog dialog;
 
@@ -67,43 +69,6 @@ public abstract class AbstractApp extends Stage implements Startable {
 		setStage(mainVerticalPane());
 		refresh();
 		show();
-	}
-
-	protected List<AppButton> addButtons() {
-		return new ArrayList<>();
-	}
-
-	protected String headerText() {
-		return Text.toHeader(this);
-	}
-
-	protected VBox mainVerticalPane() {
-		VBox vbox = box.vbox(headerPane());
-		vbox.getChildren().addAll(mainVerticalPaneNodes());
-		return vbox;
-	}
-
-	protected abstract List<Node> mainVerticalPaneNodes();
-
-	protected void setStage(VBox box) {
-		getIcons().add(icon());
-		updateTitleAndHeader();
-		setScene(scene(box));
-		setBounds();
-	}
-
-	protected String titleText() {
-		return Text.toHeader(this);
-	}
-
-	protected String unicode() {
-		return typeMap.icon(this);
-	}
-
-	protected void updateTitleAndHeader() {
-		setTitle(titleText());
-		if (header != null)
-			header.setText(headerText());
 	}
 
 	private TilePane buttonPane() {
@@ -145,5 +110,42 @@ public abstract class AbstractApp extends Stage implements Startable {
 		Rectangle2D bounds = Screen.getPrimary().getVisualBounds();
 		setMaxHeight(bounds.getHeight());
 		setMaxWidth(bounds.getWidth());
+	}
+
+	protected List<AppButton> addButtons() {
+		return new ArrayList<>();
+	}
+
+	protected String headerText() {
+		return Text.toHeader(this);
+	}
+
+	protected VBox mainVerticalPane() {
+		VBox vbox = box.vbox(headerPane());
+		vbox.getChildren().addAll(mainVerticalPaneNodes());
+		return vbox;
+	}
+
+	protected abstract List<Node> mainVerticalPaneNodes();
+
+	protected void setStage(VBox box) {
+		getIcons().add(icon());
+		updateTitleAndHeader();
+		setScene(scene(box));
+		setBounds();
+	}
+
+	protected String titleText() {
+		return Text.toHeader(this);
+	}
+
+	protected String unicode() {
+		return typeMap.icon(this);
+	}
+
+	protected void updateTitleAndHeader() {
+		setTitle(titleText());
+		if (header != null)
+			header.setText(headerText());
 	}
 }

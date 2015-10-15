@@ -5,11 +5,13 @@ import static ph.txtdis.type.Type.OTHERS;
 import static ph.txtdis.type.Type.TEXT;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import ph.txtdis.dto.Booking;
 import ph.txtdis.dto.Route;
 
+@Lazy
 @Component("pickTable")
 public class PickTable extends AppTable<Booking> {
 

@@ -1,6 +1,7 @@
 package ph.txtdis.fx.dialog;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import javafx.geometry.Insets;
@@ -31,6 +32,7 @@ import ph.txtdis.fx.control.AppButton;
 import ph.txtdis.fx.control.LabelFactory;
 import ph.txtdis.util.Spring;
 
+@Lazy
 @Component("mainMenu")
 public class MainMenu extends Stage {
 

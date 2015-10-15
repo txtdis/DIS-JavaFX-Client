@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import javafx.scene.Node;
@@ -16,7 +17,8 @@ import ph.txtdis.fx.control.LabelFactory;
 import ph.txtdis.fx.table.CreditTable;
 import ph.txtdis.service.CustomerService;
 
-@Component
+@Lazy
+@Component("creditTab")
 public class CreditTab extends AbstractTab {
 
 	@Autowired
@@ -69,6 +71,17 @@ public class CreditTab extends AbstractTab {
 		service.setCreditDetails(creditTable.getItems());
 	}
 
+	private void setBindings() {
+		contactSurnameField.disableIf(contactNameField.isEmpty());
+		titleField.disableIf(contactSurnameField.isEmpty());
+		mobileField.disableIf(titleField.isEmpty());
+		creditTable.disableIf(mobileField.isEmpty());
+	}
+
+	private VBox tablePane() {
+		return box.vbox(label.group("Approved Credit History"), creditTable.build());
+	}
+
 	@Override
 	protected List<Node> mainVerticalPaneNodes() {
 		gridPane.getChildren().clear();
@@ -82,16 +95,5 @@ public class CreditTab extends AbstractTab {
 		gridPane.add(label.field("Mobile No."), 2, 2);
 		gridPane.add(mobileField.build(PHONE), 3, 2);
 		return Arrays.asList(gridPane, box.hpane(tablePane()));
-	}
-
-	private void setBindings() {
-		contactSurnameField.disableIf(contactNameField.isEmpty());
-		titleField.disableIf(contactSurnameField.isEmpty());
-		mobileField.disableIf(titleField.isEmpty());
-		creditTable.disableIf(mobileField.isEmpty());
-	}
-
-	private VBox tablePane() {
-		return box.vbox(label.group("Approved Credit History"), creditTable.build());
 	}
 }

@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import javafx.beans.binding.BooleanBinding;
@@ -28,6 +29,7 @@ import ph.txtdis.fx.tab.CustomerTab;
 import ph.txtdis.fx.tab.InputTab;
 import ph.txtdis.service.CustomerService;
 
+@Lazy
 @Component("customerApp")
 public class CustomerApp extends AbstractIdApp<Customer, CustomerService, Long> {
 

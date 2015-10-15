@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import javafx.collections.FXCollections;
@@ -14,6 +15,7 @@ import ph.txtdis.fx.control.InputNode;
 import ph.txtdis.fx.control.LabeledCombo;
 import ph.txtdis.service.ItemTreeService;
 
+@Lazy
 @Component("itemTreeDialog")
 public class ItemTreeDialog extends FieldDialog<ItemTree> {
 

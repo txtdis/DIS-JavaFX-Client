@@ -3,6 +3,7 @@ package ph.txtdis.fx.dialog;
 import static ph.txtdis.type.Type.TEXT;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import javafx.beans.property.BooleanProperty;
@@ -30,11 +31,13 @@ import ph.txtdis.fx.control.PasswordInput;
 import ph.txtdis.util.LoginService;
 import ph.txtdis.util.Server;
 
+@Lazy
 @Component("loginDialog")
 public class LoginDialog extends Stage {
 
 	private static int tries;
 
+	@Lazy(false)
 	@Autowired
 	private Server server;
 
@@ -171,6 +174,10 @@ public class LoginDialog extends Stage {
 			close();
 	}
 
+	private String server() {
+		return server.getLocation() == null ? "" : "@" + server.getLocation();
+	}
+
 	private void setButtons() {
 		serverButton.text("Change Server").build();
 		passwordButton.text("Alter Password").build();
@@ -195,7 +202,7 @@ public class LoginDialog extends Stage {
 	}
 
 	private void setTitle() {
-		setTitle("Welcome to txtDIS@" + server.getLocation() + "!");
+		setTitle("Welcome to txtDIS" + server() + "!");
 	}
 
 	private Node spinningBalls() {

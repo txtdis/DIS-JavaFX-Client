@@ -9,11 +9,13 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import ph.txtdis.app.InvoiceApp;
 import ph.txtdis.dto.CustomerReceivable;
 
+@Lazy
 @Component("customerReceivableTable")
 public class CustomerReceivableTable extends AppTable<CustomerReceivable> {
 

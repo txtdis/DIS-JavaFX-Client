@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import ph.txtdis.dto.Vat;
@@ -13,6 +14,7 @@ import ph.txtdis.fx.dialog.OpenByDateDialog;
 import ph.txtdis.fx.table.VatTable;
 import ph.txtdis.service.VatService;
 
+@Lazy
 @Component("vatApp")
 public class VatApp extends AbstractTotaledApp<VatTable, VatService, Vat> {
 
