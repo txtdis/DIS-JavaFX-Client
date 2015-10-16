@@ -16,12 +16,13 @@ public final class ReducableTableProperty<S> {
 	private TableView<S> table;
 
 	private void addTableMenuItemsToRowMenu(TableView<S> table, ContextMenu rowMenu) {
-		table.getContextMenu().getItems().forEach(tableItem -> {
-			MenuItem rowItem = new MenuItem(tableItem.getText());
-			rowItem.setGraphic(tableItem.getGraphic());
-			rowItem.setOnAction(tableItem.getOnAction());
-			rowMenu.getItems().add(rowItem);
-		});
+		if (!(table == null || table.getContextMenu() == null || rowMenu == null))
+			table.getContextMenu().getItems().forEach(tableItem -> {
+				MenuItem rowItem = new MenuItem(tableItem.getText());
+				rowItem.setGraphic(tableItem.getGraphic());
+				rowItem.setOnAction(tableItem.getOnAction());
+				rowMenu.getItems().add(rowItem);
+			});
 	}
 
 	private MenuItem createDeleteRowMenuItem(TableRow<S> row) {

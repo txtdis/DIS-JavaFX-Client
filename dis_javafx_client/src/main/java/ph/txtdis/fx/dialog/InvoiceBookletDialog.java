@@ -1,7 +1,8 @@
 package ph.txtdis.fx.dialog;
 
+import static ph.txtdis.type.Type.ALPHA;
+import static ph.txtdis.type.Type.CODE;
 import static ph.txtdis.type.Type.ID;
-import static ph.txtdis.type.Type.TEXT;
 
 import java.util.Arrays;
 import java.util.List;
@@ -10,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
+import javafx.beans.binding.BooleanBinding;
 import ph.txtdis.dto.InvoiceBooklet;
 import ph.txtdis.dto.User;
 import ph.txtdis.fx.control.InputNode;
@@ -40,15 +42,15 @@ public class InvoiceBookletDialog extends FieldDialog<InvoiceBooklet> {
 	protected InvoiceBookletService service;
 
 	private void setInputs() {
-		prefixField.name("Prefix").build(TEXT);
-		suffixField.name("Suffix").build(TEXT);
+		prefixField.name("Code").width(70).build(CODE);
+		suffixField.name("Series").width(40).build(ALPHA);
 		startIdField.name("First No.").build(ID);
 		endIdField.name("Last No.").build(ID);
 		issuedToCombo.name("IssuedTo");
 	}
 
 	private void setOnAction() {
-		startIdField.setOnAction(event -> verifyIdIsUnissued(startIdField.getValue()));
+		startIdField.setOnAction(e -> verifyIdIsUnissued(startIdField.getValue()));
 		endIdField.setOnAction(event -> verifyIdIsUnissued(endIdField.getValue()));
 	}
 
@@ -73,7 +75,7 @@ public class InvoiceBookletDialog extends FieldDialog<InvoiceBooklet> {
 		setInputs();
 		setOnAction();
 		updateIssuedToCombo();
-		return Arrays.asList(startIdField, endIdField, issuedToCombo);
+		return Arrays.asList(prefixField, suffixField, startIdField, endIdField, issuedToCombo);
 	}
 
 	@Override
@@ -85,5 +87,10 @@ public class InvoiceBookletDialog extends FieldDialog<InvoiceBooklet> {
 			resetNodesOnError(e);
 			return null;
 		}
+	}
+
+	@Override
+	protected BooleanBinding getAddButtonBindings() {
+		return startIdField.isEmpty().or(endIdField.isEmpty()).or(issuedToCombo.isEmpty());
 	}
 }

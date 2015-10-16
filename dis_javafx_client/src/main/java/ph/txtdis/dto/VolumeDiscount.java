@@ -10,7 +10,7 @@ import ph.txtdis.type.VolumeDiscountType;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class VolumeDiscount extends AbstractAuditedId<Long>implements Comparable<VolumeDiscount> {
+public class VolumeDiscount extends AbstractTrackedId<Long>implements Comparable<VolumeDiscount> {
 
 	private VolumeDiscountType type;
 

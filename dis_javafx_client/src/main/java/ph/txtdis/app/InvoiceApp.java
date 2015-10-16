@@ -1,6 +1,6 @@
 package ph.txtdis.app;
 
-import static ph.txtdis.type.Type.ALPHA;
+import static ph.txtdis.type.Type.CODE;
 import static ph.txtdis.type.Type.CURRENCY;
 import static ph.txtdis.type.Type.DATE;
 import static ph.txtdis.type.Type.ID;
@@ -33,7 +33,7 @@ import ph.txtdis.service.InvoiceService;
 
 @Scope("prototype")
 @Component("invoiceApp")
-public class InvoiceApp extends AbstractIdApp<Invoice, InvoiceService, String> {
+public class InvoiceApp extends AbstractIdApp<Invoice, InvoiceService, Long, String> {
 
 	@Autowired
 	private LabelFactory label;
@@ -97,9 +97,9 @@ public class InvoiceApp extends AbstractIdApp<Invoice, InvoiceService, String> {
 
 	@Override
 	public void refresh() {
-		invoiceIdPrefixInput.setValue(service.getIdPrefix());
-		invoiceIdInput.setValue(service.getIdNo());
-		invoiceIdSuffixInput.setValue(service.getIdSuffix());
+		invoiceIdPrefixInput.setValue(service.getPrefix());
+		invoiceIdInput.setValue(service.getNbrId());
+		invoiceIdSuffixInput.setValue(service.getSuffix());
 		bookingIdInput.setValue(service.getBookingId());
 		actualInput.setValue(service.get().getActualValue());
 		orderDatePicker.setValue(service.get().getOrderDate());
@@ -143,18 +143,24 @@ public class InvoiceApp extends AbstractIdApp<Invoice, InvoiceService, String> {
 	}
 
 	private HBox invoiceIdBox() {
-		return new HBox(invoiceIdPrefixInput.width(60).build(ALPHA), invoiceIdInput.build(ID),
-				invoiceIdSuffixInput.width(30).build(ALPHA));
+		return new HBox(invoiceIdPrefixInput.width(70).build(CODE), invoiceIdInput.build(ID),
+				invoiceIdSuffixInput.width(40).build(CODE));
 	}
 
-	// @formatter:off
+	private void openByInvoiceId(String id) throws Exception {
+		Invoice i = service.findByInvoiceId(id);
+		service.set(i);
+		refresh();
+	}
+
 	private Node payment() {
+	// @formatter:off
 		return box.hpane(
 			label.name("Discount"), discountCombo.readOnlyOfWidth(180),
 			label.name("Payment"), paymentCombo.readOnlyOfWidth(320),
 			label.name("Balance"), balanceDisplay.readOnly().build(CURRENCY));
-	}
 	// @formatter:on
+	}
 
 	private void refreshSummaryPane() {
 		try {
@@ -179,6 +185,15 @@ public class InvoiceApp extends AbstractIdApp<Invoice, InvoiceService, String> {
 		bookingIdInput.disableIf(actualInput.isEmpty().or(posted()));
 		remarksInput.disableIf(bookingIdInput.isEmpty().or(posted()));
 		table.disableIf(bookingIdInput.isEmpty().or(posted()));
+	}
+
+	private void tryOpeningByInvoiceId(String id) {
+		try {
+			openByInvoiceId(id);
+		} catch (Exception e) {
+			e.printStackTrace();
+			dialog.show(e).addParent(this).start();
+		}
 	}
 
 	private void updateSummaryPane(ObservableList<SoldDetail> c) {
@@ -216,14 +231,14 @@ public class InvoiceApp extends AbstractIdApp<Invoice, InvoiceService, String> {
 		}
 	}
 
-	// @formatter:off
 	private Node vat() {
+	// @formatter:off
 		return box.hpane(
 			label.name("VATable"), vatableDisplay.readOnly().build(CURRENCY),
 			label.name("VAT"), vatDisplay.readOnly().build(CURRENCY),
 			label.name("Total"), totalDisplay.readOnly().build(CURRENCY));
-	}
 	// @formatter:on
+	}
 
 	@Override
 	protected VBox mainVerticalPane() {
@@ -252,6 +267,18 @@ public class InvoiceApp extends AbstractIdApp<Invoice, InvoiceService, String> {
 		gridPane.add(label.field("Remarks"), 0, 3);
 		gridPane.add(remarksInput.build(TEXT), 1, 3, 8, 1);
 		return Arrays.asList(gridPane, box.hpane(table.build()), vat(), payment());
+	}
+
+	@Override
+	protected String moduleId() {
+		return service.getModuleId() + service.getOrderNo();
+	}
+
+	@Override
+	protected void openSelected() {
+		String id = getDialogInput();
+		if (id != null && !id.isEmpty())
+			tryOpeningByInvoiceId(id);
 	}
 
 	@Override

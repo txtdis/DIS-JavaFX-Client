@@ -10,6 +10,8 @@ public class CustomerReceivable implements Keyed<Long> {
 
 	private Long id;
 
+	private String orderNo;
+
 	private LocalDate orderDate;
 
 	private LocalDate dueDate;

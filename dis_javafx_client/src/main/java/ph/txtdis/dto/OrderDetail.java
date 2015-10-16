@@ -9,7 +9,7 @@ import ph.txtdis.type.UomType;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class OrderDetail extends AbstractAuditedId<Long> {
+public class OrderDetail extends AbstractId<Long> {
 
 	private Item item;
 

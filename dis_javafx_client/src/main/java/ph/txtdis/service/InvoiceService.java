@@ -12,7 +12,7 @@ import ph.txtdis.exception.NotFoundException;
 import ph.txtdis.exception.UnissuedInvoiceIdException;
 
 @Service("invoiceService")
-public class InvoiceService extends BookedService<Invoice, String> implements Reset {
+public class InvoiceService extends BookedService<Invoice, Long> implements Reset {
 
 	@Autowired
 	private InvoiceBookletService bookletService;
@@ -31,11 +31,15 @@ public class InvoiceService extends BookedService<Invoice, String> implements Re
 
 	@Override
 	public Invoice find(String id) throws Exception {
+		return readOnlyService.module(getModule()).getOne("/" + id);
+	}
+
+	public Invoice findByInvoiceId(String id) throws Exception {
 		setIds(id);
 		Invoice e = readOnlyService.module(getModule())
 				.getOne("/find?prefix=" + prefix + "&id=" + idNo + "&suffix=" + suffix);
 		if (e == null)
-			throw new NotFoundException("ID No. " + id);
+			throw new NotFoundException(getModuleId() + id);
 		return e;
 	}
 
@@ -44,16 +48,25 @@ public class InvoiceService extends BookedService<Invoice, String> implements Re
 		return "S/I";
 	}
 
-	public Long getIdNo() {
-		return get().getIdNo();
+	@Override
+	public String getModule() {
+		return "invoice";
 	}
 
-	public String getIdPrefix() {
-		return get().getIdPrefix();
+	public Long getNbrId() {
+		return get().getNbrId();
 	}
 
-	public String getIdSuffix() {
-		return get().getIdSuffix();
+	public String getOrderNo() {
+		return get().getOrderNo();
+	}
+
+	public String getPrefix() {
+		return get().getPrefix();
+	}
+
+	public String getSuffix() {
+		return get().getSuffix();
 	}
 
 	@Override
@@ -69,38 +82,25 @@ public class InvoiceService extends BookedService<Invoice, String> implements Re
 
 	private void checkforDuplicates(String prefix, Long id, String suffix) throws Exception {
 		Invoice i = readOnlyService.module("invoice")
-				.getOne("/find?prefix=" + prefix + "&id=" + idNo + "&suffix=" + suffix);
+				.getOne("/find?prefix=" + prefix + "&id=" + id + "&suffix=" + suffix);
 		if (i != null)
 			throw new DuplicateException("ID No. " + id);
 	}
 
-	private Long latestUsedIdInBooklet(InvoiceBooklet booklet) throws Exception {
-		Invoice i = readOnlyService.module("invoice")
-				.getOne("/latest?start=" + booklet.getStartId() + "&end=" + booklet.getEndId());
-		return i == null ? booklet.getStartId() - 1 : i.getIdNo();
+	private Long latestUsedIdInBooklet(InvoiceBooklet b) throws Exception {
+		Invoice i = readOnlyService.module("invoice").getOne("/latest?prefix=" + b.getPrefix() + "&suffix="
+				+ b.getSuffix() + "&start=" + b.getStartId() + "&end=" + b.getEndId());
+		return i == null ? b.getStartId() - 1 : i.getNbrId();
 	}
 
-	private void setIdNo(Long id) {
-		get().setIdNo(id);
-	}
-
-	private void setIdPrefix(String prefix) {
-		get().setIdPrefix(prefix);
-	}
-
-	private void setIds(String id) {
-		String[] ids = StringUtils.splitByCharacterType(id);
-		if (ids == null || ids.length == 0 || ids.length > 3)
-			throw new NotFoundException("ID No. " + id);
-		if (ids.length == 1) {
-			setIds("", ids[0], "");
-		} else if (ids.length == 3) {
-			setIds(ids[0], ids[1], ids[3]);
-		} else if (StringUtils.isAlpha(ids[0])) {
-			setIds(ids[0], ids[1], "");
-		} else {
-			setIds("", ids[0], ids[1]);
-		}
+	private void setIds(String id) throws Exception {
+		String[] ids = StringUtils.split(id, "-");
+		if (ids == null || ids.length == 0 || ids.length > 2)
+			throw new NotFoundException(getModuleId() + id);
+		if (ids.length == 1)
+			setIdsWithNoCodes(id, ids);
+		else
+			setIdsWithCode(id, ids);
 	}
 
 	private void setIds(String... ids) {
@@ -110,13 +110,53 @@ public class InvoiceService extends BookedService<Invoice, String> implements Re
 	}
 
 	private void setIds(String prefix, Long id, String suffix) {
-		setIdPrefix(prefix);
-		setIdNo(id);
-		setIdSuffix(suffix);
+		setPrefix(prefix);
+		setNbrId(id);
+		setSuffix(suffix);
 	}
 
-	private void setIdSuffix(String suffix) {
-		get().setIdSuffix(suffix);
+	private void setIdsWithCode(String id, String[] ids) throws NotFoundException {
+		String[] nos = StringUtils.splitByCharacterType(ids[1]);
+		if (nos.length > 2)
+			throw new NotFoundException(getModuleId() + id);
+		if (nos.length == 1)
+			setIdsWithoutSeries(id, ids[0], nos[0]);
+		else
+			setIds(ids[0], nos[0], nos[1]);
+	}
+
+	private void setIdsWithNoCodes(String id, String[] ids) throws NotFoundException {
+		ids = StringUtils.splitByCharacterType(ids[0]);
+		if (ids.length > 2)
+			throw new NotFoundException(getModuleId() + id);
+		if (ids.length == 1)
+			setIdsWithNumbersOnly(id, ids[0]);
+		else
+			setIds("", ids[0], ids[1]);
+	}
+
+	private void setIdsWithNumbersOnly(String id, String number) throws NotFoundException {
+		if (!StringUtils.isNumeric(number))
+			throw new NotFoundException(getModuleId() + id);
+		setIds("", number, "");
+	}
+
+	private void setIdsWithoutSeries(String id, String code, String number) throws NotFoundException {
+		if (!StringUtils.isNumeric(number))
+			throw new NotFoundException(getModuleId() + id);
+		setIds(code, number, "");
+	}
+
+	private void setNbrId(Long id) {
+		get().setNbrId(id);
+	}
+
+	private void setPrefix(String prefix) {
+		get().setPrefix(prefix);
+	}
+
+	private void setSuffix(String suffix) {
+		get().setSuffix(suffix);
 	}
 
 	private void verifyIdIsPartOfAnIssuedBookletImmediatelyPrecedingItsLast(String prefix, Long id, String suffix)

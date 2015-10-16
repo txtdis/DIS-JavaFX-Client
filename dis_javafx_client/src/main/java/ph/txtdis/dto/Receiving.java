@@ -9,7 +9,7 @@ import ph.txtdis.type.ReceiptReferenceType;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class Receiving extends AbstractAuditedId<Long> {
+public class Receiving extends AbstractTrackedId<Long> {
 
 	private Customer customer;
 

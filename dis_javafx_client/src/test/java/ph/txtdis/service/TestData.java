@@ -543,7 +543,8 @@ public class TestData {
 	Invoice getInvoiceOfCustomerWithCreditAndDiscount() {
 		Invoice t = new Invoice();
 		t.setOrderDate(getDateOfNow());
-		t.setId(" 1 ");
+		t.setId(1L);
+		t.setNbrId(1L);
 		t.setBooking(getBookingOfCustomerWithCreditAndDiscount());
 		t.setCustomer(getBookingOfCustomerWithCreditAndDiscount().getCustomer());
 		t.setDiscounts(Arrays.asList(getDiscountOfLevel1Worth10Percent()));

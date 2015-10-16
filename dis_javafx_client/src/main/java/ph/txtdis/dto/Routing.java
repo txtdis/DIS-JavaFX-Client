@@ -7,7 +7,7 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class Routing extends AbstractAuditedId<Long>implements Comparable<Routing>, StartDated {
+public class Routing extends AbstractTrackedId<Long>implements Comparable<Routing>, StartDated {
 
 	private Route route;
 

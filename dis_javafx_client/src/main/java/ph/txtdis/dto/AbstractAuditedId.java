@@ -7,9 +7,17 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public abstract class AbstractAuditedId<PK> extends AbstractId<PK>implements Audited {
+public abstract class AbstractAuditedId<PK> extends AbstractTrackedId<PK> {
 
-	private String createdBy;
+	private String revisedBy;
 
-	private ZonedDateTime createdOn;
+	private ZonedDateTime revisedOn;
+
+	private String invalidatedBy;
+
+	private ZonedDateTime invalidatedOn;
+
+	private String validatedBy;
+
+	private ZonedDateTime validatedOn;
 }

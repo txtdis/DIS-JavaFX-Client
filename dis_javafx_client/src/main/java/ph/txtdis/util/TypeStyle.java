@@ -7,12 +7,12 @@ import java.time.ZonedDateTime;
 import org.apache.commons.lang3.StringUtils;
 
 import javafx.geometry.Pos;
+import ph.txtdis.fx.AlphabetOnlyValidator;
 import ph.txtdis.fx.DecimalInputValidator;
 import ph.txtdis.fx.IntegerInputValidator;
 import ph.txtdis.fx.PhoneInputValidator;
 import ph.txtdis.fx.Styled;
-import ph.txtdis.fx.ToUpperCaseConverter;
-import ph.txtdis.fx.ToUpperOnlyConverter;
+import ph.txtdis.fx.TextValidator;
 import ph.txtdis.fx.control.AppField;
 import ph.txtdis.fx.control.StylableTextField;
 import ph.txtdis.type.Type;
@@ -21,6 +21,7 @@ public class TypeStyle {
 
 	public static <T> void align(Type type, AppField<T> field) {
 		switch (type) {
+			case CODE:
 			case CURRENCY:
 			case DECIMAL:
 			case FOURPLACE:
@@ -49,8 +50,9 @@ public class TypeStyle {
 				return (T) Numeric.parseInteger(text);
 			case PHONE:
 				return (T) Numeric.persistPhone(text);
-			case TEXT:
 			case ALPHA:
+			case CODE:
+			case TEXT:
 				return text == null ? null : (T) StringUtils.trim(text);
 			default:
 				return null;
@@ -59,6 +61,9 @@ public class TypeStyle {
 
 	public static <T> void style(Type type, StylableTextField field, T value) {
 		switch (type) {
+			case CODE:
+				Styled.forCode(field, value);
+				break;
 			case CURRENCY:
 				Styled.forCurrency(field, (BigDecimal) value);
 				break;
@@ -89,6 +94,8 @@ public class TypeStyle {
 			case TIMESTAMP:
 				Styled.forTimestamp(field, (ZonedDateTime) value);
 				break;
+			case ALPHA:
+			case TEXT:
 			default:
 				Styled.forText(field, value);
 		}
@@ -110,10 +117,12 @@ public class TypeStyle {
 				field.setPromptText("0888 888 8888");
 				field.textProperty().addListener(new PhoneInputValidator(field));
 				break;
+			case CODE:
 			case TEXT:
-				field.textProperty().addListener(new ToUpperCaseConverter(field));
+				field.textProperty().addListener(new TextValidator(field));
+				break;
 			case ALPHA:
-				field.textProperty().addListener(new ToUpperOnlyConverter(field));
+				field.textProperty().addListener(new AlphabetOnlyValidator(field));
 				break;
 			default:
 		}
@@ -121,6 +130,8 @@ public class TypeStyle {
 
 	public static int width(Type type) {
 		switch (type) {
+			case ALPHA:
+				return 60;
 			case INTEGER:
 			case ENUM:
 			case FOURPLACE:
@@ -135,9 +146,9 @@ public class TypeStyle {
 				return 160;
 			case TEXT:
 				return 240;
+			case CODE:
 			case CURRENCY:
 			case OTHERS:
-			case ALPHA:
 			default:
 				return 120;
 		}

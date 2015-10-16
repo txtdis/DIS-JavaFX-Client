@@ -10,6 +10,12 @@ public class Vat implements Keyed<Long> {
 
 	private Long id;
 
+	private String prefix;
+
+	private Long nbrId;
+
+	private String suffix;
+
 	private String customer;
 
 	private LocalDate orderDate;

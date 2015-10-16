@@ -14,8 +14,6 @@ import ph.txtdis.exception.DuplicateException;
 @Service
 public class ItemTreeService implements Listed<ItemTree>, SavedByEntity<ItemTree> {
 
-	private static final String ITEM_TREE = "itemTree";
-
 	@Autowired
 	private ItemFamilyService familyService;
 
@@ -26,15 +24,20 @@ public class ItemTreeService implements Listed<ItemTree>, SavedByEntity<ItemTree
 	private SavingService<ItemTree> savingService;
 
 	public boolean duplicated(ItemFamily family, ItemFamily parent) throws Exception {
-		if (readOnlyService.module(ITEM_TREE)
+		if (readOnlyService.module(getModule())
 				.getOne("/find?family=" + family.getId() + "&parent=" + parent.getId()) != null)
 			throw new DuplicateException(family + " - " + parent);
 		return false;
 	}
 
 	@Override
+	public String getModule() {
+		return "itemTree";
+	}
+
+	@Override
 	public List<ItemTree> list() throws Exception {
-		return readOnlyService.module(ITEM_TREE).getList();
+		return readOnlyService.module(getModule()).getList();
 	}
 
 	public List<ItemFamily> listFamilies() throws Exception {
@@ -56,6 +59,6 @@ public class ItemTreeService implements Listed<ItemTree>, SavedByEntity<ItemTree
 
 	@Override
 	public ItemTree save(ItemTree entity) throws Exception {
-		return savingService.module(ITEM_TREE).save(entity);
+		return savingService.module(getModule()).save(entity);
 	}
 }

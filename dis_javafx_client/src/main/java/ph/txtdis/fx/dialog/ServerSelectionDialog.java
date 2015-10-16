@@ -23,7 +23,7 @@ public class ServerSelectionDialog extends InputDialog {
 	private Server server;
 
 	@Autowired
-	protected AppGridPane grid;
+	private AppGridPane grid;
 
 	private ToggleGroup group;
 

@@ -11,8 +11,6 @@ import ph.txtdis.exception.DuplicateException;
 @Service
 public class ChannelService implements Listed<Channel>, SavedByName<Channel>, UniquelyNamed {
 
-	private static final String CHANNEL = "channel";
-
 	@Autowired
 	private SavingService<Channel> savingService;
 
@@ -21,19 +19,24 @@ public class ChannelService implements Listed<Channel>, SavedByName<Channel>, Un
 
 	@Override
 	public void confirmUniqueness(String name) throws Exception {
-		if (readOnlyService.module(CHANNEL).getOne("/" + name) != null)
+		if (readOnlyService.module(getModule()).getOne("/" + name) != null)
 			throw new DuplicateException(name);
 	}
 
 	@Override
+	public String getModule() {
+		return "channel";
+	}
+
+	@Override
 	public List<Channel> list() throws Exception {
-		return readOnlyService.module(CHANNEL).getList();
+		return readOnlyService.module(getModule()).getList();
 	}
 
 	@Override
 	public Channel save(String name) throws Exception {
 		Channel entity = new Channel();
 		entity.setName(name);
-		return savingService.module(CHANNEL).save(entity);
+		return savingService.module(getModule()).save(entity);
 	}
 }

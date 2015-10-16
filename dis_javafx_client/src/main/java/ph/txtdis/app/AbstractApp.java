@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -17,7 +16,6 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.TilePane;
 import javafx.scene.layout.VBox;
-import javafx.scene.paint.Color;
 import javafx.stage.Modality;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
@@ -26,7 +24,6 @@ import ph.txtdis.fx.control.AppButton;
 import ph.txtdis.fx.control.LabelFactory;
 import ph.txtdis.fx.dialog.MessageDialog;
 import ph.txtdis.fx.pane.AppBoxPaneFactory;
-import ph.txtdis.util.Text;
 import ph.txtdis.util.TypeMap;
 
 public abstract class AbstractApp extends Stage implements Startable {
@@ -34,7 +31,6 @@ public abstract class AbstractApp extends Stage implements Startable {
 	@Autowired
 	protected TypeMap typeMap;
 
-	@Lazy
 	@Autowired
 	protected MessageDialog dialog;
 
@@ -92,7 +88,7 @@ public abstract class AbstractApp extends Stage implements Startable {
 	}
 
 	private Image icon() {
-		return new FontIcon(unicode(), Color.NAVY);
+		return new FontIcon(unicode());
 	}
 
 	private void initialize(Stage stage) {
@@ -116,9 +112,7 @@ public abstract class AbstractApp extends Stage implements Startable {
 		return new ArrayList<>();
 	}
 
-	protected String headerText() {
-		return Text.toHeader(this);
-	}
+	protected abstract String headerText();
 
 	protected VBox mainVerticalPane() {
 		VBox vbox = box.vbox(headerPane());
@@ -135,9 +129,7 @@ public abstract class AbstractApp extends Stage implements Startable {
 		setBounds();
 	}
 
-	protected String titleText() {
-		return Text.toHeader(this);
-	}
+	protected abstract String titleText();
 
 	protected String unicode() {
 		return typeMap.icon(this);

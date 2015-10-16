@@ -1,6 +1,7 @@
 package ph.txtdis.fx.table;
 
 import static ph.txtdis.type.Type.ALPHA;
+import static ph.txtdis.type.Type.CODE;
 import static ph.txtdis.type.Type.CURRENCY;
 import static ph.txtdis.type.Type.DATE;
 import static ph.txtdis.type.Type.ID;
@@ -22,9 +23,6 @@ public class VatTable extends AppTable<Vat> {
 
 	@Autowired
 	private InvoiceApp app;
-
-	@Autowired
-	private Column<Vat, String> id;
 
 	@Autowired
 	private Column<Vat, String> prefix;
@@ -50,11 +48,9 @@ public class VatTable extends AppTable<Vat> {
 	@Override
 	@SuppressWarnings("unchecked")
 	protected void addColumns() {
-		id.launches(app).ofType(ALPHA).build("Invoice ID", "");
-		id.getColumns().setAll(prefix.launches(app).ofType(ALPHA).build("Prefix", "idPrefix"),
-				idNo.launches(app).ofType(ID).build("No.", "idNo"),
-				suffix.launches(app).ofType(ALPHA).build("Suffix", "idSuffix"));
-		getColumns().setAll(id.launches(app).ofType(ID).build("S/I No.", "id"),
+		getColumns().setAll(prefix.launches(app).ofType(CODE).width(60).build("Code", "prefix"),
+				idNo.launches(app).ofType(ID).build("No.", "nbrId"),
+				suffix.launches(app).ofType(ALPHA).width(65).build("Series", "suffix"),
 				customer.launches(app).ofType(TEXT).width(180).build("Customer", "customer"),
 				orderDate.launches(app).ofType(DATE).build("Date", "orderDate"),
 				value.launches(app).ofType(CURRENCY).build("Value", "value"),

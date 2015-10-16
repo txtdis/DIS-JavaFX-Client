@@ -1,8 +1,8 @@
 package ph.txtdis.fx.table;
 
+import static ph.txtdis.type.Type.CODE;
 import static ph.txtdis.type.Type.CURRENCY;
 import static ph.txtdis.type.Type.DATE;
-import static ph.txtdis.type.Type.ID;
 import static ph.txtdis.type.Type.INTEGER;
 
 import java.math.BigDecimal;
@@ -43,7 +43,7 @@ public class CustomerReceivableTable extends AppTable<CustomerReceivable> {
 	@Override
 	@SuppressWarnings("unchecked")
 	protected void addColumns() {
-		getColumns().setAll(id.launches(invoiceApp).ofType(ID).build("S/I(D/R) No.", "id"),
+		getColumns().setAll(id.launches(invoiceApp).ofType(CODE).width(120).build("S/I(D/R) No.", "orderNo"),
 				orderDate.launches(invoiceApp).ofType(DATE).build("Date", "orderDate"),
 				dueDate.launches(invoiceApp).ofType(DATE).build("Due", "dueDate"),
 				daysOver.launches(invoiceApp).ofType(INTEGER).build("Days Over", "daysOverCount"),

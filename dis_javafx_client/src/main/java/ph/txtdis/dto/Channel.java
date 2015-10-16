@@ -5,7 +5,7 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class Channel extends AbstractAuditedId<Long>implements Comparable<Channel> {
+public class Channel extends AbstractTrackedId<Long>implements Comparable<Channel> {
 
 	private String name;
 

@@ -33,10 +33,10 @@ public class Column<S extends Keyed<?>, T> extends TableColumn<S, T> implements 
 	public Column<S, T> build(String name, String field) {
 		setStyle(" -fx-opacity: 1; ");
 		setText(name);
+		setEditable(false);
 		makeHeaderWrappable(name);
 		setId(field);
 		setCellValueFactory(new PropertyValueFactory<>(field));
-		setEditable(false);
 		setColumnWidth(width());
 		setCellFactory(c -> cell.get(app, type));
 		return this;

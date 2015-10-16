@@ -14,8 +14,9 @@ import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
-import javafx.scene.control.ProgressBar;
+import javafx.scene.control.ProgressIndicator;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
@@ -52,9 +53,9 @@ public class App extends Application {
 	}
 
 	private void createSplash() {
-		splash = new HBox(phoneLogo(), textPane());
+		splash = new HBox(phoneInsideSpinningBallLogo(), textPane());
 		splash.setAlignment(Pos.CENTER);
-		splash.setPadding(new Insets(30, 40, 30, 40));
+		splash.setPadding(new Insets(35, 25, 35, 60));
 		splash.setStyle("-fx-base: slateblue; -fx-background-radius: 0.5em; ");
 	}
 
@@ -70,30 +71,32 @@ public class App extends Application {
 		return new Task<ConfigurableApplicationContext>() {
 			@Override
 			protected ConfigurableApplicationContext call() throws InterruptedException {
-				return SpringApplication.run(App.class, "--debug");
+				return SpringApplication.run(App.class);
 			}
 		};
 	}
 
 	private Node message() {
 		Label l = new Label("Please wait...");
-		l.setStyle("-fx-font: 11pt 'ubuntu'; ");
-		l.setPadding(new Insets(0, 0, 5, 0));
+		l.setStyle("-fx-font: 12pt 'ubuntu'; ");
 		return l;
 	}
 
-	private Label phoneLogo() {
-		Label l = new Label("\ue826");
-		l.setStyle("-fx-font: 72 'txtdis'; -fx-text-fill: navy; ");
-		l.setPadding(new Insets(0, 15, 0, 0));
-		l.setAlignment(Pos.CENTER);
-		return l;
+	private Node phoneInsideSpinningBallLogo() {
+		return new StackPane(phoneLogo(), spinningBalls());
 	}
 
-	private ProgressBar progressBar() {
-		ProgressBar pb = new ProgressBar();
-		pb.setStyle(" -fx-accent: navy; -fx-background: white;");
-		return pb;
+	private Node phoneLogo() {
+		Label p = new Label("\ue826");
+		p.setStyle("-fx-font: 72 'txtdis'; -fx-text-fill: midnightblue;");
+		p.setPadding(new Insets(10));
+		return p;
+	}
+
+	private Scene scene() {
+		Scene s = new Scene(splash);
+		s.setFill(Color.TRANSPARENT);
+		return s;
 	}
 
 	private void setSplashToFadeOnInitCompletion(Stage stage, Task<?> task, Init init) {
@@ -111,16 +114,25 @@ public class App extends Application {
 	}
 
 	private void showSplash(Stage stage) {
-		stage.setTitle("txtDIS");
-		stage.getIcons().add(new FontIcon("\ue826", Color.NAVY));
+		stage.setTitle("Starting txtDIS...");
+		stage.getIcons().add(new FontIcon("\ue826"));
 		stage.initStyle(StageStyle.TRANSPARENT);
-		stage.setScene(new Scene(splash));
+		stage.setScene(scene());
 		stage.show();
 	}
 
+	private Node spinningBalls() {
+		ProgressIndicator pi = new ProgressIndicator();
+		pi.setScaleX(2.0);
+		pi.setScaleY(2.0);
+		pi.setStyle(" -fx-accent: white;");
+		return pi;
+	}
+
 	private Parent textPane() {
-		VBox hb = new VBox(trademark(), message(), progressBar());
+		VBox hb = new VBox(trademark(), message());
 		hb.setAlignment(Pos.CENTER);
+		hb.setPadding(new Insets(0, 0, 0, 50));
 		hb.setStyle("-fx-background: transparent;");
 		return hb;
 	}
@@ -128,7 +140,7 @@ public class App extends Application {
 	private Node trademark() {
 		UI.loadFont("Ubuntu-BI");
 		Label tm = new Label("txtDIS");
-		tm.setStyle("-fx-font: 38pt 'ubuntu'; -fx-text-fill: navy;");
+		tm.setStyle("-fx-font: 48pt 'ubuntu'; -fx-text-fill: midnightblue;");
 		tm.setAlignment(Pos.TOP_CENTER);
 		return tm;
 	}

@@ -4,20 +4,20 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import ph.txtdis.fx.control.AppField;
 
-public class ToUpperOnlyConverter implements ChangeListener<String> {
+public class AlphabetOnlyValidator implements ChangeListener<String> {
 
 	private boolean ignore;
 
 	private int maxLength;
-	
+
 	private String restrict;
 
 	private AppField<?> input;
 
-	public ToUpperOnlyConverter(AppField<?> input) {
+	public AlphabetOnlyValidator(AppField<?> input) {
 		this.input = input;
-		this.restrict = "[A-Z]";
-		maxLength = (int) input.getMinWidth() / 20;
+		this.restrict = "[a-zA-Z]";
+		maxLength = (int) input.getMinWidth() / 30;
 	}
 
 	@Override

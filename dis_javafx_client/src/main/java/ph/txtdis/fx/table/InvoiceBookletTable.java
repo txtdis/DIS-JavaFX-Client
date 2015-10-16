@@ -1,5 +1,7 @@
 package ph.txtdis.fx.table;
 
+import static ph.txtdis.type.Type.ALPHA;
+import static ph.txtdis.type.Type.CODE;
 import static ph.txtdis.type.Type.ID;
 import static ph.txtdis.type.Type.OTHERS;
 import static ph.txtdis.type.Type.TEXT;
@@ -23,6 +25,12 @@ public class InvoiceBookletTable extends AppTable<InvoiceBooklet> {
 	private AppendableTableProperty<InvoiceBooklet> append;
 
 	@Autowired
+	private Column<InvoiceBooklet, String> prefix;
+
+	@Autowired
+	private Column<InvoiceBooklet, String> suffix;
+
+	@Autowired
 	private Column<InvoiceBooklet, Long> startId;
 
 	@Autowired
@@ -43,8 +51,9 @@ public class InvoiceBookletTable extends AppTable<InvoiceBooklet> {
 	@Override
 	@SuppressWarnings("unchecked")
 	protected void addColumns() {
-		getColumns().setAll(startId.ofType(ID).build("First No.", "startId"),
-				endId.ofType(ID).build("Last No.", "endId"),
+		getColumns().setAll(prefix.ofType(CODE).width(60).build("Code", "prefix"),
+				startId.ofType(ID).build("First No.", "startId"), endId.ofType(ID).build("Last No.", "endId"),
+				suffix.ofType(ALPHA).width(65).build("Series", "suffix"),
 				issuedTo.ofType(OTHERS).width(100).build("Issued to", "issuedTo"),
 				issuedBy.ofType(TEXT).width(120).build("Issued by", "createdBy"),
 				issuedOn.ofType(TIMESTAMP).build("Issued on", "createdOn"));

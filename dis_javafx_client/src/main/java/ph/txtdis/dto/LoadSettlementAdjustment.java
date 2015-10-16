@@ -7,7 +7,7 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class LoadSettlementAdjustment extends AbstractAuditedId<Long> {
+public class LoadSettlementAdjustment extends AbstractTrackedId<Long> {
 
 	private LocalDate pickDate;
 

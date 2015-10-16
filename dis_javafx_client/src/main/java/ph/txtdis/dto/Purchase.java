@@ -9,7 +9,7 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class Purchase extends AbstractAuditedId<Long> {
+public class Purchase extends AbstractTrackedId<Long> {
 
 	private Customer customer;
 

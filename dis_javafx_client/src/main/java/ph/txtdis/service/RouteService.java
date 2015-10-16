@@ -18,8 +18,6 @@ public class RouteService implements Listed<Route>, UniquelyNamed, SavedByName<R
 
 	private static final String AGING_RECEIVABLE = "agingReceivable";
 
-	private static final String ROUTE = "route";
-
 	@Autowired
 	private CustomerService customerService;
 
@@ -36,20 +34,21 @@ public class RouteService implements Listed<Route>, UniquelyNamed, SavedByName<R
 
 	@Override
 	public void confirmUniqueness(String name) throws Exception {
-		if (readOnlyService.module(ROUTE).getOne("/" + name) != null)
+		if (readOnlyService.module(getModule()).getOne("/" + name) != null)
 			throw new DuplicateException(name);
 	}
 
 	public Route find(String id) throws Exception {
-		return route = readOnlyService.module(ROUTE).getOne("/find?id=" + id);
+		return route = readOnlyService.module(getModule()).getOne("/find?id=" + id);
 	}
 
 	public Route find(String[] ids) throws Exception {
 		return launcedFromAgingReceivable(ids) ? viaCustomer(ids) : find(routeId(ids));
 	}
 
-	public Route getRoute() {
-		return route;
+	@Override
+	public String getModule() {
+		return "route";
 	}
 
 	public List<Account> getSellerHistory() {
@@ -58,7 +57,7 @@ public class RouteService implements Listed<Route>, UniquelyNamed, SavedByName<R
 
 	@Override
 	public List<Route> list() throws Exception {
-		return readOnlyService.module(ROUTE).getList();
+		return readOnlyService.module(getModule()).getList();
 	}
 
 	public List<String> listUsers() throws Exception {
@@ -69,13 +68,13 @@ public class RouteService implements Listed<Route>, UniquelyNamed, SavedByName<R
 	public Route save(String name) throws Exception {
 		Route entity = new Route();
 		entity.setName(name);
-		return savingService.module(ROUTE).save(entity);
+		return savingService.module(getModule()).save(entity);
 	}
 
 	public Account save(String seller, LocalDate startDate) throws Exception {
 		List<Account> list = updatedSellerHistory(seller, startDate);
 		route.setSellerHistory(list);
-		route = savingService.module(ROUTE).save(route);
+		route = savingService.module(getModule()).save(route);
 		return getSellerHistory().stream()
 				.filter(s -> s.getSeller().equals(seller) && s.getStartDate().equals(startDate)).findAny().get();
 	}

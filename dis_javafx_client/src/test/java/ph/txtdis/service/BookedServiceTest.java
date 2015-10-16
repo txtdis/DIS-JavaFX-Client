@@ -43,6 +43,11 @@ public class BookedServiceTest extends TestData {
 			public String getAlternateName() {
 				return "TEST";
 			}
+
+			@Override
+			public String getModule() {
+				return "test";
+			}
 		};
 		service.set(getBookedOrder());
 		when(readOnlyService.module(service.getModule())).thenReturn(readOnlyService);

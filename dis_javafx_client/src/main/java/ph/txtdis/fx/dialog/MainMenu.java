@@ -26,7 +26,7 @@ import ph.txtdis.app.VatApp;
 import ph.txtdis.app.WarehouseApp;
 import ph.txtdis.dto.Style;
 import ph.txtdis.dto.User;
-import ph.txtdis.fx.AppIcon;
+import ph.txtdis.fx.FontIcon;
 import ph.txtdis.fx.StyleSheet;
 import ph.txtdis.fx.control.AppButton;
 import ph.txtdis.fx.control.LabelFactory;
@@ -246,7 +246,7 @@ public class MainMenu extends Stage {
 	}
 
 	private void setTitleBar() {
-		getIcons().add(new AppIcon());
+		getIcons().add(new FontIcon("\ue826"));
 		setTitle("txtDIS Menu");
 	}
 

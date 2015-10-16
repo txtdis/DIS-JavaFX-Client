@@ -10,12 +10,14 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import ph.txtdis.dto.Channel;
 import ph.txtdis.dto.CreditDetail;
 import ph.txtdis.dto.Customer;
 import ph.txtdis.dto.CustomerDiscount;
 import ph.txtdis.dto.ItemFamily;
+import ph.txtdis.dto.Keyed;
 import ph.txtdis.dto.Location;
 import ph.txtdis.dto.Route;
 import ph.txtdis.dto.Routing;
@@ -34,8 +36,6 @@ import ph.txtdis.util.Temporal;
 public class CustomerService
 		implements AlternateNamed, Excel<Customer>, Reset, SpunById<Long>, Serviced<Customer, Long>
 {
-
-	private static final String CUSTOMER = "customer";
 
 	@Autowired
 	private ChannelService channelService;
@@ -96,7 +96,7 @@ public class CustomerService
 
 	@Override
 	public Customer find(String id) throws Exception {
-		Customer c = readOnlyService.module(CUSTOMER).getOne("/" + id);
+		Customer c = readOnlyService.module(getModule()).getOne("/" + id);
 		if (c == null)
 			throw new NotFoundException("ID No. " + id);
 		return c;
@@ -115,7 +115,7 @@ public class CustomerService
 
 	@Override
 	public String getAlternateName() {
-		return "Customer";
+		return StringUtils.capitalize(getModule());
 	}
 
 	public Location getBarangay() {
@@ -177,7 +177,13 @@ public class CustomerService
 		return get().getMobile();
 	}
 
+	@Override
+	public String getModule() {
+		return "customer";
+	}
+
 	public String getName() {
+		System.err.println("Name = [" + get().getName() + "]");
 		return get().getName();
 	}
 
@@ -198,8 +204,8 @@ public class CustomerService
 	}
 
 	@Override
-	public Long getSpunId() {
-		return isNew() ? null : getId();
+	public SpunService<Customer, Long> getSpunService() {
+		return spunService;
 	}
 
 	public String getStreet() {
@@ -212,11 +218,6 @@ public class CustomerService
 
 	public VisitFrequency getVisitFrequency() {
 		return get().getVisitFrequency();
-	}
-
-	@Override
-	public boolean isNew() {
-		return getCreatedBy() == null;
 	}
 
 	@Override
@@ -252,23 +253,13 @@ public class CustomerService
 	}
 
 	@Override
-	public void next() throws Exception {
-		set(spunService.module(CUSTOMER).next(getSpunId()));
-	}
-
-	@Override
-	public void previous() throws Exception {
-		set(spunService.module(CUSTOMER).previous(getSpunId()));
-	}
-
-	@Override
 	public void reset() {
 		set(new Customer());
 	}
 
 	@Override
 	public void save() throws Exception {
-		set(savingService.module(CUSTOMER).save(customer));
+		set(savingService.module(getModule()).save(customer));
 	}
 
 	@Override
@@ -278,12 +269,12 @@ public class CustomerService
 
 	public List<Customer> search(String text) throws Exception {
 		String endpoint = text.isEmpty() ? "" : "/find?name=" + text;
-		return customers = readOnlyService.module(CUSTOMER).getList(endpoint);
+		return customers = readOnlyService.module(getModule()).getList(endpoint);
 	}
 
 	@Override
-	public void set(Customer customer) {
-		this.customer = customer;
+	public void set(Keyed<Long> customer) {
+		this.customer = (Customer) customer;
 	}
 
 	public void setBarangay(Location value) {
@@ -327,7 +318,7 @@ public class CustomerService
 	}
 
 	public void setNameIfUnique(String text) throws Exception {
-		if (readOnlyService.module(CUSTOMER).getOne("/find?name=" + text) != null)
+		if (readOnlyService.module(getModule()).getOne("/find?name=" + text) != null)
 			throw new DuplicateException(text);
 		setName(text);
 	}

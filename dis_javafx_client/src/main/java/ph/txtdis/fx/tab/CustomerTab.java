@@ -11,6 +11,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import javafx.beans.binding.BooleanBinding;
+import javafx.beans.value.ObservableBooleanValue;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.layout.HBox;
@@ -82,6 +83,10 @@ public class CustomerTab extends AbstractTab {
 		setBindings();
 		setListeners();
 		return this;
+	}
+
+	public AppField<String> nameField() {
+		return nameField;
 	}
 
 	@Override
@@ -169,6 +174,10 @@ public class CustomerTab extends AbstractTab {
 		return hbox;
 	}
 
+	private ObservableBooleanValue posted() {
+		return nameField.disabled();
+	}
+
 	private void setBarangayComboItems(Location city) {
 		try {
 			barangayCombo.items(service.listBarangays(city));
@@ -178,15 +187,15 @@ public class CustomerTab extends AbstractTab {
 	}
 
 	private void setBindings() {
-		streetField.disableIf(nameField.isEmpty());
-		parentIdField.disableIf(nameField.isEmpty());
-		provinceCombo.disableIf(streetField.isEmpty());
-		cityCombo.disableIf(provinceCombo.isEmpty());
-		barangayCombo.disableIf(cityCombo.isEmpty());
-		typeCombo.disableIf(barangayCombo.isEmpty());
-		channelCombo.disableIf(typeCombo.isEmpty().or(typeCombo.isNot(CustomerType.OUTLET)));
-		visitCombo.disableIf(channelCombo.isEmpty());
-		routingTable.disableIf(visitCombo.isEmpty());
+		streetField.disableIf(nameField.isEmpty().or(posted()));
+		parentIdField.disableIf(nameField.isEmpty().or(posted()));
+		provinceCombo.disableIf(streetField.isEmpty().or(posted()));
+		cityCombo.disableIf(provinceCombo.isEmpty().or(posted()));
+		barangayCombo.disableIf(cityCombo.isEmpty().or(posted()));
+		typeCombo.disableIf(barangayCombo.isEmpty().or(posted()));
+		channelCombo.disableIf(typeCombo.isEmpty().or(typeCombo.isNot(CustomerType.OUTLET)).or(posted()));
+		visitCombo.disableIf(channelCombo.isEmpty().or(posted()));
+		routingTable.disableIf(visitCombo.isEmpty().or(posted()));
 	}
 
 	private void setCityComboItems(Location province) {

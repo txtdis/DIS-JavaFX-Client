@@ -31,7 +31,7 @@ import ph.txtdis.service.CustomerService;
 
 @Lazy
 @Component("customerApp")
-public class CustomerApp extends AbstractIdApp<Customer, CustomerService, Long> {
+public class CustomerApp extends AbstractIdApp<Customer, CustomerService, Long, Long> {
 
 	@Autowired
 	private LabelFactory label;
@@ -88,13 +88,13 @@ public class CustomerApp extends AbstractIdApp<Customer, CustomerService, Long> 
 		customerTab.select();
 	}
 
-	// @formatter:off
 	private List<Node> deactivationNodes() {
+	// @formatter:off
 		return Arrays.asList(
 				label.name("Deactivated by"), deactivatedByDisplay.readOnly().width(120).build(TEXT),
 				label.name("on"), deactivatedOnDisplay.readOnly().build(TIMESTAMP));
-	}
 	// @formatter:on
+	}
 
 	private List<InputTab> inputTabs() {
 		inputTabs = Arrays.asList(customerTab.build(), creditTab.build(), discountTab.build());
@@ -126,6 +126,7 @@ public class CustomerApp extends AbstractIdApp<Customer, CustomerService, Long> 
 	}
 
 	private void setBindings() {
+		// customerTab.nameField().disableIf((BooleanBinding) posted());
 		creditTab.disableIf(customerTab.showsCustomerIsNotAnOutlet());
 		discountTab.disableIf(creditTab.isDisabledNow());
 		deactivateButton.disableIf(customerTab.showsANewCustomer().or(isAlreadyDeactivated()));

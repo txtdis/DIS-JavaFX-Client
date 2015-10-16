@@ -1,6 +1,7 @@
 package ph.txtdis.fx.dialog;
 
 import static ph.txtdis.type.Type.ID;
+import static ph.txtdis.type.Type.TEXT;
 
 import java.util.Arrays;
 import java.util.List;
@@ -16,6 +17,7 @@ import ph.txtdis.fx.control.AppButton;
 import ph.txtdis.fx.control.AppField;
 import ph.txtdis.fx.control.LabelFactory;
 import ph.txtdis.fx.pane.AppGridPane;
+import ph.txtdis.type.Type;
 import ph.txtdis.util.Text;
 
 @Scope("prototype")
@@ -36,13 +38,17 @@ public class OpenByIdDialog<PK> extends InputDialog {
 
 	private PK id;
 
-	public PK getId() {
-		return id;
+	public String getId() {
+		return id.toString();
 	}
 
 	@Override
 	public void setFocus() {
 		idField.requestFocus();
+	}
+
+	private Type getType() {
+		return id instanceof Long ? ID : TEXT;
 	}
 
 	private Button openButton() {
@@ -72,7 +78,7 @@ public class OpenByIdDialog<PK> extends InputDialog {
 	protected List<Node> nodes() {
 		grid.getChildren().clear();
 		grid.add(label.field("ID No"), 0, 0);
-		grid.add(idField.build(ID), 1, 0);
+		grid.add(idField.build(getType()), 1, 0);
 		return Arrays.asList(header(), grid, buttonBox());
 	}
 }

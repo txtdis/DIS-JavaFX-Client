@@ -5,7 +5,7 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class Style extends AbstractAuditedId<Long> {
+public class Style extends AbstractTrackedId<Long> {
 
 	private String base, font;
 }

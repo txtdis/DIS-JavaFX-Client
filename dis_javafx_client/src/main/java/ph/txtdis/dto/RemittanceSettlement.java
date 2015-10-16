@@ -7,7 +7,7 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class RemittanceSettlement extends AbstractAuditedId<Long> {
+public class RemittanceSettlement extends AbstractTrackedId<Long> {
 
 	private Truck truck;
 

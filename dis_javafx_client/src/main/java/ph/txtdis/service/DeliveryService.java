@@ -6,7 +6,7 @@ import org.springframework.stereotype.Service;
 import ph.txtdis.dto.Delivery;
 
 @Service
-public class DeliveryService extends BookedService<Delivery, Long>implements Reset {
+public class DeliveryService extends BookedService<Delivery, Long> implements Reset {
 
 	@Autowired
 	private InvoiceService invoiceService;
@@ -18,6 +18,11 @@ public class DeliveryService extends BookedService<Delivery, Long>implements Res
 	@Override
 	public String getAlternateName() {
 		return "D/R";
+	}
+
+	@Override
+	public String getModule() {
+		return "delivery";
 	}
 
 	@Override

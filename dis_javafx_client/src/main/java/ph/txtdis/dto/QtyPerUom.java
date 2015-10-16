@@ -8,7 +8,7 @@ import ph.txtdis.type.UomType;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class QtyPerUom extends AbstractAuditedId<Long> {
+public class QtyPerUom extends AbstractTrackedId<Long> {
 
 	private UomType uom;
 

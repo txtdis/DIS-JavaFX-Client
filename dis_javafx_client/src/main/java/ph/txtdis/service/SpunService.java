@@ -18,8 +18,8 @@ public class SpunService<T extends Keyed<PK>, PK> {
 		return this;
 	}
 
-	public T next(PK id) throws Exception {
-		return getFirstForNewOrLastElseNext(id);
+	public T next(PK pk) throws Exception {
+		return getFirstForNewOrLastElseNext(pk);
 	}
 
 	public T previous(PK id) throws Exception {

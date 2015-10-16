@@ -7,7 +7,7 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class Account extends AbstractAuditedId<Long>implements Comparable<Account> {
+public class Account extends AbstractTrackedId<Long>implements Comparable<Account> {
 
 	private String seller;
 

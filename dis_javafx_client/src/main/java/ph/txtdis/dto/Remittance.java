@@ -9,7 +9,7 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class Remittance extends AbstractAuditedId<Long> {
+public class Remittance extends AbstractTrackedId<Long> {
 
 	private LocalDate remitDate;
 

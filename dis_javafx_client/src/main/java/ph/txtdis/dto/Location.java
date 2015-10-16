@@ -6,7 +6,7 @@ import ph.txtdis.type.LocationType;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class Location extends AbstractAuditedId<Long> {
+public class Location extends AbstractTrackedId<Long> {
 
 	private String name;
 

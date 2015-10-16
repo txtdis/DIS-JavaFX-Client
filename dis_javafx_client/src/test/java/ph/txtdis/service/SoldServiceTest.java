@@ -50,6 +50,10 @@ public class SoldServiceTest extends TestData {
 		service = new SoldService<AbstractSoldOrder<Long>, Long>(familyService, itemService, readOnlyService,
 				savingService, spunService)
 		{
+			@Override
+			public String getModule() {
+				return "test";
+			}
 		};
 		service.set(getBookedOrder());
 		when(readOnlyService.module(service.getModule())).thenReturn(readOnlyService);

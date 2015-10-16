@@ -11,7 +11,7 @@ import ph.txtdis.type.VisitFrequency;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class Customer extends AbstractAuditedId<Long> {
+public class Customer extends AbstractTrackedId<Long> {
 
 	private String name;
 

@@ -11,8 +11,6 @@ import ph.txtdis.exception.DuplicateException;
 @Service("warehouseService")
 public class WarehouseService implements Listed<Warehouse>, SavedByName<Warehouse>, UniquelyNamed {
 
-	private static final String WAREHOUSE = "warehouse";
-
 	@Autowired
 	private SavingService<Warehouse> savingService;
 
@@ -21,19 +19,24 @@ public class WarehouseService implements Listed<Warehouse>, SavedByName<Warehous
 
 	@Override
 	public void confirmUniqueness(String name) throws Exception {
-		if (readOnlyService.module(WAREHOUSE).getOne("/" + name) != null)
+		if (readOnlyService.module(getModule()).getOne("/" + name) != null)
 			throw new DuplicateException(name);
 	}
 
 	@Override
+	public String getModule() {
+		return "warehouse";
+	}
+
+	@Override
 	public List<Warehouse> list() throws Exception {
-		return readOnlyService.module(WAREHOUSE).getList();
+		return readOnlyService.module(getModule()).getList();
 	}
 
 	@Override
 	public Warehouse save(String name) throws Exception {
 		Warehouse entity = new Warehouse();
 		entity.setName(name);
-		return savingService.module(WAREHOUSE).save(entity);
+		return savingService.module(getModule()).save(entity);
 	}
 }

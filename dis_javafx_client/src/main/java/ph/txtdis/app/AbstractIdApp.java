@@ -7,21 +7,24 @@ import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.List;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javafx.beans.binding.BooleanExpression;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import ph.txtdis.dto.Audited;
+import ph.txtdis.dto.Keyed;
 import ph.txtdis.fx.control.AppButton;
 import ph.txtdis.fx.control.AppField;
 import ph.txtdis.fx.dialog.OpenByIdDialog;
 import ph.txtdis.service.AlternateNamed;
+import ph.txtdis.service.Moduled;
 import ph.txtdis.service.Reset;
 import ph.txtdis.service.Serviced;
 import ph.txtdis.service.Spun;
 
-public abstract class AbstractIdApp<T, AS extends Serviced<T, PK>, PK> extends AbstractApp
+public abstract class AbstractIdApp<T, AS extends Serviced<T, PK>, PK, ID> extends AbstractApp
 		implements Savable, Launchable
 {
 
@@ -44,7 +47,7 @@ public abstract class AbstractIdApp<T, AS extends Serviced<T, PK>, PK> extends A
 	protected AppButton saveButton;
 
 	@Autowired
-	protected OpenByIdDialog<PK> openDialog;
+	protected OpenByIdDialog<ID> openDialog;
 
 	@Autowired
 	protected AppField<String> createdByDisplay;
@@ -70,17 +73,13 @@ public abstract class AbstractIdApp<T, AS extends Serviced<T, PK>, PK> extends A
 		}
 	}
 
-	private PK getDialogInput() {
-		openDialog.addParent(this).start();
-		return openDialog.getId();
-	}
-
 	private String newModule() {
 		return "New " + headerText();
 	}
 
+	@SuppressWarnings("unchecked")
 	private void open(String id) throws Exception {
-		T t = service.find(id);
+		Keyed<PK> t = (Keyed<PK>) service.find(id);
 		service.set(t);
 		refresh();
 	}
@@ -93,12 +92,6 @@ public abstract class AbstractIdApp<T, AS extends Serviced<T, PK>, PK> extends A
 	private void openPrevious() throws Exception {
 		((Spun) service).previous();
 		refresh();
-	}
-
-	private void openSelected() {
-		PK id = getDialogInput();
-		if (id != null)
-			tryOpening(id.toString());
 	}
 
 	private void tryNext() {
@@ -138,13 +131,13 @@ public abstract class AbstractIdApp<T, AS extends Serviced<T, PK>, PK> extends A
 		return Arrays.asList(newButton, backButton, openButton, nextButton, saveButton);
 	}
 
-	// @formatter:off
 	protected HBox auditPane() {
+	// @formatter:off
 		return box.hpane(
 				label.name("Created by"), createdByDisplay.readOnly().width(120).build(TEXT),
 				label.name("on"), createdOnDisplay.readOnly().build(TIMESTAMP));
-	}
 	// @formatter:on
+	}
 
 	protected void createButtons() {
 		newButton.icon("new").tooltip("Add...").build();
@@ -154,8 +147,15 @@ public abstract class AbstractIdApp<T, AS extends Serviced<T, PK>, PK> extends A
 		saveButton.icon("save").tooltip("Save...").build();
 	}
 
-	protected boolean isNew() {
-		return createdByDisplay.isEmpty().get();
+	protected String getDialogInput() {
+		openDialog.addParent(this).start();
+		return openDialog.getId();
+	}
+
+	@Override
+	protected String headerText() {
+		String m = ((Moduled) service).getModule();
+		return StringUtils.capitalize(m);
 	}
 
 	@Override
@@ -167,7 +167,13 @@ public abstract class AbstractIdApp<T, AS extends Serviced<T, PK>, PK> extends A
 	}
 
 	protected String moduleId() {
-		return ((AlternateNamed) service).getAlternateName() + " No. " + service.getId();
+		return ((AlternateNamed) service).getModuleId() + service.getId();
+	}
+
+	protected void openSelected() {
+		String id = getDialogInput();
+		if (id != null && !id.isEmpty())
+			tryOpening(id);
 	}
 
 	protected BooleanExpression posted() {

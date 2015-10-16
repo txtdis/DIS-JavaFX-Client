@@ -8,7 +8,7 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class StockTake extends AbstractAuditedId<Long> {
+public class StockTake extends AbstractTrackedId<Long> {
 
 	private Warehouse warehouse;
 

@@ -25,6 +25,7 @@ import ph.txtdis.dto.CustomerDiscount;
 import ph.txtdis.dto.Discount;
 import ph.txtdis.dto.Item;
 import ph.txtdis.dto.ItemFamily;
+import ph.txtdis.dto.Keyed;
 import ph.txtdis.dto.Price;
 import ph.txtdis.dto.PricingType;
 import ph.txtdis.dto.QtyPerUom;
@@ -40,7 +41,6 @@ import ph.txtdis.type.QualityType;
 import ph.txtdis.type.UomType;
 import ph.txtdis.type.VolumeDiscountType;
 import ph.txtdis.util.Numeric;
-import ph.txtdis.util.Text;
 import ph.txtdis.util.Util;
 
 @NoArgsConstructor
@@ -73,8 +73,6 @@ public abstract class SoldService<T extends AbstractSoldOrder<PK>, PK>
 	private List<UomType> sellingUoms;
 
 	private List<VolumeDiscount> volumeDiscounts;
-
-	private String module;
 
 	private T entity;
 
@@ -191,6 +189,11 @@ public abstract class SoldService<T extends AbstractSoldOrder<PK>, PK>
 		return isNew() ? null : getId();
 	}
 
+	@Override
+	public SpunService<? extends Keyed<PK>, PK> getSpunService() {
+		return spunService;
+	}
+
 	public BigDecimal getTotalValue() {
 		return getGrossValue() == BigDecimal.ZERO ? null : getGrossValue().subtract(getDiscountValue());
 	}
@@ -225,9 +228,10 @@ public abstract class SoldService<T extends AbstractSoldOrder<PK>, PK>
 	}
 
 	@Override
-	public void set(T entity) {
+	@SuppressWarnings("unchecked")
+	public void set(Keyed<PK> entity) {
 		if (entity != null)
-			this.entity = entity;
+			this.entity = (T) entity;
 	}
 
 	public void setDetails(List<SoldDetail> details) {
@@ -491,12 +495,6 @@ public abstract class SoldService<T extends AbstractSoldOrder<PK>, PK>
 		if (!(family == null && !isAnAllItemDiscount()))
 			return getLatestDiscount(family);
 		return Collections.emptyList();
-	}
-
-	String getModule() {
-		if (module == null)
-			module = Text.nameFromService(this);
-		return module;
 	}
 
 	LocalDate getOrderDate() {

@@ -8,7 +8,7 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class CreditDetail extends AbstractAuditedId<Long>implements Comparable<CreditDetail>, StartDated {
+public class CreditDetail extends AbstractId<Long> implements Comparable<CreditDetail>, StartDated {
 
 	private int termInDays, gracePeriodInDays;
 

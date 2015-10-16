@@ -16,6 +16,9 @@ import ph.txtdis.app.Startable;
 
 public abstract class AbstractDialog extends Stage implements Startable {
 
+	private String style = "-fx-border-color: derive(-fx-base, -20%); "
+			+ "-fx-border-radius: 0.5em; -fx-background-radius: 0.5em; ";
+
 	public Startable addParent(Node node) {
 		Scene scene = node.getScene();
 		Stage stage = (Stage) scene.getWindow();
@@ -41,33 +44,32 @@ public abstract class AbstractDialog extends Stage implements Startable {
 		showAndWait();
 	}
 
+	public Startable updateStyle(String style) {
+		this.style += style;
+		return this;
+	}
+
 	private void initialize(Stage stage) {
 		initOwner(stage);
 		initModality(Modality.WINDOW_MODAL);
 		initStyle(StageStyle.TRANSPARENT);
 	}
 
-	private Scene scene(VBox vbox) {
-		Scene s = new Scene(vbox);
+	private Scene scene() {
+		Scene s = new Scene(vbox());
 		s.getStylesheets().addAll("/css/base.css");
 		s.setFill(Color.TRANSPARENT);
 		return s;
 	}
 
-	private VBox vbox(List<Node> nodes) {
+	private VBox vbox() {
 		VBox vb = new VBox();
-		vb.getChildren().setAll(nodes);
+		vb.getChildren().setAll(nodes());
 		vb.setAlignment(Pos.CENTER);
 		vb.setPadding(new Insets(0, 20, 0, 20));
-		vb.setStyle(
-				"-fx-border-color: derive(-fx-base, -20%); -fx-border-radius: 0.5em; -fx-background-radius: 0.5em; ");
+		vb.setStyle(style);
 		return vb;
 	}
 
 	protected abstract List<Node> nodes();
-
-	protected Scene scene() {
-		VBox vb = vbox(nodes());
-		return scene(vb);
-	}
 }

@@ -26,7 +26,7 @@ import ph.txtdis.service.PickService;
 
 @Lazy
 @Component("pickingApp")
-public class PickingApp extends AbstractIdApp<Picking, PickService, Long> {
+public class PickingApp extends AbstractIdApp<Picking, PickService, Long, Long> {
 
 	@Autowired
 	private LabelFactory label;

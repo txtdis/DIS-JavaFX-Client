@@ -3,6 +3,7 @@ package ph.txtdis.app;
 import java.util.Arrays;
 import java.util.List;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javafx.scene.Node;
@@ -33,9 +34,14 @@ public abstract class AbstractTableApp<AT extends AppTable<T>, AS extends Listed
 		table.requestFocus();
 	}
 
+	private String capitalizedModule() {
+		String module = service.getModule();
+		return StringUtils.capitalize(module);
+	}
+
 	@Override
 	protected String headerText() {
-		return super.headerText() + " List";
+		return capitalizedModule() + " List";
 	}
 
 	@Override
@@ -45,6 +51,6 @@ public abstract class AbstractTableApp<AT extends AppTable<T>, AS extends Listed
 
 	@Override
 	protected String titleText() {
-		return super.titleText() + " Master";
+		return capitalizedModule() + " Master";
 	}
 }

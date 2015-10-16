@@ -7,29 +7,28 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class Invoice extends AbstractBookedOrder<String> {
+public class Invoice extends AbstractBookedOrder<Long> {
 
 	private BigDecimal actualValue;
 
-	private Long idNo;
+	private Long nbrId;
 
-	private String idPrefix, idSuffix;
+	private String prefix, suffix;
 
-	@Override
-	public String getId() {
-		return getIdPrefix() + idNo + getIdSuffix();
-	}
-
-	public String getIdPrefix() {
-		return idPrefix == null ? "" : idPrefix;
-	}
-
-	public String getIdSuffix() {
-		return idSuffix == null ? "" : idSuffix;
+	public String getOrderNo() {
+		return prefix() + nbrId + suffix();
 	}
 
 	@Override
 	public String toString() {
-		return "S/I No. " + getId();
+		return "S/I No. " + getOrderNo();
+	}
+
+	private String prefix() {
+		return prefix == null ? "" : prefix + "-";
+	}
+
+	private String suffix() {
+		return suffix == null ? "" : suffix;
 	}
 }

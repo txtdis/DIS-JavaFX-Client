@@ -8,7 +8,7 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class CustomerDiscount extends AbstractAuditedId<Long>implements StartDated, Comparable<CustomerDiscount> {
+public class CustomerDiscount extends AbstractTrackedId<Long>implements StartDated, Comparable<CustomerDiscount> {
 
 	private Integer level;
 

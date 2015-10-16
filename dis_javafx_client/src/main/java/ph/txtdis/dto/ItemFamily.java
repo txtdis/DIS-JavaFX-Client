@@ -6,7 +6,7 @@ import ph.txtdis.type.ItemTier;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class ItemFamily extends AbstractAuditedId<Long>implements Comparable<ItemFamily> {
+public class ItemFamily extends AbstractTrackedId<Long>implements Comparable<ItemFamily> {
 
 	private String name;
 

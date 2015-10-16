@@ -10,7 +10,7 @@ import ph.txtdis.type.ItemType;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class Item extends AbstractAuditedId<Long> {
+public class Item extends AbstractTrackedId<Long> {
 
 	private String name;
 

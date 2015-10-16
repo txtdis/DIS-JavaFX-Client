@@ -13,8 +13,6 @@ import ph.txtdis.type.ItemTier;
 @Service("itemFamilyService")
 public class ItemFamilyService implements Listed<ItemFamily>, SavedByName<ItemFamily>, UniquelyNamed {
 
-	private static final String ITEM_FAMILY = "itemFamily";
-
 	@Autowired
 	private ReadOnlyService<ItemFamily> readOnlyService;
 
@@ -23,17 +21,22 @@ public class ItemFamilyService implements Listed<ItemFamily>, SavedByName<ItemFa
 
 	@Override
 	public void confirmUniqueness(String name) throws Exception {
-		if (readOnlyService.module(ITEM_FAMILY).getOne("/" + name) != null)
+		if (readOnlyService.module(getModule()).getOne("/" + name) != null)
 			throw new DuplicateException(name);
 	}
 
 	public List<ItemFamily> getItemAncestry(Item item) throws Exception {
-		return readOnlyService.module(ITEM_FAMILY).getList("ancestry?family=" + item.getFamily().getId());
+		return readOnlyService.module(getModule()).getList("ancestry?family=" + item.getFamily().getId());
+	}
+
+	@Override
+	public String getModule() {
+		return "itemFamily";
 	}
 
 	@Override
 	public List<ItemFamily> list() throws Exception {
-		return readOnlyService.module(ITEM_FAMILY).getList();
+		return readOnlyService.module(getModule()).getList();
 	}
 
 	@Override
@@ -45,6 +48,6 @@ public class ItemFamilyService implements Listed<ItemFamily>, SavedByName<ItemFa
 		ItemFamily entity = new ItemFamily();
 		entity.setName(name);
 		entity.setTier(tier);
-		return savingService.module(ITEM_FAMILY).save(entity);
+		return savingService.module(getModule()).save(entity);
 	}
 }

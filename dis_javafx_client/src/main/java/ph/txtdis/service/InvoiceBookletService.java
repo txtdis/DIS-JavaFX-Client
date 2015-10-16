@@ -12,8 +12,6 @@ import ph.txtdis.exception.InvoiceIdInBookletAlreadyIssuedException;
 @Component
 public class InvoiceBookletService implements Listed<InvoiceBooklet>, SavedByEntity<InvoiceBooklet> {
 
-	private static final String INVOICE_BOOKLET = "invoiceBooklet";
-
 	@Autowired
 	private ReadOnlyService<InvoiceBooklet> readOnlyService;
 
@@ -30,13 +28,17 @@ public class InvoiceBookletService implements Listed<InvoiceBooklet>, SavedByEnt
 	}
 
 	public InvoiceBooklet find(String prefix, Long id, String suffix) throws Exception {
-		return readOnlyService.module(INVOICE_BOOKLET)
-				.getOne("/find?prefix=" + prefix + "&id=" + id + "&suffix=" + suffix);
+		return readOnlyService.module(getModule()).getOne("/find?prefix=" + prefix + "&id=" + id + "&suffix=" + suffix);
+	}
+
+	@Override
+	public String getModule() {
+		return "invoiceBooklet";
 	}
 
 	@Override
 	public List<InvoiceBooklet> list() throws Exception {
-		return readOnlyService.module(INVOICE_BOOKLET).getList();
+		return readOnlyService.module(getModule()).getList();
 	}
 
 	public List<User> listUsers() throws Exception {
@@ -45,13 +47,13 @@ public class InvoiceBookletService implements Listed<InvoiceBooklet>, SavedByEnt
 
 	@Override
 	public InvoiceBooklet save(InvoiceBooklet entity) throws Exception {
-		return savingService.module(INVOICE_BOOKLET).save(entity);
+		return savingService.module(getModule()).save(entity);
 	}
 
 	public InvoiceBooklet save(String prefix, String suffix, Long start, Long end, User issuedTo) throws Exception {
 		InvoiceBooklet ib = new InvoiceBooklet();
-		ib.setIdPrefix(prefix);
-		ib.setIdSuffix(suffix);
+		ib.setPrefix(prefix);
+		ib.setSuffix(suffix);
 		ib.setStartId(start);
 		ib.setEndId(end);
 		ib.setIssuedTo(issuedTo);

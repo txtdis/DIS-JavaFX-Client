@@ -78,6 +78,11 @@ public class CustomerReceivableService implements Spreadsheet<CustomerReceivable
 	}
 
 	@Override
+	public String getModule() {
+		return "customerReceivable";
+	}
+
+	@Override
 	public String getSubheaderText() {
 		return getCustomerName() + " A/R as of " + Temporal.format(getTimestamp());
 	}
@@ -103,7 +108,7 @@ public class CustomerReceivableService implements Spreadsheet<CustomerReceivable
 
 	public void listInvoicesByCustomerBetweenTwoDayCounts(String... ids) throws Exception {
 		columnIndex = Integer.valueOf(ids[COLUMN_INDEX]);
-		report = readOnlyService.module("customerReceivable").getOne("?customer=" + ids[CUSTOMER_ID] + "&lowerDayCount="
+		report = readOnlyService.module(getModule()).getOne("?customer=" + ids[CUSTOMER_ID] + "&lowerDayCount="
 				+ lowerDayCount() + "&upperDayCount=" + upperDayCount());
 		customerName = customerService.find(ids[CUSTOMER_ID]).getName();
 	}

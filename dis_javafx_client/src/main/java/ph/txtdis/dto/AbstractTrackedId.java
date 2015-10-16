@@ -7,11 +7,9 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class LoadSettlement extends AbstractTrackedId<Long> {
+public abstract class AbstractTrackedId<PK> extends AbstractId<PK>implements Audited {
 
-	private Truck truck;
+	private String createdBy;
 
-	private User reconciledBy;
-
-	private ZonedDateTime reconciledOn;
+	private ZonedDateTime createdOn;
 }

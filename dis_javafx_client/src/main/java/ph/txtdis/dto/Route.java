@@ -10,7 +10,7 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class Route extends AbstractAuditedId<Long> {
+public class Route extends AbstractTrackedId<Long> {
 
 	private String name;
 

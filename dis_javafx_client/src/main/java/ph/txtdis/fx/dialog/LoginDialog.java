@@ -3,6 +3,7 @@ package ph.txtdis.fx.dialog;
 import static ph.txtdis.type.Type.TEXT;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
@@ -11,16 +12,9 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
-import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Label;
-import javafx.scene.control.ProgressIndicator;
-import javafx.scene.image.Image;
-import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
-import javafx.scene.paint.Color;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import ph.txtdis.fx.FontIcon;
@@ -28,6 +22,7 @@ import ph.txtdis.fx.control.AppButton;
 import ph.txtdis.fx.control.AppField;
 import ph.txtdis.fx.control.LabelFactory;
 import ph.txtdis.fx.control.PasswordInput;
+import ph.txtdis.fx.pane.AppGridPane;
 import ph.txtdis.util.LoginService;
 import ph.txtdis.util.Server;
 
@@ -35,9 +30,14 @@ import ph.txtdis.util.Server;
 @Component("loginDialog")
 public class LoginDialog extends Stage {
 
+	private static final String STYLE = "-fx-font-size: 11pt; -fx-base: #6a5acd; -fx-accent: -fx-base;"
+			+ " -fx-focus-color: white; -fx-faint-focus-color: #ffffff22; ";
+
 	private static int tries;
 
-	@Lazy(false)
+	@Value("${server.default}")
+	private String location;
+
 	@Autowired
 	private Server server;
 
@@ -74,17 +74,13 @@ public class LoginDialog extends Stage {
 	@Autowired
 	private MessageDialog dialog;
 
-	private BooleanProperty ready = new SimpleBooleanProperty(false);
+	@Autowired
+	private AppGridPane grid;
 
-	public void setIcon() {
-		Image icon = new FontIcon("\ue826", Color.NAVY);
-		getIcons().add(icon);
-	}
+	private BooleanProperty ready = new SimpleBooleanProperty(false);
 
 	@Override
 	public void showAndWait() {
-		setIcon();
-		setTitle();
 		setScene();
 		clearFields();
 		userField.requestFocus();
@@ -93,14 +89,13 @@ public class LoginDialog extends Stage {
 	}
 
 	private Node buttons() {
-		setButtons();
-		setButtonsOnActionProperties();
-		setButtonsDisableProperties();
-		return new HBox(loginButton, passwordButton, serverButton);
+		HBox hb = new HBox(loginButton(), passwordButton(), serverButton());
+		hb.setAlignment(Pos.CENTER);
+		return hb;
 	}
 
 	private void changePassword() {
-		passwordDialog.addParent(this).start();
+		passwordDialog.updateStyle(STYLE).addParent(this).start();
 	}
 
 	private void changePasswordIfAuthenticated() throws Exception {
@@ -110,8 +105,9 @@ public class LoginDialog extends Stage {
 	}
 
 	private void changeServer() {
-		serverDialog.addParent(this).start();
+		serverDialog.updateStyle(STYLE).addParent(this).start();
 		setTitle();
+		clearFields();
 	}
 
 	private void clearFields() {
@@ -120,24 +116,25 @@ public class LoginDialog extends Stage {
 		userField.requestFocus();
 	}
 
-	private Node gridPane() {
-		GridPane gp = new GridPane();
-		gp.setHgap(5);
-		gp.setVgap(5);
-		gp.setAlignment(Pos.CENTER);
-		gp.add(label.field("Username"), 0, 0);
-		gp.add(userField.build(TEXT), 1, 0);
-		gp.add(label.field("Password"), 0, 1);
-		gp.add(passwordField, 1, 1);
-		gp.setPadding(new Insets(0, 0, 10, 0));
-		return gp;
+	private void closeAfterThreeAttempts() {
+		if (++tries > 2)
+			close();
 	}
 
-	private Node inputBox() {
-		VBox vb = new VBox(gridPane(), buttons());
-		vb.setAlignment(Pos.CENTER);
-		vb.setPadding(new Insets(0, 0, 0, 50));
-		return vb;
+	private Node gridPane() {
+		grid.getChildren().clear();
+		grid.add(label.field("Username"), 0, 0);
+		grid.add(userField.build(TEXT), 1, 0);
+		grid.add(label.field("Password"), 0, 1);
+		grid.add(passwordField(), 1, 1);
+		return grid;
+	}
+
+	private Node loginButton() {
+		loginButton.text("Log-in").build();
+		loginButton.disableIf(passwordField.isEmpty());
+		loginButton.setOnAction(event -> tryLoggingInUponVerification());
+		return loginButton;
 	}
 
 	private void logInIfAuthenticated() throws Exception {
@@ -146,71 +143,52 @@ public class LoginDialog extends Stage {
 		mainMenu.display();
 	}
 
-	private Parent parentPane() {
-		HBox hb = new HBox(phoneInsideSpinningBallLogo(), inputBox());
-		hb.setPadding(new Insets(30, 20, 30, 50));
-		hb.setAlignment(Pos.CENTER);
-		hb.setStyle("-fx-font-size: 11pt; -fx-base: #6a5acd; -fx-accent: -fx-base; -fx-focus-color: #ffffff; "
-				+ "  -fx-faint-focus-color: #ffffff22; ");
-		return hb;
+	private Node passwordButton() {
+		passwordButton.text("Alter Password").build();
+		passwordButton.disableIf(passwordField.isEmpty());
+		passwordButton.setOnAction(event -> tryChangingPasswordUponVerification());
+		return passwordButton;
 	}
 
-	private Node phoneInsideSpinningBallLogo() {
-		return new StackPane(phoneLogo(), spinningBalls());
-	}
-
-	private Node phoneLogo() {
-		Label p = new Label("\ue826");
-		p.setStyle("-fx-font: 72 'txtdis'; -fx-text-fill: navy;");
-		p.setPadding(new Insets(10));
-		return p;
+	private Node passwordField() {
+		passwordField.disableProperty().bind(userField.isEmpty());
+		return passwordField;
 	}
 
 	private void retryThrice(Exception e) {
 		e.printStackTrace();
-		dialog.show(e).addParent(this).start();
+		dialog.show(e).updateStyle(STYLE).addParent(this).start();
 		clearFields();
-		if (++tries > 2)
-			close();
+		closeAfterThreeAttempts();
+	}
+
+	private Scene scene() {
+		VBox vb = new VBox(gridPane(), buttons());
+		vb.setAlignment(Pos.CENTER);
+		vb.setPadding(new Insets(20));
+		vb.setStyle(STYLE);
+		return new Scene(vb);
 	}
 
 	private String server() {
-		return server.getLocation() == null ? "" : "@" + server.getLocation();
+		return server.getLocation() == null ? location : server.getLocation();
 	}
 
-	private void setButtons() {
+	private Node serverButton() {
 		serverButton.text("Change Server").build();
-		passwordButton.text("Alter Password").build();
-		loginButton.text("Log-in").build();
-	}
-
-	private void setButtonsDisableProperties() {
-		passwordField.disableProperty().bind(userField.isEmpty());
-		loginButton.disableIf(passwordField.isEmpty());
-		passwordButton.disableIf(passwordField.isEmpty());
-	}
-
-	private void setButtonsOnActionProperties() {
 		serverButton.setOnAction(event -> changeServer());
-		passwordButton.setOnAction(event -> tryChangingPasswordUponVerification());
-		loginButton.setOnAction(event -> tryLoggingInUponVerification());
+		return serverButton;
 	}
 
 	private void setScene() {
+		getIcons().add(new FontIcon("\ue826"));
+		setTitle();
 		initModality(Modality.APPLICATION_MODAL);
-		setScene(new Scene(parentPane()));
+		setScene(scene());
 	}
 
 	private void setTitle() {
-		setTitle("Welcome to txtDIS" + server() + "!");
-	}
-
-	private Node spinningBalls() {
-		ProgressIndicator pi = new ProgressIndicator(-1.0);
-		pi.setScaleX(2.0);
-		pi.setScaleY(2.0);
-		pi.setStyle(" -fx-accent: #ffffff;");
-		return pi;
+		setTitle("Welcome to txtDIS@" + server() + "!");
 	}
 
 	private void tryChangingPasswordUponVerification() {

@@ -31,6 +31,11 @@ public class AgingReceivableService implements Spreadsheet<AgingReceivable>, Tot
 	}
 
 	@Override
+	public String getModule() {
+		return "agingReceivable";
+	}
+
+	@Override
 	public String getSubheaderText() {
 		return "A/R as of " + Temporal.format(getTimestamp());
 	}
@@ -51,7 +56,7 @@ public class AgingReceivableService implements Spreadsheet<AgingReceivable>, Tot
 
 	@Override
 	public List<AgingReceivable> list() throws Exception {
-		report = readOnlyService.module("agingReceivable").getOne("");
+		report = readOnlyService.module(getModule()).getOne("");
 		List<AgingReceivable> list = report.getReceivables();
 		return list == null ? new ArrayList<>() : list;
 	}

@@ -27,6 +27,26 @@ public class LabeledField<T> implements InputNode<T> {
 
 	private String name;
 
+	public LabeledField<T> build(Type type) {
+		nodes = Arrays.asList(label.field(name), textField.build(type));
+		return this;
+	}
+
+	@Override
+	public List<Node> getNodes() {
+		return nodes;
+	}
+
+	@Override
+	public T getValue() {
+		return textField.getValue();
+	}
+
+	@Override
+	public BooleanBinding isEmpty() {
+		return textField.textProperty().isEmpty();
+	}
+
 	public LabeledField<T> name(String name) {
 		this.name = name;
 		return this;
@@ -37,18 +57,9 @@ public class LabeledField<T> implements InputNode<T> {
 		return this;
 	}
 
-	public LabeledField<T> build(Type type) {
-		nodes = Arrays.asList(label.field(name), textField.build(type));
-		return this;
-	}
-
-	public void setOnAction(EventHandler<ActionEvent> action) {
-		textField.setOnAction(action);
-	}
-
 	@Override
-	public List<Node> getNodes() {
-		return nodes;
+	public void requestFocus() {
+		textField.requestFocus();
 	}
 
 	@Override
@@ -56,22 +67,16 @@ public class LabeledField<T> implements InputNode<T> {
 		textField.clear();
 	}
 
-	@Override
-	public void requestFocus() {
-		textField.requestFocus();
-	}
-
-	@Override
-	public BooleanBinding isEmpty() {
-		return textField.textProperty().isEmpty();
-	}
-
-	@Override
-	public T getValue() {
-		return textField.getValue();
+	public void setOnAction(EventHandler<ActionEvent> action) {
+		textField.setOnAction(action);
 	}
 
 	public void setValue(T value) {
 		textField.setValue(value);
+	}
+
+	public LabeledField<T> width(int width) {
+		textField.width(width);
+		return this;
 	}
 }

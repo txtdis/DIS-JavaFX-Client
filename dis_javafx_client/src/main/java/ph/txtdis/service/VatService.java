@@ -42,13 +42,18 @@ public class VatService implements Spreadsheet<Vat>, Spun {
 	}
 
 	@Override
+	public String getModule() {
+		return "vat";
+	}
+
+	@Override
 	public String getSubheaderText() {
 		return Temporal.toFullMonthYear(getDate());
 	}
 
 	@Override
 	public String getTitleText() {
-		return "VAT " + Temporal.toLongMonthYear(getDate());
+		return getAllCapModule() + " " + Temporal.toLongMonthYear(getDate());
 	}
 
 	@Override
@@ -58,7 +63,7 @@ public class VatService implements Spreadsheet<Vat>, Spun {
 
 	@Override
 	public List<Vat> list() throws Exception {
-		list = readOnlyService.module("vat").getList("/list?start=" + start() + "&end=" + end());
+		list = readOnlyService.module(getModule()).getList("/list?start=" + start() + "&end=" + end());
 		return list != null ? list : Collections.emptyList();
 	}
 
@@ -86,7 +91,7 @@ public class VatService implements Spreadsheet<Vat>, Spun {
 	}
 
 	private BigDecimal computeVat() throws Exception {
-		Vat v = readOnlyService.module("vat").getOne("/rate");
+		Vat v = readOnlyService.module(getModule()).getOne("/rate");
 		BigDecimal vat = v.getVatValue();
 		return Numeric.divide(vat, (v.getValue().subtract(vat)));
 	}
@@ -95,8 +100,12 @@ public class VatService implements Spreadsheet<Vat>, Spun {
 		return Temporal.endOfMonth(getDate());
 	}
 
+	private String getAllCapModule() {
+		return "VAT";
+	}
+
 	private String getExcelFileName() {
-		return "VAT." + Temporal.toFileMonthYear(getDate());
+		return getAllCapModule() + "." + Temporal.toFileMonthYear(getDate());
 	}
 
 	private String getExcelSheetName() {
