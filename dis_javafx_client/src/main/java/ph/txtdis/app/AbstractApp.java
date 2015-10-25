@@ -51,13 +51,8 @@ public abstract class AbstractApp extends Stage implements Startable {
 
 	@Override
 	public void refresh() {
-		try {
-			updateTitleAndHeader();
-			setFocus();
-		} catch (Exception e) {
-			e.printStackTrace();
-			dialog.show(e).addParent(this).start();
-		}
+		updateTitleAndHeader();
+		setFocus();
 	}
 
 	@Override

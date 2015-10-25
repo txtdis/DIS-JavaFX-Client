@@ -20,15 +20,14 @@ import javafx.scene.Node;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import ph.txtdis.dto.Invoice;
-import ph.txtdis.dto.SoldDetail;
+import ph.txtdis.dto.SoldOrderDetail;
 import ph.txtdis.fx.control.AppCombo;
 import ph.txtdis.fx.control.AppField;
 import ph.txtdis.fx.control.InputControl;
 import ph.txtdis.fx.control.LabelFactory;
 import ph.txtdis.fx.control.LocalDatePicker;
 import ph.txtdis.fx.pane.AppGridPane;
-import ph.txtdis.fx.table.InvoiceTable;
-import ph.txtdis.info.Information;
+import ph.txtdis.fx.table.SoldOrderTable;
 import ph.txtdis.service.InvoiceService;
 
 @Scope("prototype")
@@ -93,7 +92,7 @@ public class InvoiceApp extends AbstractIdApp<Invoice, InvoiceService, Long, Str
 	private AppField<BigDecimal> balanceDisplay;
 
 	@Autowired
-	private InvoiceTable table;
+	private SoldOrderTable table;
 
 	@Override
 	public void refresh() {
@@ -111,19 +110,6 @@ public class InvoiceApp extends AbstractIdApp<Invoice, InvoiceService, Long, Str
 		table.items(service.getDetails());
 		refreshSummaryPane();
 		super.refresh();
-	}
-
-	@Override
-	public void save() {
-		try {
-			service.save();
-		} catch (Exception e) {
-			dialog.show(e).addParent(this).start();
-			e.printStackTrace();
-		} catch (Information i) {
-			dialog.show(i).addParent(this).start();
-			refresh();
-		}
 	}
 
 	@Override
@@ -178,13 +164,17 @@ public class InvoiceApp extends AbstractIdApp<Invoice, InvoiceService, Long, Str
 
 	private void setBindings() {
 		saveButton.disableIf((table.isEmpty().and(remarksInput.isNot("CANCELLED"))));
-		invoiceIdPrefixInput.disableIf(orderDatePicker.isEmpty().or(posted()));
-		invoiceIdInput.disableIf(orderDatePicker.isEmpty().or(posted()));
-		invoiceIdSuffixInput.disableIf(invoiceIdInput.isEmpty().or(posted()));
-		actualInput.disableIf(invoiceIdInput.isEmpty().or(posted()));
-		bookingIdInput.disableIf(actualInput.isEmpty().or(posted()));
-		remarksInput.disableIf(bookingIdInput.isEmpty().or(posted()));
-		table.disableIf(bookingIdInput.isEmpty().or(posted()));
+		invoiceIdPrefixInput.disableIf(orderDatePicker.isEmpty());
+		invoiceIdInput.disableIf(orderDatePicker.isEmpty());
+		invoiceIdSuffixInput.disableIf(invoiceIdInput.isEmpty());
+		actualInput.disableIf(invoiceIdInput.isEmpty());
+		bookingIdInput.disableIf(actualInput.isEmpty());
+		remarksInput.disableIf(bookingIdInput.isEmpty());
+		table.disableIf(bookingIdInput.isEmpty());
+	}
+
+	private HBox table() {
+		return box.hpane(table.addService(service).build());
 	}
 
 	private void tryOpeningByInvoiceId(String id) {
@@ -196,7 +186,7 @@ public class InvoiceApp extends AbstractIdApp<Invoice, InvoiceService, Long, Str
 		}
 	}
 
-	private void updateSummaryPane(ObservableList<SoldDetail> c) {
+	private void updateSummaryPane(ObservableList<SoldOrderDetail> c) {
 		service.setDetails(c);
 		refreshSummaryPane();
 	}
@@ -215,6 +205,7 @@ public class InvoiceApp extends AbstractIdApp<Invoice, InvoiceService, Long, Str
 	private void updateUponDateValidation() {
 		try {
 			service.setOrderDateUponValidation(orderDatePicker.getValue());
+			refresh();
 		} catch (Exception e) {
 			handleError(e, orderDatePicker);
 		}
@@ -266,7 +257,7 @@ public class InvoiceApp extends AbstractIdApp<Invoice, InvoiceService, Long, Str
 		gridPane.add(customerAddressDisplay.readOnly().build(TEXT), 1, 2, 8, 1);
 		gridPane.add(label.field("Remarks"), 0, 3);
 		gridPane.add(remarksInput.build(TEXT), 1, 3, 8, 1);
-		return Arrays.asList(gridPane, box.hpane(table.build()), vat(), payment());
+		return Arrays.asList(gridPane, table(), vat(), payment());
 	}
 
 	@Override

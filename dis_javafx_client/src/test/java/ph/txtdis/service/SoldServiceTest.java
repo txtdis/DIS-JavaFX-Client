@@ -20,7 +20,7 @@ import org.junit.Test;
 import ph.txtdis.dto.AbstractSoldOrder;
 import ph.txtdis.dto.Discount;
 import ph.txtdis.dto.Route;
-import ph.txtdis.dto.SoldDetail;
+import ph.txtdis.dto.SoldOrderDetail;
 import ph.txtdis.exception.DateInTheFutureException;
 import ph.txtdis.exception.DifferentDiscountException;
 import ph.txtdis.exception.DuplicateException;
@@ -54,6 +54,11 @@ public class SoldServiceTest extends TestData {
 			public String getModule() {
 				return "test";
 			}
+
+			@Override
+			public void reset() {
+				// TODO Auto-generated method stub
+			}
 		};
 		service.set(getBookedOrder());
 		when(readOnlyService.module(service.getModule())).thenReturn(readOnlyService);
@@ -79,7 +84,7 @@ public class SoldServiceTest extends TestData {
 		service.get().setCustomer(getCustomerOfSupermarketType());
 		service.setUnitPrice(getUnitPriceOf23p48());
 		service.setItem(getItemPineSliceFlat());
-		SoldDetail detail = service.createDetail(UomType.CS, BigDecimal.ONE, QualityType.GOOD);
+		SoldOrderDetail detail = service.createDetail(UomType.CS, BigDecimal.ONE, QualityType.GOOD);
 		assertTrue(new BigDecimal("561.52").equals(detail.getPriceValue().setScale(2, RoundingMode.HALF_EVEN)));
 	}
 
@@ -89,7 +94,7 @@ public class SoldServiceTest extends TestData {
 		service.get().setCustomer(getCustomerOfBareType());
 		service.setUnitPrice(getUnitPriceOf23p48());
 		service.setItem(getItemPineSliceFlat());
-		SoldDetail detail = service.createDetail(UomType.CS, BigDecimal.ONE, QualityType.GOOD);
+		SoldOrderDetail detail = service.createDetail(UomType.CS, BigDecimal.ONE, QualityType.GOOD);
 		assertTrue(new BigDecimal("562.52").equals(detail.getPriceValue().setScale(2, RoundingMode.HALF_EVEN)));
 	}
 
@@ -99,7 +104,7 @@ public class SoldServiceTest extends TestData {
 		service.get().setCustomer(getCustomerOfBareType());
 		service.setUnitPrice(getUnitPriceOf23p48());
 		service.setItem(getItemPineSliceFlat());
-		SoldDetail detail = service.createDetail(UomType.PC, new BigDecimal("36"), QualityType.GOOD);
+		SoldOrderDetail detail = service.createDetail(UomType.PC, new BigDecimal("36"), QualityType.GOOD);
 		assertTrue(new BigDecimal("23.45").equals(detail.getPriceValue().setScale(2, RoundingMode.HALF_EVEN)));
 	}
 
@@ -109,7 +114,7 @@ public class SoldServiceTest extends TestData {
 		service.get().setCustomer(getCustomerOfBareType());
 		service.setUnitPrice(getUnitPriceOf23p48());
 		service.setItem(getItemPineSliceFlat());
-		SoldDetail detail = service.createDetail(UomType.PC, BigDecimal.ONE, QualityType.GOOD);
+		SoldOrderDetail detail = service.createDetail(UomType.PC, BigDecimal.ONE, QualityType.GOOD);
 		assertTrue(new BigDecimal("23.48").compareTo(detail.getPriceValue()) == 0);
 	}
 
@@ -119,7 +124,7 @@ public class SoldServiceTest extends TestData {
 		service.get().setCustomer(getCustomerOfBareType());
 		service.setUnitPrice(getUnitPriceOf23p48());
 		service.setItem(getItemPineSlice15());
-		SoldDetail detail = service.createDetail(UomType.CS, new BigDecimal("15"), QualityType.GOOD);
+		SoldOrderDetail detail = service.createDetail(UomType.CS, new BigDecimal("15"), QualityType.GOOD);
 		assertTrue(new BigDecimal("553.52").equals(detail.getPriceValue().setScale(2, RoundingMode.HALF_EVEN)));
 	}
 
@@ -129,7 +134,7 @@ public class SoldServiceTest extends TestData {
 		service.get().setCustomer(getCustomerOfBareType());
 		service.setUnitPrice(getUnitPriceOf23p48());
 		service.setItem(getItemPineSlice15());
-		SoldDetail detail = service.createDetail(UomType.CS, new BigDecimal("25"), QualityType.GOOD);
+		SoldOrderDetail detail = service.createDetail(UomType.CS, new BigDecimal("25"), QualityType.GOOD);
 		assertTrue(new BigDecimal("543.52").equals(detail.getPriceValue().setScale(2, RoundingMode.HALF_EVEN)));
 	}
 
@@ -139,7 +144,7 @@ public class SoldServiceTest extends TestData {
 		service.get().setCustomer(getCustomerOfSupermarketType());
 		service.setUnitPrice(getUnitPriceOf23p48());
 		service.setItem(getItemPineSlice15());
-		SoldDetail detail = service.createDetail(UomType.CS, new BigDecimal("25"), QualityType.GOOD);
+		SoldOrderDetail detail = service.createDetail(UomType.CS, new BigDecimal("25"), QualityType.GOOD);
 		assertTrue(new BigDecimal("533.52").equals(detail.getPriceValue().setScale(2, RoundingMode.HALF_EVEN)));
 	}
 
@@ -148,7 +153,7 @@ public class SoldServiceTest extends TestData {
 		service.get().setOrderDate(getDateOfAMonthFromNow());
 		service.setUnitPrice(getUnitPriceOf23p48());
 		service.setItem(getItemPineSlice15());
-		SoldDetail detail = service.createDetail(UomType.CS, new BigDecimal("25"), QualityType.GOOD);
+		SoldOrderDetail detail = service.createDetail(UomType.CS, new BigDecimal("25"), QualityType.GOOD);
 		assertTrue(new BigDecimal("563.52").equals(detail.getPriceValue().setScale(2, RoundingMode.HALF_EVEN)));
 	}
 
@@ -157,7 +162,7 @@ public class SoldServiceTest extends TestData {
 		service.get().setOrderDate(getDateOfNow());
 		service.setUnitPrice(getUnitPriceOf23p48());
 		service.setItem(getItemPineSlice15());
-		SoldDetail detail = service.createDetail(UomType.CS, new BigDecimal("9"), QualityType.GOOD);
+		SoldOrderDetail detail = service.createDetail(UomType.CS, new BigDecimal("9"), QualityType.GOOD);
 		assertTrue(new BigDecimal("563.52").equals(detail.getPriceValue().setScale(2, RoundingMode.HALF_EVEN)));
 	}
 

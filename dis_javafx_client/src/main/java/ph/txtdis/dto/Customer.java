@@ -35,7 +35,7 @@ public class Customer extends AbstractTrackedId<Long> {
 
 	private List<CreditDetail> creditDetails;
 
-	private List<CustomerDiscount> discounts;
+	private List<Discount> discounts;
 
 	private Customer parent;
 

@@ -11,21 +11,24 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javafx.beans.binding.BooleanExpression;
+import javafx.scene.Node;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import ph.txtdis.dto.Audited;
 import ph.txtdis.dto.Keyed;
 import ph.txtdis.fx.control.AppButton;
 import ph.txtdis.fx.control.AppField;
+import ph.txtdis.fx.control.InputControl;
 import ph.txtdis.fx.dialog.OpenByIdDialog;
+import ph.txtdis.info.Information;
 import ph.txtdis.service.AlternateNamed;
 import ph.txtdis.service.Moduled;
 import ph.txtdis.service.Reset;
 import ph.txtdis.service.Serviced;
 import ph.txtdis.service.Spun;
 
-public abstract class AbstractIdApp<T, AS extends Serviced<T, PK>, PK, ID> extends AbstractApp
-		implements Savable, Launchable
+public abstract class AbstractIdApp<T extends Keyed<PK>, AS extends Serviced<T, PK>, PK, ID> extends AbstractApp
+		implements Launchable
 {
 
 	@Autowired
@@ -63,6 +66,18 @@ public abstract class AbstractIdApp<T, AS extends Serviced<T, PK>, PK, ID> exten
 		super.refresh();
 	}
 
+	public void save() {
+		try {
+			service.save();
+		} catch (Exception e) {
+			showErrorDialog(e);
+		} catch (Information i) {
+			dialog.show(i).addParent(this).start();
+		} finally {
+			refresh();
+		}
+	}
+
 	@Override
 	public void tryOpening(String... id) {
 		try {
@@ -77,9 +92,8 @@ public abstract class AbstractIdApp<T, AS extends Serviced<T, PK>, PK, ID> exten
 		return "New " + headerText();
 	}
 
-	@SuppressWarnings("unchecked")
 	private void open(String id) throws Exception {
-		Keyed<PK> t = (Keyed<PK>) service.find(id);
+		T t = service.find(id);
 		service.set(t);
 		refresh();
 	}
@@ -112,31 +126,29 @@ public abstract class AbstractIdApp<T, AS extends Serviced<T, PK>, PK, ID> exten
 		}
 	}
 
-	private void trySaving() {
-		try {
-			save();
-			dialog.showInfo("Successfully posted data of\n" + headerText() + ": " + service.getId()).addParent(this)
-					.start();
-			refresh();
-		} catch (Exception e) {
-			dialog.showError("Data NOT posted;\n" + e.getMessage()).addParent(this).start();
-			e.printStackTrace();
-		}
-	}
-
 	@Override
 	protected List<AppButton> addButtons() {
 		createButtons();
-		setActionOnButtonClick();
+		setOnButtonClickAction();
 		return Arrays.asList(newButton, backButton, openButton, nextButton, saveButton);
 	}
 
 	protected HBox auditPane() {
 	// @formatter:off
 		return box.hpane(
-				label.name("Created by"), createdByDisplay.readOnly().width(120).build(TEXT),
-				label.name("on"), createdOnDisplay.readOnly().build(TIMESTAMP));
+			label.name("Created by"), createdByDisplay.readOnly().width(120).build(TEXT),
+			label.name("on"), createdOnDisplay.readOnly().build(TIMESTAMP));
 	// @formatter:on
+	}
+
+	protected void clearControl(InputControl<?> control) {
+		control.setValue(null);
+		((Node) control).requestFocus();
+	}
+
+	protected void clearControlAfterShowingErrorDialog(Exception e, InputControl<?> control) {
+		showErrorDialog(e);
+		clearControl(control);
 	}
 
 	protected void createButtons() {
@@ -185,16 +197,21 @@ public abstract class AbstractIdApp<T, AS extends Serviced<T, PK>, PK, ID> exten
 		refresh();
 	}
 
-	protected void setActionOnButtonClick() {
+	protected void setListeners() {
+		setOnHidden(e -> ((Reset) service).reset());
+	}
+
+	protected void setOnButtonClickAction() {
 		newButton.setOnAction(e -> reset());
 		backButton.setOnAction(e -> tryPrevious());
 		openButton.setOnAction(e -> openSelected());
 		nextButton.setOnAction(e -> tryNext());
-		saveButton.setOnAction(e -> trySaving());
+		saveButton.setOnAction(e -> save());
 	}
 
-	protected void setListeners() {
-		setOnHidden(e -> ((Reset) service).reset());
+	protected void showErrorDialog(Exception e) {
+		e.printStackTrace();
+		dialog.show(e).addParent(this).start();
 	}
 
 	@Override

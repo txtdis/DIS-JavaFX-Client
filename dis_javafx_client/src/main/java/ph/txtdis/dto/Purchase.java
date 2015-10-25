@@ -17,7 +17,7 @@ public class Purchase extends AbstractTrackedId<Long> {
 
 	private String remarks;
 
-	private List<SoldDetail> details;
+	private List<SoldOrderDetail> details;
 
 	protected User deactivatedBy;
 

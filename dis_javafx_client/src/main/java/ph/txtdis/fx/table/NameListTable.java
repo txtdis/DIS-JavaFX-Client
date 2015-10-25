@@ -14,7 +14,7 @@ import ph.txtdis.fx.dialog.Inputted;
 public abstract class NameListTable<S extends Keyed<Long>, D extends Inputted<S>> extends AppTable<S> {
 
 	@Autowired
-	private AppendableTableProperty<S> append;
+	private AppendContextMenu<S> append;
 
 	@Autowired
 	protected Column<S, Long> id;
@@ -45,6 +45,6 @@ public abstract class NameListTable<S extends Keyed<Long>, D extends Inputted<S>
 
 	@Override
 	protected void addProperties() {
-		append.addProperties(this, dialog);
+		append.addMenu(this, dialog);
 	}
 }

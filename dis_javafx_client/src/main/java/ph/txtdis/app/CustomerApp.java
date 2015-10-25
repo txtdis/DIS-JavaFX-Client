@@ -27,6 +27,7 @@ import ph.txtdis.fx.tab.CreditTab;
 import ph.txtdis.fx.tab.CustomerDiscountTab;
 import ph.txtdis.fx.tab.CustomerTab;
 import ph.txtdis.fx.tab.InputTab;
+import ph.txtdis.info.Information;
 import ph.txtdis.service.CustomerService;
 
 @Lazy
@@ -78,9 +79,9 @@ public class CustomerApp extends AbstractIdApp<Customer, CustomerService, Long, 
 	}
 
 	@Override
-	public void save() throws Exception {
+	public void save() {
 		inputTabs.forEach(t -> t.save());
-		service.save();
+		super.save();
 	}
 
 	@Override
@@ -88,11 +89,23 @@ public class CustomerApp extends AbstractIdApp<Customer, CustomerService, Long, 
 		customerTab.select();
 	}
 
+	private void deactivate() {
+		try {
+			service.deactivate();
+		} catch (Exception e) {
+			showErrorDialog(e);
+		} catch (Information i) {
+			dialog.show(i).addParent(this).start();
+		} finally {
+			refresh();
+		}
+	}
+
 	private List<Node> deactivationNodes() {
 	// @formatter:off
 		return Arrays.asList(
-				label.name("Deactivated by"), deactivatedByDisplay.readOnly().width(120).build(TEXT),
-				label.name("on"), deactivatedOnDisplay.readOnly().build(TIMESTAMP));
+			label.name("Deactivated by"), deactivatedByDisplay.readOnly().width(120).build(TEXT),
+			label.name("on"), deactivatedOnDisplay.readOnly().build(TIMESTAMP));
 	// @formatter:on
 	}
 
@@ -110,7 +123,7 @@ public class CustomerApp extends AbstractIdApp<Customer, CustomerService, Long, 
 		searchDialog.criteria("name").start();
 		String name = searchDialog.getText();
 		if (name != null)
-			trySearching(name);
+			search(name);
 	}
 
 	private void refreshDeactivationNodes() {
@@ -118,15 +131,17 @@ public class CustomerApp extends AbstractIdApp<Customer, CustomerService, Long, 
 		deactivatedOnDisplay.setValue(service.getDeactivatedOn());
 	}
 
-	private void search(String name) throws Exception {
-		service.search(name);
-		listSearchResults();
-		refresh();
-		setFocus();
+	private void search(String name) {
+		try {
+			service.search(name);
+			listSearchResults();
+			refresh();
+		} catch (Exception e) {
+			showErrorDialog(e);
+		}
 	}
 
 	private void setBindings() {
-		// customerTab.nameField().disableIf((BooleanBinding) posted());
 		creditTab.disableIf(customerTab.showsCustomerIsNotAnOutlet());
 		discountTab.disableIf(creditTab.isDisabledNow());
 		deactivateButton.disableIf(customerTab.showsANewCustomer().or(isAlreadyDeactivated()));
@@ -145,25 +160,6 @@ public class CustomerApp extends AbstractIdApp<Customer, CustomerService, Long, 
 
 	private List<Tab> tabs() {
 		return inputTabs().stream().map(t -> t.asTab()).collect(Collectors.toList());
-	}
-
-	private void tryDeactivating() {
-		try {
-			service.deactivate();
-			refresh();
-		} catch (Exception e) {
-			e.printStackTrace();
-			dialog.show(e).addParent(this).start();
-		}
-	}
-
-	private void trySearching(String name) {
-		try {
-			search(name);
-		} catch (Exception e) {
-			e.printStackTrace();
-			dialog.show(e).addParent(this).start();
-		}
 	}
 
 	@Override
@@ -193,9 +189,9 @@ public class CustomerApp extends AbstractIdApp<Customer, CustomerService, Long, 
 	}
 
 	@Override
-	protected void setActionOnButtonClick() {
+	protected void setOnButtonClickAction() {
 		searchButton.setOnAction(e -> openSearchDialog());
-		deactivateButton.setOnAction(e -> tryDeactivating());
-		super.setActionOnButtonClick();
+		deactivateButton.setOnAction(e -> deactivate());
+		super.setOnButtonClickAction();
 	}
 }

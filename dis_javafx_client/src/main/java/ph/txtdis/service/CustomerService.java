@@ -15,7 +15,7 @@ import org.springframework.util.StringUtils;
 import ph.txtdis.dto.Channel;
 import ph.txtdis.dto.CreditDetail;
 import ph.txtdis.dto.Customer;
-import ph.txtdis.dto.CustomerDiscount;
+import ph.txtdis.dto.Discount;
 import ph.txtdis.dto.ItemFamily;
 import ph.txtdis.dto.Keyed;
 import ph.txtdis.dto.Location;
@@ -27,6 +27,7 @@ import ph.txtdis.excel.Tabular;
 import ph.txtdis.exception.DateInThePastException;
 import ph.txtdis.exception.DuplicateException;
 import ph.txtdis.exception.NotFoundException;
+import ph.txtdis.info.SuccessfulSaveInfo;
 import ph.txtdis.type.CustomerType;
 import ph.txtdis.type.VisitFrequency;
 import ph.txtdis.util.Spring;
@@ -77,7 +78,7 @@ public class CustomerService
 		return createCreditLine(term, gracePeriod, creditLimit, startDate);
 	}
 
-	public CustomerDiscount createDiscountUponValidation(int level, BigDecimal percent, ItemFamily family,
+	public Discount createDiscountUponValidation(int level, BigDecimal percent, ItemFamily family,
 			LocalDate startDate) throws Exception {
 		validateStartDate(discounts(), startDate);
 		return createCustomerDiscount(level, percent, familyLimit(family), startDate);
@@ -88,7 +89,7 @@ public class CustomerService
 		return createRouteAssignment(route, startDate);
 	}
 
-	public void deactivate() throws Exception {
+	public void deactivate() throws Exception, SuccessfulSaveInfo {
 		get().setDeactivatedBy(Spring.username());
 		get().setDeactivatedOn(ZonedDateTime.now());
 		save();
@@ -98,7 +99,7 @@ public class CustomerService
 	public Customer find(String id) throws Exception {
 		Customer c = readOnlyService.module(getModule()).getOne("/" + id);
 		if (c == null)
-			throw new NotFoundException("ID No. " + id);
+			throw new NotFoundException("Customer No. " + id);
 		return c;
 	}
 
@@ -164,7 +165,7 @@ public class CustomerService
 		return get().getDeactivatedOn();
 	}
 
-	public List<CustomerDiscount> getDiscounts() {
+	public List<Discount> getDiscounts() {
 		return get().getDiscounts();
 	}
 
@@ -183,7 +184,6 @@ public class CustomerService
 	}
 
 	public String getName() {
-		System.err.println("Name = [" + get().getName() + "]");
 		return get().getName();
 	}
 
@@ -201,6 +201,11 @@ public class CustomerService
 
 	public List<Routing> getRouteHistory() {
 		return get().getRouteHistory();
+	}
+
+	@Override
+	public SavingService<Customer> getSavingService() {
+		return savingService;
 	}
 
 	@Override
@@ -258,11 +263,6 @@ public class CustomerService
 	}
 
 	@Override
-	public void save() throws Exception {
-		set(savingService.module(getModule()).save(customer));
-	}
-
-	@Override
 	public void saveAsExcel(Tabular... tables) throws Exception {
 		excel.filename(getExcelFileName()).sheetname(getExcelSheetName()).table(tables).write();
 	}
@@ -305,7 +305,7 @@ public class CustomerService
 		get().setCreditDetails(list);
 	}
 
-	public void setDiscounts(List<CustomerDiscount> list) {
+	public void setDiscounts(List<Discount> list) {
 		get().setDiscounts(list);
 	}
 
@@ -357,9 +357,9 @@ public class CustomerService
 		return credit;
 	}
 
-	private CustomerDiscount createCustomerDiscount(int level, BigDecimal percent, ItemFamily family,
+	private Discount createCustomerDiscount(int level, BigDecimal percent, ItemFamily family,
 			LocalDate startDate) {
-		CustomerDiscount discount = new CustomerDiscount();
+		Discount discount = new Discount();
 		discount.setLevel(level);
 		discount.setPercent(percent);
 		discount.setFamilyLimit(family);
@@ -382,7 +382,7 @@ public class CustomerService
 		return getCreditDetails();
 	}
 
-	private List<CustomerDiscount> discounts() {
+	private List<Discount> discounts() {
 		if (getDiscounts() == null)
 			setDiscounts(new ArrayList<>());
 		return getDiscounts();
@@ -432,8 +432,8 @@ public class CustomerService
 		setCreditDetails(list);
 	}
 
-	private void updateCustomerDiscounts(CustomerDiscount discount) {
-		List<CustomerDiscount> list = new ArrayList<>(getDiscounts());
+	private void updateCustomerDiscounts(Discount discount) {
+		List<Discount> list = new ArrayList<>(getDiscounts());
 		list.add(discount);
 		setDiscounts(list);
 	}

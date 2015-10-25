@@ -19,7 +19,7 @@ import ph.txtdis.type.Type;
 public class RoutingTable extends AppTable<Routing> {
 
 	@Autowired
-	private AppendableTableProperty<Routing> append;
+	private AppendContextMenu<Routing> append;
 
 	@Autowired
 	private Column<Routing, String> designatedRoute;
@@ -47,6 +47,6 @@ public class RoutingTable extends AppTable<Routing> {
 
 	@Override
 	protected void addProperties() {
-		append.addProperties(this, dialog);
+		append.addMenu(this, dialog);
 	}
 }

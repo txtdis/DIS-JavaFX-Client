@@ -16,7 +16,7 @@ public abstract class AbstractSoldOrder<PK> extends AbstractAuditedId<PK> {
 
 	private String remarks;
 
-	private List<SoldDetail> details;
+	private List<SoldOrderDetail> details;
 
 	private CreditDetail credit;
 

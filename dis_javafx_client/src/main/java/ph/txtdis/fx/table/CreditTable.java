@@ -22,7 +22,7 @@ import ph.txtdis.fx.dialog.CreditDialog;
 public class CreditTable extends AppTable<CreditDetail> {
 
 	@Autowired
-	private AppendableTableProperty<CreditDetail> append;
+	private AppendContextMenu<CreditDetail> append;
 
 	@Autowired
 	private Column<CreditDetail, Integer> termInDays;
@@ -58,6 +58,6 @@ public class CreditTable extends AppTable<CreditDetail> {
 
 	@Override
 	protected void addProperties() {
-		append.addProperties(this, dialog);
+		append.addMenu(this, dialog);
 	}
 }

@@ -41,12 +41,30 @@ public class ReadOnlyService<T> {
 		return getList("");
 	}
 
+	private HttpEntity<T> httpEntity(T entity) {
+		return new HttpEntity<T>(entity, http.headers());
+	}
+
 	private String plural() {
 		return English.plural(single());
 	}
 
-	private String single() {
-		return module;
+	private ResponseEntity<?> responseEntity(String endpoint, String path) throws Exception {
+		try {
+			return restService.exchange(url() + endpoint, HttpMethod.GET, httpEntity(null), response.type(path));
+		} catch (ResourceAccessException e) {
+			throw new NoServerConnectionException(server.location());
+		} catch (HttpClientErrorException e) {
+			if (e.getStatusCode() == HttpStatus.UNAUTHORIZED) {
+				if (e.getResponseBodyAsString().contains("This connection has been closed"))
+					throw new StoppedServerException();
+				else
+					throw new FailedAuthenticationException();
+			} else if (e.getStatusCode() == HttpStatus.INTERNAL_SERVER_ERROR) {
+				throw new InvalidException(e.getResponseBodyAsString());
+			}
+			throw new InvalidException(e.getResponseBodyAsString());
+		}
 	}
 
 	private String url() {
@@ -63,28 +81,12 @@ public class ReadOnlyService<T> {
 		return (T) responseEntity(endpoint, single()).getBody();
 	}
 
-	protected HttpEntity<T> httpEntity(T entity) {
-		return new HttpEntity<T>(entity, http.headers());
+	protected String single() {
+		return module;
 	}
 
-	protected ReadOnlyService<T> module(String module) {
+	ReadOnlyService<T> module(String module) {
 		this.module = module;
 		return this;
-	}
-
-	protected ResponseEntity<?> responseEntity(String endpoint, String path) throws Exception {
-		try {
-			return restService.exchange(url() + endpoint, HttpMethod.GET, httpEntity(null), response.type(path));
-		} catch (ResourceAccessException e) {
-			throw new NoServerConnectionException(server.location());
-		} catch (HttpClientErrorException e) {
-			if (e.getStatusCode() == HttpStatus.UNAUTHORIZED) {
-				if (e.getResponseBodyAsString().contains("This connection has been closed"))
-					throw new StoppedServerException();
-				else
-					throw new FailedAuthenticationException();
-			}
-			throw new InvalidException(e.getMessage());
-		}
 	}
 }

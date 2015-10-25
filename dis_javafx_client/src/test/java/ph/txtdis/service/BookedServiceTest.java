@@ -25,7 +25,7 @@ public class BookedServiceTest extends TestData {
 
 	private BookedService<AbstractBookedOrder<Long>, Long> service;
 	private BookingService bookingService;
-	private PickService pickService;
+	private PickListService pickService;
 	private ReadOnlyService<AbstractBookedOrder<Long>> readOnlyService;
 	private ReceivingService receivingService;
 
@@ -33,7 +33,7 @@ public class BookedServiceTest extends TestData {
 	@SuppressWarnings("unchecked")
 	public void setUp() throws Exception {
 		bookingService = Mockito.mock(BookingService.class);
-		pickService = Mockito.mock(PickService.class);
+		pickService = Mockito.mock(PickListService.class);
 		readOnlyService = Mockito.mock(ReadOnlyService.class);
 		receivingService = Mockito.mock(ReceivingService.class);
 		service = new BookedService<AbstractBookedOrder<Long>, Long>(readOnlyService, bookingService, pickService,
@@ -47,6 +47,11 @@ public class BookedServiceTest extends TestData {
 			@Override
 			public String getModule() {
 				return "test";
+			}
+
+			@Override
+			public void reset() {
+				// TODO Auto-generated method stub
 			}
 		};
 		service.set(getBookedOrder());

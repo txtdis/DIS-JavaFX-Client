@@ -10,8 +10,8 @@ import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 
 @Lazy
-@Component("reducableTableProperty")
-public final class ReducableTableProperty<S> {
+@Component("deleteContextMenu")
+public final class DeleteContextMenu<S> {
 
 	private TableView<S> table;
 
@@ -52,7 +52,7 @@ public final class ReducableTableProperty<S> {
 		return rowMenu;
 	}
 
-	protected void addProperties(TableView<S> table) {
+	protected void addMenu(TableView<S> table) {
 		this.table = table;
 		table.setRowFactory(t -> createRow(t));
 	}

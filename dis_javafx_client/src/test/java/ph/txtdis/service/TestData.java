@@ -12,14 +12,13 @@ import ph.txtdis.dto.Booking;
 import ph.txtdis.dto.Channel;
 import ph.txtdis.dto.CreditDetail;
 import ph.txtdis.dto.Customer;
-import ph.txtdis.dto.CustomerDiscount;
 import ph.txtdis.dto.Discount;
 import ph.txtdis.dto.Invoice;
 import ph.txtdis.dto.Item;
 import ph.txtdis.dto.ItemFamily;
 import ph.txtdis.dto.ItemTree;
 import ph.txtdis.dto.OrderDetail;
-import ph.txtdis.dto.Picking;
+import ph.txtdis.dto.PickList;
 import ph.txtdis.dto.Price;
 import ph.txtdis.dto.PricingType;
 import ph.txtdis.dto.QtyPerUom;
@@ -28,7 +27,7 @@ import ph.txtdis.dto.Remittance;
 import ph.txtdis.dto.RemittancePayment;
 import ph.txtdis.dto.Route;
 import ph.txtdis.dto.Routing;
-import ph.txtdis.dto.SoldDetail;
+import ph.txtdis.dto.SoldOrderDetail;
 import ph.txtdis.dto.User;
 import ph.txtdis.dto.VolumeDiscount;
 import ph.txtdis.type.CustomerType;
@@ -147,38 +146,38 @@ public class TestData {
 		return cd;
 	}
 
-	List<CustomerDiscount> getCustomerDiscountListOf0p10By0p05ForAllSince20150101() {
+	List<Discount> getCustomerDiscountListOf0p10By0p05ForAllSince20150101() {
 		return Arrays.asList(getCustomerDiscountOfLevel1By0p10ForAllSince20150101(),
 				getCustomerDiscountOfLevel2By0p05ForAllSince20150101());
 	}
 
-	List<CustomerDiscount> getCustomerDiscountListOf0p30By0p15ForAllAMonthFromNow() {
+	List<Discount> getCustomerDiscountListOf0p30By0p15ForAllAMonthFromNow() {
 		return Arrays.asList(getCustomerDiscountOfLevel1By0p30ForAllAMonthFromNow(),
 				getCustomerDiscountOfLevel2By0p15ForAllAMonthFromNow());
 	}
 
-	List<CustomerDiscount> getCustomerDiscountListOf10by5ForRmFamilySince20150101() {
+	List<Discount> getCustomerDiscountListOf10by5ForRmFamilySince20150101() {
 		return Arrays.asList(getCustomerDiscountOfLevel1By10p00ForRmFamilySince20150101(),
 				getCustomerDiscountOfLevel2By5p00ForRmFamilySince20150101());
 	}
 
-	List<CustomerDiscount> getCustomerDiscountListOf1by0p50ForTjFamilySince20150101() {
+	List<Discount> getCustomerDiscountListOf1by0p50ForTjFamilySince20150101() {
 		return Arrays.asList(getCustomerDiscountOfLevel1By1ForTjFamilySince20150101(),
 				getCustomerDiscountOfLevel2By0p50ForTjFamilySince20150101());
 	}
 
-	List<CustomerDiscount> getCustomerDiscountListOf30by15ForAllAMonthFromNow() {
+	List<Discount> getCustomerDiscountListOf30by15ForAllAMonthFromNow() {
 		return Arrays.asList(getCustomerDiscountOfLevel1By30p00ForDmFamilyAMonthFromNow(),
 				getCustomerDiscountOfLevel2By15ForDmFamilyAMonthFromNow());
 	}
 
-	List<CustomerDiscount> getCustomerDiscountListOf3by1p5ForPineFamilyAMonthFromNow() {
+	List<Discount> getCustomerDiscountListOf3by1p5ForPineFamilyAMonthFromNow() {
 		return Arrays.asList(getCustomerDiscountOfLevel1By3p00ForPineFamilyAMonthFromNow(),
 				getCustomerDiscountOfLevel2By1p50ForPineFamilyAMonthFromNow());
 	}
 
-	List<CustomerDiscount> getCustomerDiscountListOfOldAndNew() {
-		List<CustomerDiscount> list = new ArrayList<>(getCustomerDiscountListOf0p10By0p05ForAllSince20150101());
+	List<Discount> getCustomerDiscountListOfOldAndNew() {
+		List<Discount> list = new ArrayList<>(getCustomerDiscountListOf0p10By0p05ForAllSince20150101());
 		list.addAll(getCustomerDiscountListOf1by0p50ForTjFamilySince20150101());
 		list.addAll(getCustomerDiscountListOf10by5ForRmFamilySince20150101());
 		list.addAll(getCustomerDiscountListOf0p30By0p15ForAllAMonthFromNow());
@@ -187,24 +186,24 @@ public class TestData {
 		return list;
 	}
 
-	CustomerDiscount getCustomerDiscountOfLevel1By0p10ForAllSince20150101() {
-		CustomerDiscount cd = new CustomerDiscount();
+	Discount getCustomerDiscountOfLevel1By0p10ForAllSince20150101() {
+		Discount cd = new Discount();
 		cd.setLevel(1);
 		cd.setPercent(new BigDecimal("0.10"));
 		cd.setStartDate(getDateOf20150101());
 		return cd;
 	}
 
-	CustomerDiscount getCustomerDiscountOfLevel1By0p30ForAllAMonthFromNow() {
-		CustomerDiscount cd = new CustomerDiscount();
+	Discount getCustomerDiscountOfLevel1By0p30ForAllAMonthFromNow() {
+		Discount cd = new Discount();
 		cd.setLevel(1);
 		cd.setPercent(new BigDecimal("0.30"));
 		cd.setStartDate(getDateOfAMonthFromNow());
 		return cd;
 	}
 
-	CustomerDiscount getCustomerDiscountOfLevel1By10p00ForRmFamilySince20150101() {
-		CustomerDiscount cd = new CustomerDiscount();
+	Discount getCustomerDiscountOfLevel1By10p00ForRmFamilySince20150101() {
+		Discount cd = new Discount();
 		cd.setLevel(1);
 		cd.setPercent(new BigDecimal("10.00"));
 		cd.setStartDate(getDateOf20150101());
@@ -212,8 +211,8 @@ public class TestData {
 		return cd;
 	}
 
-	CustomerDiscount getCustomerDiscountOfLevel1By1ForTjFamilySince20150101() {
-		CustomerDiscount cd = new CustomerDiscount();
+	Discount getCustomerDiscountOfLevel1By1ForTjFamilySince20150101() {
+		Discount cd = new Discount();
 		cd.setLevel(1);
 		cd.setPercent(new BigDecimal("1.00"));
 		cd.setStartDate(getDateOf20150101());
@@ -221,8 +220,8 @@ public class TestData {
 		return cd;
 	}
 
-	CustomerDiscount getCustomerDiscountOfLevel1By30p00ForDmFamilyAMonthFromNow() {
-		CustomerDiscount cd = new CustomerDiscount();
+	Discount getCustomerDiscountOfLevel1By30p00ForDmFamilyAMonthFromNow() {
+		Discount cd = new Discount();
 		cd.setLevel(1);
 		cd.setPercent(new BigDecimal("30.00"));
 		cd.setStartDate(getDateOfAMonthFromNow());
@@ -230,8 +229,8 @@ public class TestData {
 		return cd;
 	}
 
-	CustomerDiscount getCustomerDiscountOfLevel1By3p00ForPineFamilyAMonthFromNow() {
-		CustomerDiscount cd = new CustomerDiscount();
+	Discount getCustomerDiscountOfLevel1By3p00ForPineFamilyAMonthFromNow() {
+		Discount cd = new Discount();
 		cd.setLevel(1);
 		cd.setPercent(new BigDecimal("3.00"));
 		cd.setStartDate(getDateOfAMonthFromNow());
@@ -239,24 +238,24 @@ public class TestData {
 		return cd;
 	}
 
-	CustomerDiscount getCustomerDiscountOfLevel2By0p05ForAllSince20150101() {
-		CustomerDiscount cd = new CustomerDiscount();
+	Discount getCustomerDiscountOfLevel2By0p05ForAllSince20150101() {
+		Discount cd = new Discount();
 		cd.setLevel(2);
 		cd.setPercent(new BigDecimal("0.05"));
 		cd.setStartDate(getDateOf20150101());
 		return cd;
 	}
 
-	CustomerDiscount getCustomerDiscountOfLevel2By0p15ForAllAMonthFromNow() {
-		CustomerDiscount cd = new CustomerDiscount();
+	Discount getCustomerDiscountOfLevel2By0p15ForAllAMonthFromNow() {
+		Discount cd = new Discount();
 		cd.setLevel(2);
 		cd.setPercent(new BigDecimal("0.15"));
 		cd.setStartDate(getDateOfAMonthFromNow());
 		return cd;
 	}
 
-	CustomerDiscount getCustomerDiscountOfLevel2By0p50ForTjFamilySince20150101() {
-		CustomerDiscount cd = new CustomerDiscount();
+	Discount getCustomerDiscountOfLevel2By0p50ForTjFamilySince20150101() {
+		Discount cd = new Discount();
 		cd.setLevel(2);
 		cd.setPercent(new BigDecimal("0.50"));
 		cd.setStartDate(getDateOf20150101());
@@ -264,8 +263,8 @@ public class TestData {
 		return cd;
 	}
 
-	CustomerDiscount getCustomerDiscountOfLevel2By15ForDmFamilyAMonthFromNow() {
-		CustomerDiscount cd = new CustomerDiscount();
+	Discount getCustomerDiscountOfLevel2By15ForDmFamilyAMonthFromNow() {
+		Discount cd = new Discount();
 		cd.setLevel(2);
 		cd.setPercent(new BigDecimal("15.00"));
 		cd.setStartDate(getDateOfAMonthFromNow());
@@ -273,8 +272,8 @@ public class TestData {
 		return cd;
 	}
 
-	CustomerDiscount getCustomerDiscountOfLevel2By1p50ForPineFamilyAMonthFromNow() {
-		CustomerDiscount cd = new CustomerDiscount();
+	Discount getCustomerDiscountOfLevel2By1p50ForPineFamilyAMonthFromNow() {
+		Discount cd = new Discount();
 		cd.setLevel(2);
 		cd.setPercent(new BigDecimal("1.50"));
 		cd.setStartDate(getDateOfAMonthFromNow());
@@ -282,8 +281,8 @@ public class TestData {
 		return cd;
 	}
 
-	CustomerDiscount getCustomerDiscountOfLevel2By5p00ForRmFamilySince20150101() {
-		CustomerDiscount cd = new CustomerDiscount();
+	Discount getCustomerDiscountOfLevel2By5p00ForRmFamilySince20150101() {
+		Discount cd = new Discount();
 		cd.setLevel(2);
 		cd.setPercent(new BigDecimal("5.00"));
 		cd.setStartDate(getDateOf20150101());
@@ -354,8 +353,8 @@ public class TestData {
 		return LocalDate.now();
 	}
 
-	SoldDetail getDetailOfPineSliceByCaseOf10AndGood() {
-		SoldDetail sd = new SoldDetail();
+	SoldOrderDetail getDetailOfPineSliceByCaseOf10AndGood() {
+		SoldOrderDetail sd = new SoldOrderDetail();
 		sd.setItem(getItemPineSliceFlat());
 		sd.setUom(UomType.CS);
 		sd.setQty(BigDecimal.TEN);
@@ -364,8 +363,8 @@ public class TestData {
 		return sd;
 	}
 
-	SoldDetail getDetailOfPineSliceByPieceBy10ByGood() {
-		SoldDetail sd = new SoldDetail();
+	SoldOrderDetail getDetailOfPineSliceByPieceBy10ByGood() {
+		SoldOrderDetail sd = new SoldOrderDetail();
 		sd.setItem(getItemPineSliceFlat());
 		sd.setUom(UomType.PC);
 		sd.setQty(BigDecimal.TEN);
@@ -374,8 +373,8 @@ public class TestData {
 		return sd;
 	}
 
-	SoldDetail getDetailOfPineSliceByPieceOf20AndGood() {
-		SoldDetail sd = new SoldDetail();
+	SoldOrderDetail getDetailOfPineSliceByPieceOf20AndGood() {
+		SoldOrderDetail sd = new SoldOrderDetail();
 		sd.setItem(getItemPineSliceFlat());
 		sd.setUom(UomType.PC);
 		sd.setQty(new BigDecimal("20"));
@@ -384,8 +383,8 @@ public class TestData {
 		return sd;
 	}
 
-	SoldDetail getDetailOfTjReg1kPeBagByPieceOf20AndGood() {
-		SoldDetail sd = new SoldDetail();
+	SoldOrderDetail getDetailOfTjReg1kPeBagByPieceOf20AndGood() {
+		SoldOrderDetail sd = new SoldOrderDetail();
 		sd.setItem(getItemTjReg1kPeBag());
 		sd.setUom(UomType.PC);
 		sd.setQty(new BigDecimal("20"));
@@ -394,15 +393,15 @@ public class TestData {
 		return sd;
 	}
 
-	List<SoldDetail> getDetailsOfPineSliceByByCaseOf10AndTjHotdogByPieceOf20() {
+	List<SoldOrderDetail> getDetailsOfPineSliceByByCaseOf10AndTjHotdogByPieceOf20() {
 		return Arrays.asList(getDetailOfPineSliceByCaseOf10AndGood(), getDetailOfTjReg1kPeBagByPieceOf20AndGood());
 	}
 
-	List<SoldDetail> getDetailsOfPineSliceByPieceBy10ByGood() {
+	List<SoldOrderDetail> getDetailsOfPineSliceByPieceBy10ByGood() {
 		return Arrays.asList(getDetailOfPineSliceByPieceBy10ByGood());
 	}
 
-	List<SoldDetail> getDetailsOfPineSliceByPieceBy20ByGood() {
+	List<SoldOrderDetail> getDetailsOfPineSliceByPieceBy20ByGood() {
 		return Arrays.asList(getDetailOfPineSliceByPieceOf20AndGood());
 	}
 
@@ -544,7 +543,7 @@ public class TestData {
 		Invoice t = new Invoice();
 		t.setOrderDate(getDateOfNow());
 		t.setId(1L);
-		t.setNbrId(1L);
+		t.setNumId(1L);
 		t.setBooking(getBookingOfCustomerWithCreditAndDiscount());
 		t.setCustomer(getBookingOfCustomerWithCreditAndDiscount().getCustomer());
 		t.setDiscounts(Arrays.asList(getDiscountOfLevel1Worth10Percent()));
@@ -608,8 +607,8 @@ public class TestData {
 		return t;
 	}
 
-	Picking getPicking() {
-		Picking t = new Picking();
+	PickList getPicking() {
+		PickList t = new PickList();
 		t.setId(1L);
 		t.setPickDate(getDateOfNow());
 		return t;
@@ -761,10 +760,10 @@ public class TestData {
 
 	Remittance getRemittance() {
 		Remittance r = new Remittance();
-		r.setRemitDate(getDateOfNow());
-		r.setBank(getCustomerOfCashierType());
+		r.setDueDate(getDateOfNow());
+		r.setDraweeBank(getCustomerOfCashierType().getName());
 		r.setValue(new BigDecimal(469.60));
-		r.setCollector(getUserOgie());
+		r.setPayor(getUserOgie().getUsername());
 		return r;
 	}
 
@@ -924,7 +923,7 @@ public class TestData {
 		VolumeDiscount vd = new VolumeDiscount();
 		vd.setType(VolumeDiscountType.SET);
 		vd.setUom(UomType.PC);
-		vd.setCutOff(1);
+		vd.setCutoff(1);
 		vd.setDiscount(BigDecimal.ZERO);
 		vd.setStartDate(getDateOfAMonthFromNow());
 		return vd;
@@ -934,7 +933,7 @@ public class TestData {
 		VolumeDiscount vd = new VolumeDiscount();
 		vd.setType(VolumeDiscountType.SET);
 		vd.setUom(UomType.CS);
-		vd.setCutOff(1);
+		vd.setCutoff(1);
 		vd.setDiscount(new BigDecimal("1.00"));
 		vd.setStartDate(getDateOf20150101());
 		return vd;
@@ -944,7 +943,7 @@ public class TestData {
 		VolumeDiscount vd = new VolumeDiscount();
 		vd.setType(VolumeDiscountType.SET);
 		vd.setUom(UomType.CS);
-		vd.setCutOff(1);
+		vd.setCutoff(1);
 		vd.setDiscount(new BigDecimal("2.00"));
 		vd.setStartDate(getDateOf20150101());
 		vd.setChannelLimit(getChannelOfSupermarket());
@@ -955,7 +954,7 @@ public class TestData {
 		VolumeDiscount vd = new VolumeDiscount();
 		vd.setType(VolumeDiscountType.TIER);
 		vd.setUom(UomType.CS);
-		vd.setCutOff(10);
+		vd.setCutoff(10);
 		vd.setDiscount(new BigDecimal("10.00"));
 		vd.setStartDate(getDateOf20150101());
 		return vd;
@@ -965,7 +964,7 @@ public class TestData {
 		VolumeDiscount vd = new VolumeDiscount();
 		vd.setType(VolumeDiscountType.TIER);
 		vd.setUom(UomType.CS);
-		vd.setCutOff(20);
+		vd.setCutoff(20);
 		vd.setDiscount(new BigDecimal("20.00"));
 		vd.setStartDate(getDateOf20150101());
 		return vd;
@@ -975,7 +974,7 @@ public class TestData {
 		VolumeDiscount vd = new VolumeDiscount();
 		vd.setType(VolumeDiscountType.TIER);
 		vd.setUom(UomType.CS);
-		vd.setCutOff(20);
+		vd.setCutoff(20);
 		vd.setDiscount(new BigDecimal("30.00"));
 		vd.setStartDate(getDateOf20150101());
 		vd.setChannelLimit(getChannelOfSupermarket());
@@ -986,7 +985,7 @@ public class TestData {
 		VolumeDiscount vd = new VolumeDiscount();
 		vd.setType(VolumeDiscountType.TIER);
 		vd.setUom(UomType.CS);
-		vd.setCutOff(30);
+		vd.setCutoff(30);
 		vd.setDiscount(new BigDecimal("40.00"));
 		vd.setStartDate(getDateOfAMonthFromNow());
 		return vd;

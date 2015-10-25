@@ -19,7 +19,7 @@ import ph.txtdis.type.Type;
 public class AccountTable extends AppTable<Account> {
 
 	@Autowired
-	private AppendableTableProperty<Account> append;
+	private AppendContextMenu<Account> append;
 
 	@Autowired
 	private Column<Account, String> assignedSeller;
@@ -47,6 +47,6 @@ public class AccountTable extends AppTable<Account> {
 
 	@Override
 	protected void addProperties() {
-		append.addProperties(this, dialog);
+		append.addMenu(this, dialog);
 	}
 }

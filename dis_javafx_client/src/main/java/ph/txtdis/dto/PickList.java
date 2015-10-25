@@ -9,7 +9,7 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class Picking extends AbstractTrackedId<Long> {
+public class PickList extends AbstractTrackedId<Long> {
 
 	private Truck truck;
 
@@ -25,7 +25,7 @@ public class Picking extends AbstractTrackedId<Long> {
 
 	private List<Booking> bookings;
 
-	private User printedBy;
+	private String printedBy;
 
 	private ZonedDateTime printedOn;
 }

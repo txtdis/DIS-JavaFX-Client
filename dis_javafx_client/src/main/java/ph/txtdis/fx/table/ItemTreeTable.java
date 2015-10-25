@@ -18,7 +18,7 @@ import ph.txtdis.fx.dialog.ItemTreeDialog;
 public class ItemTreeTable extends AppTable<ItemTree> {
 
 	@Autowired
-	private AppendableTableProperty<ItemTree> append;
+	private AppendContextMenu<ItemTree> append;
 
 	@Autowired
 	private Column<ItemTree, ItemFamily> family;
@@ -46,6 +46,6 @@ public class ItemTreeTable extends AppTable<ItemTree> {
 
 	@Override
 	protected void addProperties() {
-		append.addProperties(this, dialog);
+		append.addMenu(this, dialog);
 	}
 }

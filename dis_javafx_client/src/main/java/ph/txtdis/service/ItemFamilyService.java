@@ -26,7 +26,7 @@ public class ItemFamilyService implements Listed<ItemFamily>, SavedByName<ItemFa
 	}
 
 	public List<ItemFamily> getItemAncestry(Item item) throws Exception {
-		return readOnlyService.module(getModule()).getList("ancestry?family=" + item.getFamily().getId());
+		return readOnlyService.module(getModule()).getList("/ancestry?family=" + item.getFamily().getId());
 	}
 
 	@Override

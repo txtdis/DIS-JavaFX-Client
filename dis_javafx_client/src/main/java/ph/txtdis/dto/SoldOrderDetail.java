@@ -7,7 +7,7 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class SoldDetail extends OrderDetail {
+public class SoldOrderDetail extends OrderDetail {
 
 	private BigDecimal priceValue;
 

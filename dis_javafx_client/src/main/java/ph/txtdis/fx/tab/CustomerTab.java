@@ -178,6 +178,10 @@ public class CustomerTab extends AbstractTab {
 		return nameField.disabled();
 	}
 
+	private AppCombo<Location> provinceCombo() throws Exception {
+		return provinceCombo.width(180).items(service.listProvinces());
+	}
+
 	private void setBarangayComboItems(Location city) {
 		try {
 			barangayCombo.items(service.listBarangays(city));
@@ -252,7 +256,7 @@ public class CustomerTab extends AbstractTab {
 			gridPane.add(parentDisplay.readOnly().build(TEXT), 6, 1, 2, 1);
 
 			gridPane.add(label.field("Province"), 0, 2);
-			gridPane.add(provinceCombo.width(180).items(service.listProvinces()), 1, 2, 2, 1);
+			gridPane.add(provinceCombo(), 1, 2, 2, 1);
 			gridPane.add(label.field("City/Town"), 3, 2);
 			gridPane.add(cityCombo.width(200), 4, 2, 2, 1);
 			gridPane.add(label.field("Barangay"), 6, 2);
@@ -267,8 +271,8 @@ public class CustomerTab extends AbstractTab {
 
 			return Arrays.asList(gridPane, box.hpane(tablePane()));
 		} catch (Exception e) {
-			dialog.show(e).addParent(this).start();
 			e.printStackTrace();
+			dialog.show(e).addParent(this).start();
 			return null;
 		}
 	}

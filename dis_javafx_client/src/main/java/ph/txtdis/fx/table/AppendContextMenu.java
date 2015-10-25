@@ -13,8 +13,8 @@ import ph.txtdis.app.Startable;
 import ph.txtdis.fx.dialog.Inputted;
 
 @Lazy
-@Component("appendableTableProperty")
-public final class AppendableTableProperty<S> {
+@Component("appendContextMenu")
+public final class AppendContextMenu<S> {
 
 	private Inputted<S> dialog;
 
@@ -68,7 +68,7 @@ public final class AppendableTableProperty<S> {
 		}
 	}
 
-	void addProperties(TableView<S> table, Inputted<S> dialog) {
+	void addMenu(TableView<S> table, Inputted<S> dialog) {
 		this.table = table;
 		this.dialog = dialog;
 		table.setContextMenu(createTableMenu());

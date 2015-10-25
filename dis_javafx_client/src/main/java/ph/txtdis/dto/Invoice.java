@@ -11,12 +11,12 @@ public class Invoice extends AbstractBookedOrder<Long> {
 
 	private BigDecimal actualValue;
 
-	private Long nbrId;
+	private Long numId;
 
 	private String prefix, suffix;
 
 	public String getOrderNo() {
-		return prefix() + nbrId + suffix();
+		return prefix() + numId + suffix();
 	}
 
 	@Override

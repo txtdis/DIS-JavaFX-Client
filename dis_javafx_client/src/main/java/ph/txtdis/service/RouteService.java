@@ -71,12 +71,12 @@ public class RouteService implements Listed<Route>, UniquelyNamed, SavedByName<R
 		return savingService.module(getModule()).save(entity);
 	}
 
-	public Account save(String seller, LocalDate startDate) throws Exception {
-		List<Account> list = updatedSellerHistory(seller, startDate);
+	public Account save(String seller, LocalDate date) throws Exception {
+		List<Account> list = updatedSellerHistory(seller, date);
 		route.setSellerHistory(list);
 		route = savingService.module(getModule()).save(route);
-		return getSellerHistory().stream()
-				.filter(s -> s.getSeller().equals(seller) && s.getStartDate().equals(startDate)).findAny().get();
+		return getSellerHistory().stream().filter(s -> s.getSeller().equals(seller) && s.getStartDate().equals(date))
+				.findAny().get();
 	}
 
 	private Account createAccount(String seller, LocalDate startDate) {

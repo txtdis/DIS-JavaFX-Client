@@ -15,10 +15,10 @@ public class ReceivingService implements AlternateNamed {
 	private ReadOnlyService<Receiving> readOnlyService;
 
 	public Receiving find(Long id) throws Exception {
-		Receiving e = readOnlyService.module("receiving").getOne("/" + id);
-		if (e == null)
-			throw new NotFoundException("ID No. " + id);
-		return e;
+		Receiving rr = readOnlyService.module("receiving").getOne("/" + id);
+		if (rr == null)
+			throw new NotFoundException("R/R No. " + id);
+		return rr;
 	}
 
 	@Override
@@ -26,7 +26,10 @@ public class ReceivingService implements AlternateNamed {
 		return "R/R";
 	}
 
-	protected Receiving getByBooking(Long id) throws Exception {
-		return readOnlyService.module("receiving").getOne("/booking?id=" + id);
+	protected Receiving findByBooking(Long id) throws Exception {
+		Receiving rr = readOnlyService.module("receiving").getOne("/booking?id=" + id);
+		if (rr == null)
+			throw new NotFoundException("R/R No. " + id);
+		return rr;
 	}
 }

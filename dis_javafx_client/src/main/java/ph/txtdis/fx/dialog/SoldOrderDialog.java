@@ -12,20 +12,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
-import ph.txtdis.dto.SoldDetail;
+import ph.txtdis.dto.AbstractSoldOrder;
+import ph.txtdis.dto.SoldOrderDetail;
 import ph.txtdis.fx.control.InputNode;
 import ph.txtdis.fx.control.LabeledCombo;
 import ph.txtdis.fx.control.LabeledField;
-import ph.txtdis.service.InvoiceService;
+import ph.txtdis.service.SoldService;
 import ph.txtdis.type.QualityType;
 import ph.txtdis.type.UomType;
 
 @Lazy
-@Component("invoiceDialog")
-public class InvoiceDialog extends FieldDialog<SoldDetail> {
-
-	@Autowired
-	protected InvoiceService service;
+@Component("soldOrderDialog")
+public class SoldOrderDialog extends FieldDialog<SoldOrderDetail> {
 
 	@Autowired
 	private LabeledField<Long> itemIdField;
@@ -41,6 +39,13 @@ public class InvoiceDialog extends FieldDialog<SoldDetail> {
 
 	@Autowired
 	private LabeledCombo<QualityType> qualityCombo;
+
+	private SoldService<? extends AbstractSoldOrder<Long>, Long> service;
+
+	public SoldOrderDialog service(SoldService<? extends AbstractSoldOrder<Long>, Long> service) {
+		this.service = service;
+		return this;
+	}
 
 	private LabeledField<Long> itemIdField() {
 		itemIdField.name("Item No.").build(ID);
@@ -79,7 +84,12 @@ public class InvoiceDialog extends FieldDialog<SoldDetail> {
 	}
 
 	@Override
-	protected SoldDetail createEntity() {
+	protected SoldOrderDetail createEntity() {
 		return service.createDetail(uomCombo.getValue(), qtyField.getValue(), qualityCombo.getValue());
+	}
+
+	@Override
+	protected String headerText() {
+		return "Add New Item";
 	}
 }

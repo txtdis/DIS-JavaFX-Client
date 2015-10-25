@@ -18,9 +18,6 @@ public class InvoiceService extends BookedService<Invoice, Long> implements Rese
 	private InvoiceBookletService bookletService;
 
 	@Autowired
-	private DeliveryService deliveryService;
-
-	@Autowired
 	private ReadOnlyService<Invoice> readOnlyService;
 
 	private String prefix, idNo, suffix;
@@ -54,7 +51,7 @@ public class InvoiceService extends BookedService<Invoice, Long> implements Rese
 	}
 
 	public Long getNbrId() {
-		return get().getNbrId();
+		return get().getNumId();
 	}
 
 	public String getOrderNo() {
@@ -90,7 +87,7 @@ public class InvoiceService extends BookedService<Invoice, Long> implements Rese
 	private Long latestUsedIdInBooklet(InvoiceBooklet b) throws Exception {
 		Invoice i = readOnlyService.module("invoice").getOne("/latest?prefix=" + b.getPrefix() + "&suffix="
 				+ b.getSuffix() + "&start=" + b.getStartId() + "&end=" + b.getEndId());
-		return i == null ? b.getStartId() - 1 : i.getNbrId();
+		return i == null ? b.getStartId() - 1 : i.getNumId();
 	}
 
 	private void setIds(String id) throws Exception {
@@ -148,7 +145,7 @@ public class InvoiceService extends BookedService<Invoice, Long> implements Rese
 	}
 
 	private void setNbrId(Long id) {
-		get().setNbrId(id);
+		get().setNumId(id);
 	}
 
 	private void setPrefix(String prefix) {
@@ -171,11 +168,6 @@ public class InvoiceService extends BookedService<Invoice, Long> implements Rese
 
 	@Override
 	protected void verifyBookingHasNotBeenReferenced(Long id) throws Exception {
-		super.verifyBookingHasNotBeenReferenced(id);
-		deliveryService.verifyNoDeliveryReportReferencedBooking(id);
-	}
-
-	protected void verifyNoInvoiceReferencedBooking(Long id) throws Exception {
 		super.verifyBookingHasNotBeenReferenced(id);
 	}
 }

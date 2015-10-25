@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import ph.txtdis.dto.User;
+import ph.txtdis.type.UserType;
 
 @Service
 public class UserService {
@@ -23,11 +24,15 @@ public class UserService {
 	}
 
 	public User findByEmail(String email) throws Exception {
-		return readOnlyService.module(USER).getOne("/email?=" + email);
+		return readOnlyService.module(USER).getOne("/email?address=" + email);
 	}
 
 	public List<User> list() throws Exception {
 		return readOnlyService.module(USER).getList();
+	}
+
+	public List<User> listByRole(UserType type) throws Exception {
+		return readOnlyService.module(USER).getList("/role?name=" + type);
 	}
 
 	public User save(User entity) throws Exception {

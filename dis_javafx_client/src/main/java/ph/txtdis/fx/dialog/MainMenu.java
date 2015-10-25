@@ -12,13 +12,14 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
 import ph.txtdis.app.AgingReceivableApp;
+import ph.txtdis.app.BookingApp;
 import ph.txtdis.app.ChannelApp;
 import ph.txtdis.app.CustomerApp;
 import ph.txtdis.app.InvoiceApp;
 import ph.txtdis.app.InvoiceBookletApp;
 import ph.txtdis.app.ItemFamilyApp;
 import ph.txtdis.app.ItemTreeApp;
-import ph.txtdis.app.PickingApp;
+import ph.txtdis.app.PickListApp;
 import ph.txtdis.app.RouteApp;
 import ph.txtdis.app.Startable;
 import ph.txtdis.app.TruckApp;
@@ -46,7 +47,7 @@ public class MainMenu extends Stage {
 	private BackupApp backupDialog;
 
 	@Autowired
-	private InvoiceApp bookingApp;
+	private BookingApp bookingApp;
 
 	@Autowired
 	private ChannelApp channelApp;
@@ -79,7 +80,7 @@ public class MainMenu extends Stage {
 	private ItemTreeApp treeApp;
 
 	@Autowired
-	private PickingApp pickApp;
+	private PickListApp pickApp;
 
 	@Autowired
 	private InvoiceApp purchaseApp;

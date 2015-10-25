@@ -2,6 +2,8 @@ package ph.txtdis.dto;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZonedDateTime;
 import java.util.List;
 
 import lombok.Data;
@@ -11,22 +13,22 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 public class Remittance extends AbstractTrackedId<Long> {
 
-	private LocalDate remitDate;
-
-	private Customer bank;
-
-	private String reference;
-
 	private BigDecimal value;
-
-	private User collector;
-
-	private String remarks;
 
 	private List<RemittanceDetail> details;
 
+	private LocalDate dueDate, depositDate;
+
+	private LocalTime depositTime;
+
+	private Long checkId, depositId, receiptId, transferId;
+
+	private String draweeBank, depositBank, lastModifiedBy, payor, receivedBy, remarks;
+
+	private ZonedDateTime lastModifiedOn, receivedOn;
+
 	@Override
 	public String toString() {
-		return "R/S No. " + getId();
+		return "Collection No. " + getId();
 	}
 }

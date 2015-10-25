@@ -12,11 +12,11 @@ import ph.txtdis.dto.Booking;
 import ph.txtdis.dto.Route;
 
 @Lazy
-@Component("pickTable")
-public class PickTable extends AppTable<Booking> {
+@Component("pickListTable")
+public class PickListTable extends AppTable<Booking> {
 
 	@Autowired
-	private ReducableTableProperty<Booking> reduce;
+	private PickListTableContextMenu menu;
 
 	@Autowired
 	private Column<Booking, Long> id;
@@ -30,6 +30,10 @@ public class PickTable extends AppTable<Booking> {
 	@Autowired
 	private Column<Booking, Route> route;
 
+	public void addMenu() {
+		menu.setMenu(this);
+	}
+
 	@Override
 	@SuppressWarnings("unchecked")
 	protected void addColumns() {
@@ -37,13 +41,8 @@ public class PickTable extends AppTable<Booking> {
 		getColumns().setAll(
 			id.ofType(ID).build("S/O No.", "id"),
 			name.ofType(TEXT).build("Name", "customerName"),
-			barangay.ofType(TEXT).build("Barangay", "barangay"),
+			barangay.ofType(TEXT).width(360).build("Location", "location"),
 			route.ofType(OTHERS).build("Route", "route"));
 	// @formatter:on
-	}
-
-	@Override
-	protected void addProperties() {
-		reduce.addProperties(this);
 	}
 }

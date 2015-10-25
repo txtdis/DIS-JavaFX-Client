@@ -108,8 +108,12 @@ public class CustomerReceivableService implements Spreadsheet<CustomerReceivable
 
 	public void listInvoicesByCustomerBetweenTwoDayCounts(String... ids) throws Exception {
 		columnIndex = Integer.valueOf(ids[COLUMN_INDEX]);
-		report = readOnlyService.module(getModule()).getOne("?customer=" + ids[CUSTOMER_ID] + "&lowerDayCount="
-				+ lowerDayCount() + "&upperDayCount=" + upperDayCount());
+		// @formatter:off
+		report = readOnlyService.module(getModule()).getOne(
+				"?customer=" + ids[CUSTOMER_ID] +
+				"&lowerDayCount="+ lowerDayCount() +
+				"&upperDayCount=" + upperDayCount());
+		// @formatter:off
 		customerName = customerService.find(ids[CUSTOMER_ID]).getName();
 	}
 
@@ -118,7 +122,7 @@ public class CustomerReceivableService implements Spreadsheet<CustomerReceivable
 		excel.filename(getExcelFileName()).sheetname(getExcelSheetName()).table(tables).write();
 	}
 
-	private String dottedCustomer() {
+	private String dottedCustomerName() {
 		return getCustomerName().replace(" ", ".") + ".";
 	}
 
@@ -127,7 +131,7 @@ public class CustomerReceivableService implements Spreadsheet<CustomerReceivable
 	}
 
 	private String getExcelFileName() {
-		return dottedDayCount() + ".Receivables-" + dottedCustomer() + Temporal.toFilename(getTimestamp());
+		return dottedDayCount() + ".Receivables-" + dottedCustomerName() + Temporal.toFilename(getTimestamp());
 	}
 
 	private String getExcelSheetName() {

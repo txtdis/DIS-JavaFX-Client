@@ -13,10 +13,10 @@ import lombok.NoArgsConstructor;
 import ph.txtdis.dto.AbstractBookedOrder;
 import ph.txtdis.dto.Booking;
 import ph.txtdis.dto.OrderDetail;
-import ph.txtdis.dto.Picking;
+import ph.txtdis.dto.PickList;
 import ph.txtdis.dto.Receiving;
 import ph.txtdis.dto.RemittancePayment;
-import ph.txtdis.dto.SoldDetail;
+import ph.txtdis.dto.SoldOrderDetail;
 import ph.txtdis.exception.AlreadyReferencedBookingIdException;
 import ph.txtdis.exception.DateInTheFutureException;
 import ph.txtdis.exception.InvalidDateSequenceException;
@@ -35,12 +35,12 @@ public abstract class BookedService<T extends AbstractBookedOrder<PK>, PK> exten
 	private BookingService bookingService;
 
 	@Autowired
-	private PickService pickService;
+	private PickListService pickService;
 
 	@Autowired
 	private ReceivingService receivingService;
 
-	BookedService(ReadOnlyService<T> readOnlyService, BookingService bookingService, PickService pickService,
+	BookedService(ReadOnlyService<T> readOnlyService, BookingService bookingService, PickListService pickService,
 			ReceivingService receivingService) {
 		this.readOnlyService = readOnlyService;
 		this.bookingService = bookingService;
@@ -71,7 +71,7 @@ public abstract class BookedService<T extends AbstractBookedOrder<PK>, PK> exten
 	}
 
 	@Override
-	public void setDetails(List<SoldDetail> details) {
+	public void setDetails(List<SoldOrderDetail> details) {
 		super.setDetails(details);
 		get().setUnpaidValue(computeUnpaid());
 	}
@@ -95,7 +95,7 @@ public abstract class BookedService<T extends AbstractBookedOrder<PK>, PK> exten
 		}
 	}
 
-	private boolean areUomsEqual(SoldDetail booked, OrderDetail received) {
+	private boolean areUomsEqual(SoldOrderDetail booked, OrderDetail received) {
 		return booked.getUom() == received.getUom();
 	}
 
@@ -104,15 +104,16 @@ public abstract class BookedService<T extends AbstractBookedOrder<PK>, PK> exten
 	}
 
 	private void confirmBookingHasBeenPicked(Long id) throws Exception {
-		Picking p = pickService.getByBooking(id);
+		PickList p = pickService.getByBooking(id);
 		if (p == null)
 			throw new NotPickedBookingIdException(id);
 		if (get().getOrderDate().isBefore(p.getPickDate()))
 			throw new InvalidDateSequenceException(getAlternateName(), get().getOrderDate(), "Pick", p.getPickDate());
 	}
 
-	private SoldDetail createDetail(SoldDetail booked, OrderDetail returned, BigDecimal qtyInPieces) throws Exception {
-		SoldDetail sd = new SoldDetail();
+	private SoldOrderDetail createDetail(SoldOrderDetail booked, OrderDetail returned, BigDecimal qtyInPieces)
+			throws Exception {
+		SoldOrderDetail sd = new SoldOrderDetail();
 		sd.setItem(booked.getItem());
 		sd.setUom(getUom(booked, returned));
 		sd.setQty(getQtyPerUom(booked, returned, qtyInPieces));
@@ -141,15 +142,15 @@ public abstract class BookedService<T extends AbstractBookedOrder<PK>, PK> exten
 		get().setDiscounts(booking.getDiscounts());
 	}
 
-	private SoldDetail getNettedDetail(SoldDetail booked, OrderDetail returned) throws Exception {
-		SoldDetail detail = null;
+	private SoldOrderDetail getNettedDetail(SoldOrderDetail booked, OrderDetail returned) throws Exception {
+		SoldOrderDetail detail = null;
 		BigDecimal qtyInPieces = netQty(booked, returned);
 		if (qtyInPieces.compareTo(BigDecimal.ZERO) > 0)
 			detail = createDetail(booked, returned, qtyInPieces);
 		return detail;
 	}
 
-	private BigDecimal getNormalPrice(SoldDetail booked, OrderDetail received) throws Exception {
+	private BigDecimal getNormalPrice(SoldOrderDetail booked, OrderDetail received) throws Exception {
 		if (areUomsEqual(booked, received))
 			return booked.getPriceValue();
 		return getUnitPrice();
@@ -159,13 +160,13 @@ public abstract class BookedService<T extends AbstractBookedOrder<PK>, PK> exten
 		return get().getPayments();
 	}
 
-	private BigDecimal getPrice(SoldDetail booked, OrderDetail received, BigDecimal qty) throws Exception {
+	private BigDecimal getPrice(SoldOrderDetail booked, OrderDetail received, BigDecimal qty) throws Exception {
 		if (isVolumeDiscounted(booked.getItem()))
 			return getVolumeDiscountedPrice(booked, received, qty);
 		return getNormalPrice(booked, received);
 	}
 
-	private BigDecimal getQtyPerUom(SoldDetail booked, OrderDetail received, BigDecimal qty) {
+	private BigDecimal getQtyPerUom(SoldOrderDetail booked, OrderDetail received, BigDecimal qty) {
 		return !areUomsEqual(booked, received) ? qty
 				: qty.divide(getQtyPerUom(booked.getUom()), 8, RoundingMode.HALF_EVEN);
 	}
@@ -179,17 +180,17 @@ public abstract class BookedService<T extends AbstractBookedOrder<PK>, PK> exten
 		return "[TOTAL] " + Numeric.formatCurrency(sumPayments(p));
 	}
 
-	private UomType getUom(SoldDetail booked, OrderDetail received) {
+	private UomType getUom(SoldOrderDetail booked, OrderDetail received) {
 		return areUomsEqual(booked, received) ? booked.getUom() : UomType.PC;
 	}
 
-	private BigDecimal getVolumeDiscountedPrice(SoldDetail booked, OrderDetail received, BigDecimal qty)
+	private BigDecimal getVolumeDiscountedPrice(SoldOrderDetail booked, OrderDetail received, BigDecimal qty)
 			throws Exception {
 		BigDecimal unitPrice = computeDiscountedPrice(qty);
 		return areUomsEqual(booked, received) ? unitPrice.multiply(getQtyPerUom(booked.getUom())) : unitPrice;
 	}
 
-	private BigDecimal netQty(SoldDetail booked, OrderDetail received) {
+	private BigDecimal netQty(SoldOrderDetail booked, OrderDetail received) {
 		BigDecimal bookedQty = booked.getQty().multiply(getQtyPerUom(booked.getUom()));
 		BigDecimal receivedQty = received.getQty().multiply(getQtyPerUom(received.getUom()));
 		return bookedQty.subtract(receivedQty);
@@ -197,7 +198,7 @@ public abstract class BookedService<T extends AbstractBookedOrder<PK>, PK> exten
 
 	private void netReturnedItems(long id) throws Exception {
 		try {
-			netReturnedItems(receivingService.find(id));
+			netReturnedItems(receivingService.findByBooking(id));
 		} catch (Exception e) {
 			if (!(e instanceof NotFoundException))
 				throw e;
@@ -205,16 +206,16 @@ public abstract class BookedService<T extends AbstractBookedOrder<PK>, PK> exten
 	}
 
 	private void netReturnedItems(Receiving receiving) throws Exception {
-		Iterator<SoldDetail> it = getDetails().iterator();
-		List<SoldDetail> list = new ArrayList<>(getDetails());
+		Iterator<SoldOrderDetail> it = getDetails().iterator();
+		List<SoldOrderDetail> list = new ArrayList<>(getDetails());
 		int i = 0, j = 0;
 		while (it.hasNext()) {
 			for (OrderDetail rd : receiving.getDetails()) {
-				SoldDetail bd = getDetails().get(j++);
+				SoldOrderDetail bd = getDetails().get(j++);
 				if (rd.getItem().equals(bd.getItem())) {
 					setItem(bd.getItem());
 					setLatestPrice(getItem());
-					SoldDetail sd = getNettedDetail(bd, rd);
+					SoldOrderDetail sd = getNettedDetail(bd, rd);
 					if (sd == null)
 						list.remove(i);
 					else

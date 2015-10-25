@@ -19,21 +19,45 @@ import javafx.scene.input.KeyEvent;
 @Component
 @Scope("prototype")
 @SuppressWarnings("restriction")
-public class AppCombo<T> extends ComboBox<T> {
+public class AppCombo<T> extends ComboBox<T> implements InputControl<T> {
 
 	public AppCombo() {
 		traversePressedEnterKey();
 		itemsProperty().addListener(o -> selectFirstAndDisableFocusTranversingIfSelectionIsOne());
+		setMinWidth(120);
 	}
 
-	private void selectFirstAndDisableFocusTranversingIfSelectionIsOne() {
-		select(0);
-		if (size() == 1)
-			focusTraversableProperty().set(false);
+	@Override
+	public void clear() {
+		getSelectionModel().clearSelection();
 	}
 
-	public AppCombo<T> items(T[] items) {
-		return items(Arrays.asList(items));
+	public void disableIf(BooleanBinding b) {
+		disableProperty().bind(b);
+	}
+
+	public void empty() {
+		getItems().clear();
+	}
+
+	public BooleanBinding is(T item) {
+		return getSelectionModel().selectedItemProperty().isEqualTo(item);
+	}
+
+	public ObservableBooleanValue isDisabledNow() {
+		return disabledProperty();
+	}
+
+	public BooleanBinding isEmpty() {
+		return getSelectionModel().selectedItemProperty().isNull();
+	}
+
+	public BooleanBinding isNot(T item) {
+		return is(item).not();
+	}
+
+	public BooleanBinding isNotEmpty() {
+		return isEmpty().not();
 	}
 
 	public AppCombo<T> items(List<T> items) {
@@ -41,9 +65,8 @@ public class AppCombo<T> extends ComboBox<T> {
 		return this;
 	}
 
-	public AppCombo<T> width(int width) {
-		setMinWidth(width);
-		return this;
+	public AppCombo<T> items(T[] items) {
+		return items(Arrays.asList(items));
 	}
 
 	public AppCombo<T> readOnlyOfWidth(int width) {
@@ -52,48 +75,27 @@ public class AppCombo<T> extends ComboBox<T> {
 		return this;
 	}
 
-	public void clear() {
-		getSelectionModel().clearSelection();
-	}
-
-	public void empty() {
-		getItems().clear();
-	}
-
-	public int size() {
-		return getItems().size();
+	public void select(int index) {
+		getSelectionModel().select(index);
 	}
 
 	public void select(T selection) {
 		getSelectionModel().select(selection);
 	}
 
-	public void select(int index) {
-		getSelectionModel().select(index);
+	public int size() {
+		return getItems().size();
 	}
 
-	public BooleanBinding isEmpty() {
-		return getSelectionModel().selectedItemProperty().isNull();
+	public AppCombo<T> width(int width) {
+		setMinWidth(width);
+		return this;
 	}
 
-	public BooleanBinding isNotEmpty() {
-		return isEmpty().not();
-	}
-
-	public BooleanBinding is(T item) {
-		return getSelectionModel().selectedItemProperty().isEqualTo(item);
-	}
-
-	public BooleanBinding isNot(T item) {
-		return is(item).not();
-	}
-
-	public void disableIf(BooleanBinding b) {
-		disableProperty().bind(b);
-	}
-
-	public ObservableBooleanValue isDisabledNow() {
-		return disabledProperty();
+	private void selectFirstAndDisableFocusTranversingIfSelectionIsOne() {
+		select(0);
+		if (size() == 1)
+			focusTraversableProperty().set(false);
 	}
 
 	@SuppressWarnings("unchecked")

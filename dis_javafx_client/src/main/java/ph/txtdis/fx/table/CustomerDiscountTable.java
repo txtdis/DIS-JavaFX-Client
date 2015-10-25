@@ -15,34 +15,34 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
-import ph.txtdis.dto.CustomerDiscount;
+import ph.txtdis.dto.Discount;
 import ph.txtdis.dto.ItemFamily;
 import ph.txtdis.fx.dialog.CustomerDiscountDialog;
 
 @Lazy
 @Component("customerDiscountTable")
-public class CustomerDiscountTable extends AppTable<CustomerDiscount> {
+public class CustomerDiscountTable extends AppTable<Discount> {
 
 	@Autowired
-	private AppendableTableProperty<CustomerDiscount> append;
+	private AppendContextMenu<Discount> append;
 
 	@Autowired
-	private Column<CustomerDiscount, Integer> level;
+	private Column<Discount, Integer> level;
 
 	@Autowired
-	private Column<CustomerDiscount, BigDecimal> percent;
+	private Column<Discount, BigDecimal> percent;
 
 	@Autowired
-	private Column<CustomerDiscount, ItemFamily> familyLimit;
+	private Column<Discount, ItemFamily> familyLimit;
 
 	@Autowired
-	private Column<CustomerDiscount, LocalDate> startDate;
+	private Column<Discount, LocalDate> startDate;
 
 	@Autowired
-	private Column<CustomerDiscount, String> givenBy;
+	private Column<Discount, String> givenBy;
 
 	@Autowired
-	private Column<CustomerDiscount, ZonedDateTime> givenOn;
+	private Column<Discount, ZonedDateTime> givenOn;
 
 	@Autowired
 	private CustomerDiscountDialog dialog;
@@ -60,6 +60,6 @@ public class CustomerDiscountTable extends AppTable<CustomerDiscount> {
 
 	@Override
 	protected void addProperties() {
-		append.addProperties(this, dialog);
+		append.addMenu(this, dialog);
 	}
 }

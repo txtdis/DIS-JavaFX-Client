@@ -11,7 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
-import ph.txtdis.dto.CustomerDiscount;
+import ph.txtdis.dto.Discount;
 import ph.txtdis.dto.ItemFamily;
 import ph.txtdis.fx.control.InputNode;
 import ph.txtdis.fx.control.LabeledCombo;
@@ -21,7 +21,7 @@ import ph.txtdis.service.CustomerService;
 
 @Lazy
 @Component("customerDiscountDialog")
-public class CustomerDiscountDialog extends FieldDialog<CustomerDiscount> {
+public class CustomerDiscountDialog extends FieldDialog<Discount> {
 
 	@Autowired
 	private CustomerService service;
@@ -38,7 +38,7 @@ public class CustomerDiscountDialog extends FieldDialog<CustomerDiscount> {
 	@Autowired
 	private LabeledDatePicker startDatePicker;
 
-	private CustomerDiscount discount;
+	private Discount discount;
 
 	private void createDiscountUponValidation() {
 		try {
@@ -74,7 +74,7 @@ public class CustomerDiscountDialog extends FieldDialog<CustomerDiscount> {
 	}
 
 	@Override
-	protected CustomerDiscount createEntity() {
+	protected Discount createEntity() {
 		return discount;
 	}
 

@@ -10,13 +10,13 @@ import ph.txtdis.type.VolumeDiscountType;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class VolumeDiscount extends AbstractTrackedId<Long>implements Comparable<VolumeDiscount> {
+public class VolumeDiscount extends AbstractTrackedId<Long> implements Comparable<VolumeDiscount> {
 
 	private VolumeDiscountType type;
 
 	private UomType uom;
 
-	private int cutOff;
+	private int cutoff;
 
 	private BigDecimal discount;
 

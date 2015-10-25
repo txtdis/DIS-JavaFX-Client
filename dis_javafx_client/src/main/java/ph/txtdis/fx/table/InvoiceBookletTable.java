@@ -22,7 +22,7 @@ import ph.txtdis.fx.dialog.InvoiceBookletDialog;
 public class InvoiceBookletTable extends AppTable<InvoiceBooklet> {
 
 	@Autowired
-	private AppendableTableProperty<InvoiceBooklet> append;
+	private AppendContextMenu<InvoiceBooklet> append;
 
 	@Autowired
 	private Column<InvoiceBooklet, String> prefix;
@@ -61,6 +61,6 @@ public class InvoiceBookletTable extends AppTable<InvoiceBooklet> {
 
 	@Override
 	protected void addProperties() {
-		append.addProperties(this, dialog);
+		append.addMenu(this, dialog);
 	}
 }

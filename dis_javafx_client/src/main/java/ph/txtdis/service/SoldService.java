@@ -15,13 +15,15 @@ import java.util.stream.Stream;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
+import static java.math.BigDecimal.ONE;
+import static java.math.BigDecimal.ZERO;
+
 import lombok.NoArgsConstructor;
 import ph.txtdis.dto.AbstractSoldOrder;
 import ph.txtdis.dto.Audited;
 import ph.txtdis.dto.Channel;
 import ph.txtdis.dto.CreditDetail;
 import ph.txtdis.dto.Customer;
-import ph.txtdis.dto.CustomerDiscount;
 import ph.txtdis.dto.Discount;
 import ph.txtdis.dto.Item;
 import ph.txtdis.dto.ItemFamily;
@@ -29,14 +31,13 @@ import ph.txtdis.dto.Keyed;
 import ph.txtdis.dto.Price;
 import ph.txtdis.dto.PricingType;
 import ph.txtdis.dto.QtyPerUom;
-import ph.txtdis.dto.SoldDetail;
+import ph.txtdis.dto.SoldOrderDetail;
 import ph.txtdis.dto.VolumeDiscount;
 import ph.txtdis.exception.DateInTheFutureException;
 import ph.txtdis.exception.DifferentDiscountException;
 import ph.txtdis.exception.DuplicateException;
 import ph.txtdis.exception.NotAnItemToBeSoldToCustomerException;
 import ph.txtdis.exception.NotFoundException;
-import ph.txtdis.info.SuccessfulSaveInfo;
 import ph.txtdis.type.QualityType;
 import ph.txtdis.type.UomType;
 import ph.txtdis.type.VolumeDiscountType;
@@ -45,7 +46,7 @@ import ph.txtdis.util.Util;
 
 @NoArgsConstructor
 public abstract class SoldService<T extends AbstractSoldOrder<PK>, PK>
-		implements Audited, Serviced<T, PK>, SpunById<PK>
+		implements Audited, Reset, Serviced<T, PK>, SpunById<PK>
 {
 
 	@Autowired
@@ -90,8 +91,8 @@ public abstract class SoldService<T extends AbstractSoldOrder<PK>, PK>
 			throw new DuplicateException("ID No. " + id);
 	}
 
-	public SoldDetail createDetail(UomType uom, BigDecimal qty, QualityType quality) {
-		SoldDetail sd = new SoldDetail();
+	public SoldOrderDetail createDetail(UomType uom, BigDecimal qty, QualityType quality) {
+		SoldOrderDetail sd = new SoldOrderDetail();
 		sd.setItem(item);
 		sd.setUom(uom);
 		sd.setQty(qty);
@@ -141,7 +142,7 @@ public abstract class SoldService<T extends AbstractSoldOrder<PK>, PK>
 		return getCustomer() == null ? null : getCustomer().getName();
 	}
 
-	public List<SoldDetail> getDetails() {
+	public List<SoldOrderDetail> getDetails() {
 		if (get().getDetails() == null)
 			setDetails(Collections.emptyList());
 		return get().getDetails();
@@ -176,6 +177,11 @@ public abstract class SoldService<T extends AbstractSoldOrder<PK>, PK>
 
 	public String getItemDescription() {
 		return item == null ? null : item.getDescription();
+	}
+
+	@Override
+	public SavingService<T> getSavingService() {
+		return savingService;
 	}
 
 	public List<UomType> getSellingUoms() throws Exception {
@@ -222,19 +228,13 @@ public abstract class SoldService<T extends AbstractSoldOrder<PK>, PK>
 	}
 
 	@Override
-	public void save() throws Exception, SuccessfulSaveInfo {
-		set(savingService.module(getModule()).save(entity));
-		throw new SuccessfulSaveInfo(get());
-	}
-
-	@Override
 	@SuppressWarnings("unchecked")
 	public void set(Keyed<PK> entity) {
 		if (entity != null)
 			this.entity = (T) entity;
 	}
 
-	public void setDetails(List<SoldDetail> details) {
+	public void setDetails(List<SoldOrderDetail> details) {
 		get().setDetails(details);
 	}
 
@@ -248,27 +248,27 @@ public abstract class SoldService<T extends AbstractSoldOrder<PK>, PK>
 			return;
 		if (date.isAfter(LocalDate.now()))
 			throw new DateInTheFutureException();
-		get().setOrderDate(date);
+		setOrderDateAfterReset(date);
 	}
 
 	private boolean areChannelLimitsEqual(VolumeDiscount vd) {
 		return Util.areEqual(vd.getChannelLimit(), getCustomer().getChannel());
 	}
 
-	private int compareVolumeDiscountChannelLimits(VolumeDiscount a, VolumeDiscount b) {
-		Channel aChannel = a.getChannelLimit();
-		Channel bChannel = b.getChannelLimit();
-		if (aChannel == null)
-			return bChannel == null ? 0 : 1;
-		return bChannel == null ? -1 : aChannel.compareTo(bChannel);
-	}
-
-	private Comparator<VolumeDiscount> compareVolumeDiscountOfSetTypeChannelLimits() {
+	private Comparator<VolumeDiscount> compareSetTypeVolumeDiscountChannelLimits() {
 		return (a, b) -> compareVolumeDiscountChannelLimits(a, b);
 	}
 
-	private Comparator<VolumeDiscount> compareVolumeDiscountOfTierTypeChannelLimitsThenReverseCutOff() {
+	private Comparator<VolumeDiscount> compareTierTypeVolumeDiscountChannelLimitsThenReverseCutOff() {
 		return (a, b) -> reverseCompareCutOffsWhenChannelLimitsAreEqual(a, b);
+	}
+
+	private int compareVolumeDiscountChannelLimits(VolumeDiscount a, VolumeDiscount b) {
+		Channel c1 = a.getChannelLimit();
+		Channel c2 = b.getChannelLimit();
+		if (c1 == null)
+			return c2 == null ? 0 : 1;
+		return c2 == null ? -1 : c1.compareTo(c2);
 	}
 
 	private BigDecimal computeUnitPrice(UomType uom, BigDecimal qty) {
@@ -293,6 +293,7 @@ public abstract class SoldService<T extends AbstractSoldOrder<PK>, PK>
 		try {
 			setLatestPrice(item);
 		} catch (Exception e) {
+			e.printStackTrace();
 			throw new NotAnItemToBeSoldToCustomerException(item, getCustomer());
 		}
 	}
@@ -302,7 +303,7 @@ public abstract class SoldService<T extends AbstractSoldOrder<PK>, PK>
 			throw new DuplicateException(item.getName());
 	}
 
-	private Discount createDiscount(CustomerDiscount cd) {
+	private Discount createDiscount(Discount cd) {
 		Discount discount = new Discount();
 		discount.setLevel(cd.getLevel());
 		discount.setPercent(cd.getPercent());
@@ -318,9 +319,9 @@ public abstract class SoldService<T extends AbstractSoldOrder<PK>, PK>
 	}
 
 	private BigDecimal getCutOff(VolumeDiscount vd) {
-		BigDecimal cutOff = new BigDecimal(vd.getCutOff());
+		BigDecimal cutoff = new BigDecimal(vd.getCutoff());
 		BigDecimal qtyPerUom = getQtyPerUom(vd.getUom());
-		return cutOff.multiply(qtyPerUom);
+		return cutoff.multiply(qtyPerUom);
 	}
 
 	private List<Discount> getDiscounts() {
@@ -356,7 +357,7 @@ public abstract class SoldService<T extends AbstractSoldOrder<PK>, PK>
 		}
 	}
 
-	private Stream<CustomerDiscount> getLatestCustomerDiscountStream() {
+	private Stream<Discount> getLatestCustomerDiscountStream() {
 		try {
 			return getCustomer().getDiscounts().stream().filter(cd -> cd.getStartDate().compareTo(getOrderDate()) <= 0);
 		} catch (Exception e) {
@@ -370,7 +371,7 @@ public abstract class SoldService<T extends AbstractSoldOrder<PK>, PK>
 				.map(cd -> createDiscount(cd)).collect(Collectors.toList());
 	}
 
-	private Stream<CustomerDiscount> getLatestFamilyFilteredCustomerDiscountStream(ItemFamily family) {
+	private Stream<Discount> getLatestFamilyFilteredCustomerDiscountStream(ItemFamily family) {
 		return getLatestCustomerDiscountStream().filter(cd -> Util.areEqual(cd.getFamilyLimit(), family));
 	}
 
@@ -390,8 +391,7 @@ public abstract class SoldService<T extends AbstractSoldOrder<PK>, PK>
 
 	private LocalDate getStartDateOfLatestDiscount(ItemFamily family) {
 		try {
-			return getLatestFamilyFilteredCustomerDiscountStream(family).max(CustomerDiscount::compareTo).get()
-					.getStartDate();
+			return getLatestFamilyFilteredCustomerDiscountStream(family).max(Discount::compareTo).get().getStartDate();
 		} catch (Exception e) {
 			return null;
 		}
@@ -403,13 +403,13 @@ public abstract class SoldService<T extends AbstractSoldOrder<PK>, PK>
 
 	private BigDecimal getVatDivisor() throws Exception {
 		if (vatDivisor == null)
-			setVatDivisor(BigDecimal.ONE.add(vatService.vatRate()));
+			setVatDivisor(ONE.add(vatService.vatRate()));
 		return vatDivisor;
 	}
 
 	private BigDecimal getVolumeDiscountOfSetTypePrice(BigDecimal qty) {
-		BigDecimal discount = BigDecimal.ZERO;
-		volumeDiscounts.sort(compareVolumeDiscountOfSetTypeChannelLimits());
+		BigDecimal discount = ZERO;
+		volumeDiscounts.sort(compareSetTypeVolumeDiscountChannelLimits());
 		for (VolumeDiscount vd : volumeDiscounts)
 			if (areChannelLimitsEqual(vd) || isAnAllChannelVolumeDiscount(vd)) {
 				BigDecimal discountSet = qty.divideToIntegralValue(getCutOff(vd));
@@ -422,7 +422,7 @@ public abstract class SoldService<T extends AbstractSoldOrder<PK>, PK>
 
 	private BigDecimal getVolumeDiscountOfTierTypePrice(BigDecimal qty) {
 		BigDecimal unitDiscount = BigDecimal.ZERO;
-		volumeDiscounts.sort(compareVolumeDiscountOfTierTypeChannelLimitsThenReverseCutOff());
+		volumeDiscounts.sort(compareTierTypeVolumeDiscountChannelLimitsThenReverseCutOff());
 		for (VolumeDiscount vd : volumeDiscounts)
 			if (getCutOff(vd).compareTo(qty) <= 0 && (areChannelLimitsEqual(vd) || isAnAllChannelVolumeDiscount(vd))) {
 				unitDiscount = vd.getDiscount().divide(getQtyPerUom(vd.getUom()), 8, RoundingMode.HALF_EVEN);
@@ -441,7 +441,7 @@ public abstract class SoldService<T extends AbstractSoldOrder<PK>, PK>
 
 	private int reverseCompareCutOffsWhenChannelLimitsAreEqual(VolumeDiscount a, VolumeDiscount b) {
 		int comp = compareVolumeDiscountChannelLimits(a, b);
-		return comp != 0 ? comp : Integer.valueOf(b.getCutOff()).compareTo(Integer.valueOf(a.getCutOff()));
+		return comp != 0 ? comp : Integer.valueOf(b.getCutoff()).compareTo(Integer.valueOf(a.getCutoff()));
 	}
 
 	private void setVolumeDiscounts() {
@@ -477,8 +477,13 @@ public abstract class SoldService<T extends AbstractSoldOrder<PK>, PK>
 		return item;
 	}
 
+	protected void setOrderDateAfterReset(LocalDate date) {
+		reset();
+		get().setOrderDate(date);
+	}
+
 	BigDecimal computeDiscountedPrice(BigDecimal qty) {
-		if (item.getVolumeDiscounts() == null)
+		if (item.getLatestVolumeDiscount(getOrderDate()) == null)
 			return unitPrice;
 		setVolumeDiscounts();
 		if (volumeDiscounts.get(0).getType() == VolumeDiscountType.TIER)
