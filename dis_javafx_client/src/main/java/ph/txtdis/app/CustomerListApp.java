@@ -23,12 +23,12 @@ public class CustomerListApp extends AbstractExcelApp<CustomerListTable, Custome
 	}
 
 	@Override
-	protected String headerText() {
+	protected String getHeaderText() {
 		return "Customer List";
 	}
 
 	@Override
-	protected String titleText() {
-		return headerText();
+	protected String getTitleText() {
+		return getHeaderText();
 	}
 }

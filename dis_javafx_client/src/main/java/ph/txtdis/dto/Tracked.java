@@ -2,7 +2,7 @@ package ph.txtdis.dto;
 
 import java.time.ZonedDateTime;
 
-public interface Audited {
+public interface Tracked {
 
 	String getCreatedBy();
 

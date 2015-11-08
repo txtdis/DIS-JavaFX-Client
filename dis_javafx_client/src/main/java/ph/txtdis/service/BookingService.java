@@ -7,15 +7,15 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import ph.txtdis.dto.Booking;
+import ph.txtdis.dto.Billable;
 import ph.txtdis.dto.Customer;
 import ph.txtdis.dto.CustomerReceivable;
 import ph.txtdis.exception.BadCreditException;
 import ph.txtdis.exception.DateInThePastException;
-import ph.txtdis.util.Numeric;
+import ph.txtdis.util.NumberUtils;
 
 @Service("bookingService")
-public class BookingService extends SoldService<Booking, Long> implements AlternateNamed, Reset {
+public class BookingService extends SoldService<Billable, Long> {
 
 	private static final String A_DAY_OVER = "1";
 
@@ -41,13 +41,19 @@ public class BookingService extends SoldService<Booking, Long> implements Altern
 		return "booking";
 	}
 
-	public List<Booking> listByPickDate(LocalDate d) throws Exception {
-		return readOnlyService.module(getModule()).getList("/pick?date=" + d);
+	@Override
+	public String getRemarks() {
+		return null;
+	}
+
+	public List<Billable> listByPickDate(LocalDate d) throws Exception {
+		return getReadOnlyService().module(getModule()).getList("/pick?date=" + d);
 	}
 
 	@Override
 	public void reset() {
-		set(new Booking());
+		super.reset();
+		set(new Billable());
 	}
 
 	@Override
@@ -59,10 +65,29 @@ public class BookingService extends SoldService<Booking, Long> implements Altern
 		setOrderDateAfterReset(d);
 	}
 
+	@Override
+	public void setRemarks(String s) {
+		get().setRemarks(s);
+	}
+
+	@Override
+	public void updatePerValidity(Boolean b) {
+		// TODO Auto-generated method stub
+	}
+
 	public void updateUponCustomerIdValidation(Long id) throws Exception {
 		Customer c = customerService.find(id.toString());
 		verifyCustomerHasNoOverdues(c);
-		setCustomerAfterReset(c);
+		setCustomerAndDatesAfterReset(c);
+	}
+
+	private LocalDate dueDate() {
+		try {
+			int term = getCredit().getTermInDays();
+			return getOrderDate().plusDays(term);
+		} catch (Exception e) {
+			return null;
+		}
 	}
 
 	private BigDecimal overdueValue(Customer c) throws Exception {
@@ -72,15 +97,16 @@ public class BookingService extends SoldService<Booking, Long> implements Altern
 		return list.stream().map(r -> r.getUnpaidValue()).reduce(BigDecimal.ZERO, (a, b) -> a.add(b));
 	}
 
-	private void setCustomerAfterReset(Customer c) {
+	private void setCustomerAndDatesAfterReset(Customer c) {
 		LocalDate d = getOrderDate();
 		setOrderDateAfterReset(d);
-		get().setCustomer(c);
+		setCustomer(c);
+		get().setDueDate(dueDate());
 	}
 
 	private void verifyCustomerHasNoOverdues(Customer c) throws Exception {
 		BigDecimal o = overdueValue(c);
-		if (Numeric.isPositive(o))
+		if (NumberUtils.isPositive(o))
 			throw new BadCreditException(c, o);
 	}
 }

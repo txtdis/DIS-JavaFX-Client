@@ -8,5 +8,5 @@ public interface Launchable {
 
 	void start();
 
-	void tryOpening(String... id);
+	void launch(String... id);
 }

@@ -67,7 +67,7 @@ public abstract class AppTable<S> extends TableView<S> implements Tabular {
 	}
 
 	public void setOnItemChange(InvalidationListener listener) {
-		getItems().addListener(listener);
+		itemsProperty().addListener(listener);
 	}
 
 	private double width() {

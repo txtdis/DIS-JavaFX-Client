@@ -13,7 +13,7 @@ public class RemittanceSettlementAdjustment extends AbstractTrackedId<Long> {
 
 	private Truck truck;
 
-	private Invoice invoice;
+	private Billable billable;
 
 	private String actionTaken;
 }

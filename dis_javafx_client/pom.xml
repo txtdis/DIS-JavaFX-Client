@@ -26,7 +26,7 @@
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<spring.version>4.2.2.RELEASE</spring.version>
 		<spring-data-releasetrain.version>Gosling-RELEASE</spring-data-releasetrain.version>
-		<spring-security.version>4.0.2.RELEASE</spring-security.version>
+		<spring-security.version>4.0.3.RELEASE</spring-security.version>
 		<jackson.version>2.6.3</jackson.version>
 		<javassist.version>3.20.0-GA</javassist.version>
 		<httpclient.version>4.5.1</httpclient.version>
@@ -72,7 +72,7 @@
 		<dependency>
 			<groupId>com.googlecode.libphonenumber</groupId>
 			<artifactId>libphonenumber</artifactId>
-			<version>7.1.0</version>
+			<version>7.1.1</version>
 		</dependency>
 		<dependency>
 			<groupId>org.atteo</groupId>
@@ -85,6 +85,7 @@
 			<version>3.13</version>
 		</dependency>
 	</dependencies>
+	
 	<build>
 		<finalName>${project.name}</finalName>
 		<plugins>

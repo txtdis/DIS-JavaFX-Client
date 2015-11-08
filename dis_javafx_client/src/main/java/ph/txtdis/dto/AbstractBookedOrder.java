@@ -10,9 +10,9 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 public abstract class AbstractBookedOrder<PK> extends AbstractSoldOrder<PK> {
 
-	private Booking booking;
+	private Long bookingId;
 
-	private List<RemittancePayment> payments;
+	private List<String> payments;
 
 	private BigDecimal unpaidValue;
 }

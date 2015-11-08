@@ -16,8 +16,6 @@ import javafx.scene.Node;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import ph.txtdis.dto.PickList;
-import ph.txtdis.dto.Truck;
-import ph.txtdis.dto.User;
 import ph.txtdis.fx.control.AppButton;
 import ph.txtdis.fx.control.AppCombo;
 import ph.txtdis.fx.control.AppField;
@@ -35,16 +33,16 @@ public class PickListApp extends AbstractIdApp<PickList, PickListService, Long, 
 	private AppButton printButton;
 
 	@Autowired
-	private AppCombo<Truck> truckCombo;
+	private AppCombo<String> truckCombo;
 
 	@Autowired
-	private AppCombo<User> driverCombo;
+	private AppCombo<String> driverCombo;
 
 	@Autowired
-	private AppCombo<User> leadHelperCombo;
+	private AppCombo<String> leadHelperCombo;
 
 	@Autowired
-	private AppCombo<User> asstHelperCombo;
+	private AppCombo<String> asstHelperCombo;
 
 	@Autowired
 	private AppField<String> remarksInput;
@@ -86,13 +84,13 @@ public class PickListApp extends AbstractIdApp<PickList, PickListService, Long, 
 		pickDatePicker.requestFocus();
 	}
 
-	private AppCombo<User> asstHelperCombo() throws Exception {
+	private AppCombo<String> asstHelperCombo() throws Exception {
 		asstHelperCombo.items(service.listHelpers());
 		asstHelperCombo.clear();
 		return asstHelperCombo;
 	}
 
-	private AppCombo<User> driverCombo() throws Exception {
+	private AppCombo<String> driverCombo() throws Exception {
 		driverCombo.items(service.listDrivers());
 		driverCombo.clear();
 		return driverCombo;
@@ -114,7 +112,7 @@ public class PickListApp extends AbstractIdApp<PickList, PickListService, Long, 
 		gridPane.add(remarksInput.build(TEXT), 1, 1, 10, 1);
 	}
 
-	private AppCombo<User> leadHelperCombo() throws Exception {
+	private AppCombo<String> leadHelperCombo() throws Exception {
 		leadHelperCombo.items(service.listHelpers());
 		leadHelperCombo.clear();
 		return leadHelperCombo;
@@ -159,7 +157,7 @@ public class PickListApp extends AbstractIdApp<PickList, PickListService, Long, 
 			service.get().setRemarks(s);
 	}
 
-	private AppCombo<Truck> truckCombo() throws Exception {
+	private AppCombo<String> truckCombo() throws Exception {
 		truckCombo.items(service.listTrucks());
 		truckCombo.clear();
 		return truckCombo;
@@ -241,7 +239,7 @@ public class PickListApp extends AbstractIdApp<PickList, PickListService, Long, 
 		} catch (Exception e) {
 			showErrorDialog(e);
 		}
-		return Arrays.asList(gridPane, box.hpane(table.build()));
+		return Arrays.asList(gridPane, box.forHorizontalPane(table.build()));
 	}
 
 	@Override
@@ -253,11 +251,7 @@ public class PickListApp extends AbstractIdApp<PickList, PickListService, Long, 
 		leadHelperCombo.setOnAction(e -> validateLeadHelper());
 		asstHelperCombo.setOnAction(e -> validateAsstHelper());
 		remarksInput.setOnAction(e -> setRemarks());
-	}
-
-	@Override
-	protected void setOnButtonClickAction() {
-		super.setOnButtonClickAction();
 		printButton.setOnAction(e -> print());
+		super.setListeners();
 	}
 }

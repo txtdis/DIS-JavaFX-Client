@@ -164,23 +164,18 @@ public class CustomerApp extends AbstractIdApp<Customer, CustomerService, Long, 
 
 	@Override
 	protected List<AppButton> addButtons() {
-		List<AppButton> list = new ArrayList<>(super.addButtons());
-		list.addAll(Arrays.asList(searchButton, deactivateButton));
-		return list;
+		List<AppButton> l = super.addButtons();
+		List<AppButton> al = new ArrayList<>(l);
+		al.addAll(Arrays.asList(searchButton.icon("search").tooltip("Search...").build(),
+				deactivateButton.icon("deactivate").tooltip("Next...").build()));
+		return al;
 	}
 
 	@Override
 	protected HBox auditPane() {
-		HBox hbox = super.auditPane();
-		hbox.getChildren().addAll(deactivationNodes());
-		return hbox;
-	}
-
-	@Override
-	protected void createButtons() {
-		searchButton.icon("search").tooltip("Search...").build();
-		deactivateButton.icon("deactivate").tooltip("Next...").build();
-		super.createButtons();
+		HBox b = super.auditPane();
+		b.getChildren().addAll(deactivationNodes());
+		return b;
 	}
 
 	@Override
@@ -189,9 +184,9 @@ public class CustomerApp extends AbstractIdApp<Customer, CustomerService, Long, 
 	}
 
 	@Override
-	protected void setOnButtonClickAction() {
+	protected void setListeners() {
 		searchButton.setOnAction(e -> openSearchDialog());
 		deactivateButton.setOnAction(e -> deactivate());
-		super.setOnButtonClickAction();
+		super.setListeners();
 	}
 }

@@ -1,5 +1,8 @@
 package ph.txtdis.service;
 
+import static ph.txtdis.util.DateTimeUtils.toTimestampText;
+import static ph.txtdis.util.DateTimeUtils.toTimestampFilename;
+
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -12,10 +15,9 @@ import ph.txtdis.dto.AgingReceivable;
 import ph.txtdis.dto.AgingReceivableReport;
 import ph.txtdis.excel.ExcelWriter;
 import ph.txtdis.excel.Tabular;
-import ph.txtdis.util.Temporal;
 
-@Service
-public class AgingReceivableService implements Spreadsheet<AgingReceivable>, Totaled {
+@Service("agingReceivableService")
+public class AgingReceivableService implements Spreadsheet<AgingReceivable>, TotaledTable {
 
 	@Autowired
 	private ExcelWriter excel;
@@ -36,12 +38,12 @@ public class AgingReceivableService implements Spreadsheet<AgingReceivable>, Tot
 	}
 
 	@Override
-	public String getSubheaderText() {
-		return "A/R as of " + Temporal.format(getTimestamp());
+	public String getSubhead() {
+		return "A/R as of " + toTimestampText(getTimestamp());
 	}
 
 	public ZonedDateTime getTimestamp() {
-		return report == null ? null : report.getTimestamp();
+		return report.getTimestamp();
 	}
 
 	@Override
@@ -71,6 +73,6 @@ public class AgingReceivableService implements Spreadsheet<AgingReceivable>, Tot
 	}
 
 	private String getExcelSheetName() {
-		return Temporal.toFilename(getTimestamp());
+		return toTimestampFilename(getTimestamp());
 	}
 }

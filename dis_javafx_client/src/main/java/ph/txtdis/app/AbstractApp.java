@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
+import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.geometry.Rectangle2D;
@@ -42,6 +43,8 @@ public abstract class AbstractApp extends Stage implements Startable {
 
 	private Label header;
 
+	private TilePane buttons;
+
 	@Override
 	public AbstractApp addParent(Stage stage) {
 		if (getOwner() == null)
@@ -62,21 +65,13 @@ public abstract class AbstractApp extends Stage implements Startable {
 		show();
 	}
 
-	private TilePane buttonPane() {
-		TilePane tile = new TilePane();
-		tile.getChildren().addAll(addButtons());
-		tile.setHgap(5);
-		tile.setAlignment(Pos.TOP_RIGHT);
-		return tile;
-	}
-
 	private Label header() {
-		return header = label.header(headerText());
+		return header = label.header(getHeaderText());
 	}
 
 	private HBox headerPane() {
-		TilePane buttons = buttonPane();
-		HBox hBox = new HBox(header(), buttons);
+		setButtonPane();
+		HBox hBox = box.forHorizontals(header(), buttons);
 		HBox.setHgrow(buttons, Priority.ALWAYS);
 		hBox.setPadding(new Insets(10, 10, 0, 10));
 		return hBox;
@@ -103,14 +98,25 @@ public abstract class AbstractApp extends Stage implements Startable {
 		setMaxWidth(bounds.getWidth());
 	}
 
+	private void setButtonPane() {
+		buttons = new TilePane();
+		buttons.getChildren().addAll(addButtons());
+		buttons.setHgap(5);
+		buttons.setAlignment(Pos.TOP_RIGHT);
+	}
+
 	protected List<AppButton> addButtons() {
 		return new ArrayList<>();
 	}
 
-	protected abstract String headerText();
+	protected ObservableList<Node> buttons() {
+		return buttons.getChildren();
+	}
+
+	protected abstract String getHeaderText();
 
 	protected VBox mainVerticalPane() {
-		VBox vbox = box.vbox(headerPane());
+		VBox vbox = box.forVerticals(headerPane());
 		vbox.getChildren().addAll(mainVerticalPaneNodes());
 		return vbox;
 	}
@@ -124,15 +130,15 @@ public abstract class AbstractApp extends Stage implements Startable {
 		setBounds();
 	}
 
-	protected abstract String titleText();
+	protected abstract String getTitleText();
 
 	protected String unicode() {
 		return typeMap.icon(this);
 	}
 
 	protected void updateTitleAndHeader() {
-		setTitle(titleText());
+		setTitle(getTitleText());
 		if (header != null)
-			header.setText(headerText());
+			header.setText(getHeaderText());
 	}
 }

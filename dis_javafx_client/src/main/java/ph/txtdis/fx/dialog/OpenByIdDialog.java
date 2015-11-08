@@ -12,13 +12,11 @@ import org.springframework.stereotype.Component;
 
 import javafx.scene.Node;
 import javafx.scene.control.Button;
-import ph.txtdis.app.Startable;
 import ph.txtdis.fx.control.AppButton;
 import ph.txtdis.fx.control.AppField;
 import ph.txtdis.fx.control.LabelFactory;
 import ph.txtdis.fx.pane.AppGridPane;
 import ph.txtdis.type.Type;
-import ph.txtdis.util.Text;
 
 @Scope("prototype")
 @Component("openByIdDialog")
@@ -39,7 +37,7 @@ public class OpenByIdDialog<PK> extends InputDialog {
 	private PK id;
 
 	public String getId() {
-		return id.toString();
+		return id == null ? "" : id.toString();
 	}
 
 	@Override
@@ -60,18 +58,13 @@ public class OpenByIdDialog<PK> extends InputDialog {
 
 	private void setEnteredId() {
 		id = idField.getValue();
-		idField.clear();
+		idField.setValue(null);
 		close();
 	}
 
 	@Override
 	protected Button[] buttons() {
 		return new Button[] { openButton(), closeButton() };
-	}
-
-	@Override
-	protected String headerText() {
-		return "Open " + Text.toHeader((Startable) getOwner()) + " Data";
 	}
 
 	@Override

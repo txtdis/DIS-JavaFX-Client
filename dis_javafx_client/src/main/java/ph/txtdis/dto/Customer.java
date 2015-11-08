@@ -43,17 +43,34 @@ public class Customer extends AbstractTrackedId<Long> {
 		return street() + barangay() + city() + province();
 	}
 
+	public CreditDetail getCredit(LocalDate date) {
+		try {
+			return getCreditDetails().stream().filter(p -> !p.getStartDate().isAfter(date))
+					.max((a, b) -> a.getStartDate().compareTo(b.getStartDate())).get();
+		} catch (Exception e) {
+			return null;
+		}
+	}
+
 	public Route getRoute() {
 		return getRoute(LocalDate.now());
 	}
 
 	public Route getRoute(LocalDate date) {
-		return routeHistory == null || routeHistory.isEmpty() ? null : route(date);
+		try {
+			return getRouteHistory().stream().filter(p -> !p.getStartDate().isAfter(date))
+					.max((a, b) -> a.getStartDate().compareTo(b.getStartDate())).get().getRoute();
+		} catch (Exception e) {
+			return null;
+		}
 	}
 
 	public String getSeller(LocalDate date) {
-		Route route = getRoute(date);
-		return route == null ? null : route.getSeller(date);
+		try {
+			return getRoute(date).getSeller(date);
+		} catch (Exception e) {
+			return null;
+		}
 	}
 
 	@Override
@@ -77,11 +94,6 @@ public class Customer extends AbstractTrackedId<Long> {
 		if (province == null)
 			return "";
 		return (city != null || barangay != null || street != null ? ", " : "") + province;
-	}
-
-	private Route route(LocalDate date) {
-		return routeHistory.stream().filter(p -> p.getStartDate().compareTo(date) <= 0).max(Routing::compareTo).get()
-				.getRoute();
 	}
 
 	private String street() {

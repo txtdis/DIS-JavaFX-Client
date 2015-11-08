@@ -1,11 +1,12 @@
 package ph.txtdis;
 
-import java.util.Date;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 
 public class JavaTest {
 
 	public static void main(String[] args) {
-		Date date = new Date();
-		System.out.println(date);
+		LocalTime t = LocalTime.parse("1309", DateTimeFormatter.ofPattern("Hmm"));
+		System.out.println(t);
 	}
 }

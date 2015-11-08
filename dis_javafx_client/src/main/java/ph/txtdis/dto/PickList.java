@@ -11,21 +11,13 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 public class PickList extends AbstractTrackedId<Long> {
 
-	private Truck truck;
-
-	private User driver;
-
-	private User leadHelper;
-
-	private User asstHelper;
+	private String truck, driver, leadHelper, asstHelper, remarks, printedBy;
 
 	private LocalDate pickDate;
 
-	private String remarks;
-
-	private List<Booking> bookings;
-
-	private String printedBy;
+	private List<Billable> bookings;
 
 	private ZonedDateTime printedOn;
+
+	private Boolean printedAll;
 }

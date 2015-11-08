@@ -26,12 +26,7 @@ public class OpenByDateDialog extends InputDialog {
 
 	private LocalDate date;
 
-	private String headerText, criteria;
-
-	public OpenByDateDialog criteria(String criteria) {
-		this.criteria = criteria;
-		return this;
-	}
+	private String headerText, prompt;
 
 	public LocalDate getDate() {
 		return date;
@@ -39,6 +34,11 @@ public class OpenByDateDialog extends InputDialog {
 
 	public OpenByDateDialog header(String headerText) {
 		this.headerText = headerText;
+		return this;
+	}
+
+	public OpenByDateDialog prompt(String prompt) {
+		this.prompt = prompt;
 		return this;
 	}
 
@@ -54,7 +54,6 @@ public class OpenByDateDialog extends InputDialog {
 
 	private void onPick() {
 		date = datePicker.getValue();
-		datePicker.clear();
 		close();
 	}
 
@@ -70,10 +69,16 @@ public class OpenByDateDialog extends InputDialog {
 
 	@Override
 	protected List<Node> nodes() {
-		Label help = new Label(criteria);
+		Label help = new Label(prompt);
 		grid.getChildren().clear();
 		grid.add(help, 0, 0);
 		grid.add(datePicker(), 0, 1);
 		return Arrays.asList(header(), grid, buttonBox());
+	}
+
+	@Override
+	protected void setOnFiredCloseButton() {
+		date = null;
+		super.setOnFiredCloseButton();
 	}
 }

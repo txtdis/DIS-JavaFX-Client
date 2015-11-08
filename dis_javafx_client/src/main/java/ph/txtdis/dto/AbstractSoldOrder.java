@@ -1,5 +1,6 @@
 package ph.txtdis.dto;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -8,19 +9,21 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public abstract class AbstractSoldOrder<PK> extends AbstractAuditedId<PK> {
+public abstract class AbstractSoldOrder<PK> extends AbstractAuditedId<PK> implements Remarked<PK> {
 
-	private Customer customer;
+	private BigDecimal totalValue, grossValue;
 
-	private LocalDate orderDate;
+	private Long customerId;
 
-	private String remarks;
+	private List<BillableDetail> details;
 
-	private List<SoldOrderDetail> details;
+	private List<String> discounts;
 
-	private CreditDetail credit;
+	private List<Long> detailIds, discountIds;
 
-	private List<Discount> discounts;
+	private LocalDate dueDate, orderDate;
 
 	private Route route;
+
+	private String customerName, customerAddress, remarks;
 }

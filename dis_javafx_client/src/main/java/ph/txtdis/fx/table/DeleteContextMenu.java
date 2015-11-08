@@ -35,14 +35,14 @@ public final class DeleteContextMenu<S> {
 	}
 
 	private TableRow<S> createRow(TableView<S> table) {
-		// @formatter:off
+	// @formatter:off
         TableRow<S> row = new TableRow<>();
         row.contextMenuProperty().bind(Bindings
-                .when(row.itemProperty().isNotNull())
+                .when(row.itemProperty().isNotNull().or(table.contextMenuProperty().isNotNull()))
                 .then(createRowMenu(table, row))
                 .otherwise((ContextMenu) null));
         return row;
-        // @formatter:on
+    // @formatter:on
 	}
 
 	private ContextMenu createRowMenu(TableView<S> table, TableRow<S> row) {

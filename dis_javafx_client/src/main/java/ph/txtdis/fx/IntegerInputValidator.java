@@ -14,7 +14,7 @@ public class IntegerInputValidator implements ChangeListener<String> {
 
 	public IntegerInputValidator(AppField<?> input) {
 		this.input = input;
-		this.restrict = "[0-9-]";
+		this.restrict = "[0-9-()]";
 	}
 
 	@Override

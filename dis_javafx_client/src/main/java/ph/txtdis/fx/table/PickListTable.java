@@ -8,27 +8,27 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
-import ph.txtdis.dto.Booking;
+import ph.txtdis.dto.Billable;
 import ph.txtdis.dto.Route;
 
 @Lazy
 @Component("pickListTable")
-public class PickListTable extends AppTable<Booking> {
+public class PickListTable extends AppTable<Billable> {
 
 	@Autowired
 	private PickListTableContextMenu menu;
 
 	@Autowired
-	private Column<Booking, Long> id;
+	private Column<Billable, Long> id;
 
 	@Autowired
-	private Column<Booking, String> name;
+	private Column<Billable, String> name;
 
 	@Autowired
-	private Column<Booking, String> barangay;
+	private Column<Billable, String> barangay;
 
 	@Autowired
-	private Column<Booking, Route> route;
+	private Column<Billable, Route> route;
 
 	public void addMenu() {
 		menu.setMenu(this);

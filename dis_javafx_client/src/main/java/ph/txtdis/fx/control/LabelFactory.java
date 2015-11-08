@@ -12,6 +12,12 @@ import javafx.scene.text.TextAlignment;
 @Component("label")
 public class LabelFactory {
 
+	public Label dialog(String text) {
+		Label label = header(text);
+		label.setPadding(new Insets(20, 0, 0, 0));
+		return label;
+	}
+
 	public Label field(String name) {
 		Label label = new Label(name);
 		GridPane.setHalignment(label, HPos.RIGHT);
@@ -21,12 +27,6 @@ public class LabelFactory {
 	public Label group(String name) {
 		Label label = new Label(name);
 		label.setStyle(" -fx-font-size: 16pt;");
-		return label;
-	}
-
-	public Label dialog(String text) {
-		Label label = header(text);
-		label.setPadding(new Insets(20, 0, 0, 0));
 		return label;
 	}
 

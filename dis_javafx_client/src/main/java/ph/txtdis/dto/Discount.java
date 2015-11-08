@@ -8,18 +8,13 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class Discount extends AbstractTrackedId<Long>implements StartDated, Comparable<Discount> {
+public class Discount extends AbstractTrackedId<Long> implements StartDated {
 
-	private Integer level;
+	private int level;
 
 	private BigDecimal percent;
 
 	private ItemFamily familyLimit;
 
 	private LocalDate startDate;
-
-	@Override
-	public int compareTo(Discount o) {
-		return getStartDate().compareTo(o.getStartDate());
-	}
 }

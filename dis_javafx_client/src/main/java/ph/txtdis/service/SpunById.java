@@ -1,12 +1,16 @@
 package ph.txtdis.service;
 
-import ph.txtdis.dto.Audited;
 import ph.txtdis.dto.Keyed;
+import ph.txtdis.dto.Tracked;
 
-public interface SpunById<PK> extends Audited, GetSet<PK>, Keyed<PK>, Moduled, Spun {
+public interface SpunById<PK> extends Tracked, GetSet<PK>, Keyed<PK>, Moduled, Spun {
 
 	default PK getSpunId() {
 		return isNew() ? null : getId();
+	}
+
+	default String getSpunModule() {
+		return getModule();
 	}
 
 	SpunService<? extends Keyed<PK>, PK> getSpunService();
@@ -17,11 +21,11 @@ public interface SpunById<PK> extends Audited, GetSet<PK>, Keyed<PK>, Moduled, S
 
 	@Override
 	default void next() throws Exception {
-		set(getSpunService().module(getModule()).next(getSpunId()));
+		set(getSpunService().module(getSpunModule()).next(getSpunId()));
 	}
 
 	@Override
 	default void previous() throws Exception {
-		set(getSpunService().module(getModule()).previous(getSpunId()));
+		set(getSpunService().module(getSpunModule()).previous(getSpunId()));
 	}
 }

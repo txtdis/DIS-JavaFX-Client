@@ -64,7 +64,6 @@ public class SearchDialog extends InputDialog {
 
 	private void setEnteredText() {
 		searchText = textField.getText();
-		System.err.println("SearchText = " + searchText);
 		textField.clear();
 		close();
 	}

@@ -1,12 +1,20 @@
 package ph.txtdis.fx;
 
+import static ph.txtdis.util.NumberUtils.format4Place;
+import static ph.txtdis.util.NumberUtils.formatCurrency;
+import static ph.txtdis.util.NumberUtils.formatId;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.ZonedDateTime;
 
+import static ph.txtdis.util.DateTimeUtils.toDateDisplay;
+import static ph.txtdis.util.DateTimeUtils.toTimeDisplay;
+
 import ph.txtdis.fx.control.StylableTextField;
-import ph.txtdis.util.Numeric;
-import ph.txtdis.util.Temporal;
+import ph.txtdis.util.DateTimeUtils;
+import ph.txtdis.util.NumberUtils;
 
 public class Styled {
 	private static final String UNDIMMED = "-fx-opacity: 1; ";
@@ -16,7 +24,7 @@ public class Styled {
 	private static final String RED = " -fx-text-fill: red; ";
 
 	public static void for4Place(StylableTextField field, BigDecimal number) {
-		field.setText(Numeric.format4Place(number));
+		field.setText(format4Place(number));
 		setNumberStyle(field, number);
 	}
 
@@ -26,17 +34,17 @@ public class Styled {
 	}
 
 	public static void forCurrency(StylableTextField field, BigDecimal number) {
-		field.setText(Numeric.formatCurrency(number));
+		field.setText(formatCurrency(number));
 		setNumberStyle(field, number);
 	}
 
 	public static void forDate(StylableTextField field, LocalDate date) {
-		field.setText(Temporal.format(date));
+		field.setText(toDateDisplay(date));
 		field.setStyle(UNDIMMED);
 	}
 
 	public static void forDecimal(StylableTextField field, BigDecimal number) {
-		field.setText(Numeric.formatDecimal(number));
+		field.setText(NumberUtils.formatDecimal(number));
 		setNumberStyle(field, number);
 	}
 
@@ -46,22 +54,22 @@ public class Styled {
 	}
 
 	public static void forIdNo(StylableTextField field, Long number) {
-		field.setText(Numeric.formatId(number));
+		field.setText(formatId(number));
 		setNumberStyle(field, number);
 	}
 
 	public static void forInteger(StylableTextField field, Integer number) {
-		field.setText(Numeric.formatInt(number));
+		field.setText(NumberUtils.formatInt(number));
 		setNumberStyle(field, number);
 	}
 
 	public static void forPercent(StylableTextField field, BigDecimal number) {
-		field.setText(Numeric.formatPercent(number));
+		field.setText(NumberUtils.formatPercent(number));
 		setNumberStyle(field, number);
 	}
 
 	public static void forPhone(StylableTextField field, String text) {
-		field.setText(Numeric.displayPhone(text));
+		field.setText(NumberUtils.displayPhone(text));
 		field.setStyle(RIGHT_ALIGN);
 	}
 
@@ -70,8 +78,13 @@ public class Styled {
 		field.setStyle(UNDIMMED);
 	}
 
+	public static void forTime(StylableTextField field, LocalTime t) {
+		field.setText(toTimeDisplay(t));
+		field.setStyle(UNDIMMED);
+	}
+
 	public static void forTimestamp(StylableTextField field, ZonedDateTime date) {
-		field.setText(Temporal.format(date));
+		field.setText(DateTimeUtils.toTimestampText(date));
 		center(field);
 	}
 
@@ -80,14 +93,14 @@ public class Styled {
 	}
 
 	private static void setNumberStyle(StylableTextField field, BigDecimal number) {
-		field.setStyle(RIGHT_ALIGN + (Numeric.isNegative(number) ? RED : ""));
+		field.setStyle(RIGHT_ALIGN + (NumberUtils.isNegative(number) ? RED : ""));
 	}
 
 	private static void setNumberStyle(StylableTextField field, Integer number) {
-		field.setStyle(RIGHT_ALIGN + (Numeric.isNegative(number) ? RED : ""));
+		field.setStyle(RIGHT_ALIGN + (NumberUtils.isNegative(number) ? RED : ""));
 	}
 
 	private static void setNumberStyle(StylableTextField field, Long number) {
-		field.setStyle(RIGHT_ALIGN + (Numeric.isNegative(number) ? RED : ""));
+		field.setStyle(RIGHT_ALIGN + (NumberUtils.isNegative(number) ? RED : ""));
 	}
 }

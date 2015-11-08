@@ -160,7 +160,7 @@ public class CustomerTab extends AbstractTab {
 	private Node customerBox() {
 		idField.readOnly().build(ID);
 		nameField.build(TEXT);
-		return box.gridpane(idField, label.name("Name"), nameField);
+		return box.forIdName(idField, label.name("Name"), nameField);
 	}
 
 	private void handleError(ErrorHandling control, Exception e) {
@@ -169,7 +169,7 @@ public class CustomerTab extends AbstractTab {
 	}
 
 	private Node parentBox() {
-		HBox hbox = box.gridpane(label.name("Parent / Former ID No."), parentIdField.build(ID));
+		HBox hbox = box.forIdName(label.name("Parent / Former ID No."), parentIdField.build(ID));
 		hbox.setAlignment(Pos.CENTER_RIGHT);
 		return hbox;
 	}
@@ -222,7 +222,7 @@ public class CustomerTab extends AbstractTab {
 	}
 
 	private VBox tablePane() {
-		return box.vbox(label.group("Route Assignment"), routingTable.build());
+		return box.forVerticals(label.group("Route Assignment"), routingTable.build());
 	}
 
 	private void validateName() {
@@ -269,7 +269,7 @@ public class CustomerTab extends AbstractTab {
 			gridPane.add(label.field("Visit per Month"), 5, 3, 2, 1);
 			gridPane.add(visitCombo.items(VisitFrequency.values()), 7, 3);
 
-			return Arrays.asList(gridPane, box.hpane(tablePane()));
+			return Arrays.asList(gridPane, box.forHorizontalPane(tablePane()));
 		} catch (Exception e) {
 			e.printStackTrace();
 			dialog.show(e).addParent(this).start();

@@ -1,6 +1,6 @@
 package ph.txtdis.service;
 
-import static ph.txtdis.type.ItemTier.PRINCIPAL;
+import static java.time.LocalDate.now;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -11,6 +11,11 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+
+import static ph.txtdis.type.ItemTier.PRINCIPAL;
+
+import static ph.txtdis.util.DateTimeUtils.toDateDisplay;
+import static ph.txtdis.util.DateTimeUtils.toHypenatedYearMonthDay;
 
 import ph.txtdis.dto.Channel;
 import ph.txtdis.dto.CreditDetail;
@@ -26,17 +31,13 @@ import ph.txtdis.excel.ExcelWriter;
 import ph.txtdis.excel.Tabular;
 import ph.txtdis.exception.DateInThePastException;
 import ph.txtdis.exception.DuplicateException;
-import ph.txtdis.exception.NotFoundException;
 import ph.txtdis.info.SuccessfulSaveInfo;
 import ph.txtdis.type.CustomerType;
 import ph.txtdis.type.VisitFrequency;
 import ph.txtdis.util.Spring;
-import ph.txtdis.util.Temporal;
 
 @Service
-public class CustomerService
-		implements AlternateNamed, Excel<Customer>, Reset, SpunById<Long>, Serviced<Customer, Long>
-{
+public class CustomerService implements Excel<Customer>, Reset, SpunById<Long>, Serviced<Customer, Long> {
 
 	@Autowired
 	private ChannelService channelService;
@@ -78,8 +79,8 @@ public class CustomerService
 		return createCreditLine(term, gracePeriod, creditLimit, startDate);
 	}
 
-	public Discount createDiscountUponValidation(int level, BigDecimal percent, ItemFamily family,
-			LocalDate startDate) throws Exception {
+	public Discount createDiscountUponValidation(int level, BigDecimal percent, ItemFamily family, LocalDate startDate)
+			throws Exception {
 		validateStartDate(discounts(), startDate);
 		return createCustomerDiscount(level, percent, familyLimit(family), startDate);
 	}
@@ -96,14 +97,6 @@ public class CustomerService
 	}
 
 	@Override
-	public Customer find(String id) throws Exception {
-		Customer c = readOnlyService.module(getModule()).getOne("/" + id);
-		if (c == null)
-			throw new NotFoundException("Customer No. " + id);
-		return c;
-	}
-
-	@Override
 	public Customer get() {
 		if (customer == null)
 			reset();
@@ -117,6 +110,10 @@ public class CustomerService
 	@Override
 	public String getAlternateName() {
 		return StringUtils.capitalize(getModule());
+	}
+
+	public List<Customer> getBanks() throws Exception {
+		return readOnlyService.module(getModule()).getList("/banks");
 	}
 
 	public Location getBarangay() {
@@ -197,6 +194,11 @@ public class CustomerService
 
 	public Location getProvince() {
 		return get().getProvince();
+	}
+
+	@Override
+	public ReadOnlyService<Customer> getReadOnlyService() {
+		return readOnlyService;
 	}
 
 	public List<Routing> getRouteHistory() {
@@ -348,32 +350,31 @@ public class CustomerService
 	}
 
 	private CreditDetail createCreditLine(int term, int gracePeriod, BigDecimal creditLimit, LocalDate startDate) {
-		CreditDetail credit = new CreditDetail();
-		credit.setTermInDays(term);
-		credit.setGracePeriodInDays(gracePeriod);
-		credit.setCreditLimit(creditLimit);
-		credit.setStartDate(startDate);
-		updateCreditDetails(credit);
-		return credit;
+		CreditDetail c = new CreditDetail();
+		c.setTermInDays(term);
+		c.setGracePeriodInDays(gracePeriod);
+		c.setCreditLimit(creditLimit);
+		c.setStartDate(startDate);
+		updateCreditDetails(c);
+		return c;
 	}
 
-	private Discount createCustomerDiscount(int level, BigDecimal percent, ItemFamily family,
-			LocalDate startDate) {
-		Discount discount = new Discount();
-		discount.setLevel(level);
-		discount.setPercent(percent);
-		discount.setFamilyLimit(family);
-		discount.setStartDate(startDate);
-		updateCustomerDiscounts(discount);
-		return discount;
+	private Discount createCustomerDiscount(int level, BigDecimal percent, ItemFamily family, LocalDate startDate) {
+		Discount d = new Discount();
+		d.setLevel(level);
+		d.setPercent(percent);
+		d.setFamilyLimit(family);
+		d.setStartDate(startDate);
+		updateCustomerDiscounts(d);
+		return d;
 	}
 
 	private Routing createRouteAssignment(Route route, LocalDate startDate) {
-		Routing routing = new Routing();
-		routing.setRoute(route);
-		routing.setStartDate(startDate);
-		updateRouteHistory(routing);
-		return routing;
+		Routing r = new Routing();
+		r.setRoute(route);
+		r.setStartDate(startDate);
+		updateRouteHistory(r);
+		return r;
 	}
 
 	private List<CreditDetail> creditDetails() {
@@ -400,7 +401,7 @@ public class CustomerService
 	}
 
 	private String getExcelFileName() {
-		return getExcelSheetName() + "." + Temporal.toFilename(getTimestamp());
+		return getExcelSheetName() + "." + toHypenatedYearMonthDay(now());
 	}
 
 	private String getExcelSheetName() {
@@ -409,11 +410,6 @@ public class CustomerService
 
 	private Customer getParent() {
 		return get().getParent();
-	}
-
-	private LocalDate getTimestamp() {
-		// TODO Auto-generated method stub
-		return null;
 	}
 
 	private List<Routing> routeHistory() {
@@ -445,13 +441,13 @@ public class CustomerService
 	}
 
 	private void validateDateIsNotInThePast(LocalDate startDate) throws Exception {
-		if (startDate.isBefore(LocalDate.now()))
+		if (startDate.isBefore(now()))
 			throw new DateInThePastException();
 	}
 
 	private void validateDateIsUnique(List<? extends StartDated> list, LocalDate startDate) throws Exception {
 		if (startDateExists(list, startDate))
-			throw new DuplicateException(Temporal.format(startDate));
+			throw new DuplicateException(toDateDisplay(startDate));
 	}
 
 	private void validateStartDate(List<? extends StartDated> list, LocalDate startDate) throws Exception {

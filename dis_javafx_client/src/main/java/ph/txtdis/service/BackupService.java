@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 import ph.txtdis.dto.Backup;
 import ph.txtdis.exception.FailedFileWriteAccessException;
 import ph.txtdis.util.Binary;
-import ph.txtdis.util.Temporal;
+import ph.txtdis.util.DateTimeUtils;
 
 @Service("backupService")
 public class BackupService {
@@ -27,7 +27,7 @@ public class BackupService {
 	}
 
 	public String writeBackup(File folder) throws Exception {
-		pathname = folder + "\\\n" + Temporal.toFilename(ZonedDateTime.now()) + ".backup";
+		pathname = folder + "\\\n" + DateTimeUtils.toTimestampFilename(ZonedDateTime.now()) + ".backup";
 		String filename = pathname.replace("\n", "");
 		writeBackup(Binary.toPath(filename));
 		return pathname;

@@ -79,7 +79,7 @@ public class CreditTab extends AbstractTab {
 	}
 
 	private VBox tablePane() {
-		return box.vbox(label.group("Approved Credit History"), creditTable.build());
+		return box.forVerticals(label.group("Approved Credit History"), creditTable.build());
 	}
 
 	@Override
@@ -94,6 +94,6 @@ public class CreditTab extends AbstractTab {
 		gridPane.add(titleField.build(TEXT), 1, 2);
 		gridPane.add(label.field("Mobile No."), 2, 2);
 		gridPane.add(mobileField.build(PHONE), 3, 2);
-		return Arrays.asList(gridPane, box.hpane(tablePane()));
+		return Arrays.asList(gridPane, box.forHorizontalPane(tablePane()));
 	}
 }

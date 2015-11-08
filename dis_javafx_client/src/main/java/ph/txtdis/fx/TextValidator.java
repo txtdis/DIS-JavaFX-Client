@@ -16,7 +16,7 @@ public class TextValidator implements ChangeListener<String> {
 
 	public TextValidator(AppField<?> input) {
 		this.input = input;
-		this.restrict = "[a-zA-Z0-9-,.&' ]";
+		this.restrict = "[a-zA-Z0-9-\\[\\]:,.&' ]";
 		maxLength = Integer.MAX_VALUE;
 		if (input.getMinWidth() < 240)
 			maxLength = (int) input.getMinWidth() / 20;

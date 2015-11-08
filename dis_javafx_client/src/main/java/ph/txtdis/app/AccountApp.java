@@ -25,7 +25,7 @@ public class AccountApp extends AbstractTableApp<AccountTable, RouteService, Acc
 	}
 
 	@Override
-	public void tryOpening(String... ids) {
+	public void launch(String... ids) {
 		try {
 			open(ids);
 		} catch (Exception e) {
@@ -44,12 +44,12 @@ public class AccountApp extends AbstractTableApp<AccountTable, RouteService, Acc
 	}
 
 	@Override
-	protected String headerText() {
+	protected String getHeaderText() {
 		return capitalizedModule() + " Seller List";
 	}
 
 	@Override
-	protected String titleText() {
+	protected String getTitleText() {
 		return capitalizedModule() + " Seller History";
 	}
 }

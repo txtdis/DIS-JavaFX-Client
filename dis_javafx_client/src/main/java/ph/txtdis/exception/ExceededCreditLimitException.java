@@ -3,7 +3,7 @@ package ph.txtdis.exception;
 import java.math.BigDecimal;
 
 import ph.txtdis.dto.Customer;
-import ph.txtdis.util.Numeric;
+import ph.txtdis.util.NumberUtils;
 
 public class ExceededCreditLimitException extends Exception {
 
@@ -11,12 +11,12 @@ public class ExceededCreditLimitException extends Exception {
 
     public ExceededCreditLimitException(Customer customer,
             BigDecimal creditLimit) {
-        super(customer + " has exceeded its\n" + Numeric.formatCurrency(
+        super(customer + " has exceeded its\n" + NumberUtils.formatCurrency(
                 creditLimit) + " credit limit");
     }
 
     public ExceededCreditLimitException(BigDecimal creditLimit) {
-        super("Credit limit of " + Numeric.formatCurrency(creditLimit)
+        super("Credit limit of " + NumberUtils.formatCurrency(creditLimit)
                 + " exceeded");
     }
 }

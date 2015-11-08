@@ -10,7 +10,7 @@ import ph.txtdis.type.VolumeDiscountType;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class VolumeDiscount extends AbstractTrackedId<Long> implements Comparable<VolumeDiscount> {
+public class VolumeDiscount extends AbstractTrackedId<Long> {
 
 	private VolumeDiscountType type;
 
@@ -23,9 +23,4 @@ public class VolumeDiscount extends AbstractTrackedId<Long> implements Comparabl
 	private LocalDate startDate;
 
 	private Channel channelLimit;
-
-	@Override
-	public int compareTo(VolumeDiscount o) {
-		return getStartDate().compareTo(o.getStartDate());
-	}
 }

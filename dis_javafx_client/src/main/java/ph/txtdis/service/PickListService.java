@@ -1,5 +1,9 @@
 package ph.txtdis.service;
 
+import static java.util.stream.Collectors.toList;
+import static ph.txtdis.type.UserType.DRIVER;
+import static ph.txtdis.type.UserType.HELPER;
+
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
@@ -12,19 +16,17 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import ph.txtdis.dto.Booking;
+import ph.txtdis.dto.Billable;
 import ph.txtdis.dto.Keyed;
 import ph.txtdis.dto.PickList;
 import ph.txtdis.dto.Route;
 import ph.txtdis.dto.Truck;
 import ph.txtdis.dto.User;
 import ph.txtdis.exception.DateInThePastException;
-import ph.txtdis.exception.NotFoundException;
-import ph.txtdis.type.UserType;
-import ph.txtdis.util.Temporal;
+import ph.txtdis.util.DateTimeUtils;
 
 @Service("pickListService")
-public class PickListService implements AlternateNamed, Reset, Serviced<PickList, Long>, SpunById<Long> {
+public class PickListService implements Reset, Serviced<PickList, Long>, SpunById<Long> {
 
 	private class DateAfterTomorrowWhichIsNotASundayException extends Exception {
 
@@ -40,7 +42,7 @@ public class PickListService implements AlternateNamed, Reset, Serviced<PickList
 		private static final long serialVersionUID = 7000764332504494319L;
 
 		public NothingToPickException(LocalDate date) {
-			super("There's nothing to pick on\n" + Temporal.format(date));
+			super("There's nothing to pick on\n" + DateTimeUtils.toDateDisplay(date));
 		}
 	}
 
@@ -62,26 +64,18 @@ public class PickListService implements AlternateNamed, Reset, Serviced<PickList
 	@Autowired
 	private UserService userService;
 
-	private List<Booking> unpickedBookings;
+	private List<Billable> unpickedBookings;
 
 	private List<PickList> pickLists;
 
-	private List<Truck> allTrucks;
+	private List<String> allTrucks;
 
-	private List<User> assignedHelpers, allHelpers, allDrivers;
+	private List<String> assignedHelpers, allHelpers, allDrivers;
 
 	private PickList pickList;
 
 	public PickListService() {
 		reset();
-	}
-
-	@Override
-	public PickList find(String id) throws Exception {
-		PickList p = readOnlyService.module(getModule()).getOne("/" + id);
-		if (p == null)
-			throw new NotFoundException(getAlternateName() + "No. " + id);
-		return p;
 	}
 
 	@Override
@@ -119,6 +113,11 @@ public class PickListService implements AlternateNamed, Reset, Serviced<PickList
 	}
 
 	@Override
+	public ReadOnlyService<PickList> getReadOnlyService() {
+		return readOnlyService;
+	}
+
+	@Override
 	public SavingService<PickList> getSavingService() {
 		return savingService;
 	}
@@ -128,19 +127,24 @@ public class PickListService implements AlternateNamed, Reset, Serviced<PickList
 		return spunService;
 	}
 
-	public List<Booking> listBookings(Route r) {
-		List<Booking> picked = unpickedBookings.stream().filter(b -> b.getRoute().equals(r))
+	public List<Billable> listBookings(Route r) {
+		List<Billable> picked = unpickedBookings.stream().filter(b -> b.getRoute().equals(r))
 				.collect(Collectors.toList());
 		picked.forEach(p -> unpickedBookings.remove(p));
 		return picked;
 	}
 
-	public List<User> listDrivers() throws Exception {
-		return allDrivers != null ? allDrivers : userService.listByRole(UserType.DRIVER);
+	public List<String> listDrivers() throws Exception {
+		if (allDrivers == null)
+			;
+		setAllDrivers();
+		return allDrivers;
 	}
 
-	public List<User> listHelpers() throws Exception {
-		return allHelpers != null ? allHelpers : userService.listByRole(UserType.HELPER);
+	public List<String> listHelpers() throws Exception {
+		if (allHelpers == null)
+			setAllHelpers();
+		return allHelpers;
 	}
 
 	public List<Route> listRoutes() throws Exception {
@@ -148,8 +152,10 @@ public class PickListService implements AlternateNamed, Reset, Serviced<PickList
 				.sorted((a, b) -> a.getName().compareTo(b.getName())).collect(Collectors.toList());
 	}
 
-	public List<Truck> listTrucks() throws Exception {
-		return allTrucks != null ? allTrucks : truckService.list();
+	public List<String> listTrucks() throws Exception {
+		if (allTrucks == null)
+			setAllTrucks();
+		return allTrucks;
 	}
 
 	@Override
@@ -182,7 +188,7 @@ public class PickListService implements AlternateNamed, Reset, Serviced<PickList
 		instatiateLists();
 	}
 
-	public void setAsstHelperUponValidation(User t) throws Exception {
+	public void setAsstHelperUponValidation(String t) throws Exception {
 		if (t == null)
 			return;
 		if (assignedHelpers().contains(t) || isALeadHelper(t))
@@ -190,7 +196,7 @@ public class PickListService implements AlternateNamed, Reset, Serviced<PickList
 		get().setAsstHelper(t);
 	}
 
-	public void setDriverUponValidation(User t) throws Exception {
+	public void setDriverUponValidation(String t) throws Exception {
 		if (t == null)
 			return;
 		if (assignedDrivers().contains(t))
@@ -198,7 +204,7 @@ public class PickListService implements AlternateNamed, Reset, Serviced<PickList
 		get().setDriver(t);
 	}
 
-	public void setLeadHelperUponValidation(User t) throws Exception {
+	public void setLeadHelperUponValidation(String t) throws Exception {
 		if (t == null)
 			return;
 		if (assignedHelpers().contains(t) || isAnAsstHelper(t))
@@ -212,7 +218,7 @@ public class PickListService implements AlternateNamed, Reset, Serviced<PickList
 		get().setPickDate(date);
 	}
 
-	public void setTruckUponValidation(Truck t) throws Exception {
+	public void setTruckUponValidation(String t) throws Exception {
 		if (t == null)
 			return;
 		if (loadedTrucks().contains(t))
@@ -220,27 +226,27 @@ public class PickListService implements AlternateNamed, Reset, Serviced<PickList
 		get().setTruck(t);
 	}
 
-	public void unpick(Booking b) {
+	public void unpick(Billable b) {
 		unpickedBookings.add(b);
 	}
 
 	private void addAssignedAsstHelpersInOtherTrucks() throws Exception {
-		List<User> c = pickLists.stream().map(p -> p.getAsstHelper()).collect(Collectors.toList());
+		List<String> c = pickLists.stream().map(p -> p.getAsstHelper()).collect(Collectors.toList());
 		if (!c.isEmpty())
 			assignedHelpers.addAll(c);
 	}
 
 	private void addAssignedLeadHelpersInOtherTrucks() throws Exception {
-		List<User> c = pickLists.stream().map(p -> p.getLeadHelper()).collect(Collectors.toList());
+		List<String> c = pickLists.stream().map(p -> p.getLeadHelper()).collect(Collectors.toList());
 		if (!c.isEmpty())
 			assignedHelpers.addAll(c);
 	}
 
-	private List<User> assignedDrivers() throws Exception {
+	private List<String> assignedDrivers() throws Exception {
 		return pickLists.stream().map(p -> p.getDriver()).collect(Collectors.toList());
 	}
 
-	private List<User> assignedHelpers() throws Exception {
+	private List<String> assignedHelpers() throws Exception {
 		if (assignedHelpers.isEmpty()) {
 			addAssignedLeadHelpersInOtherTrucks();
 			addAssignedAsstHelpersInOtherTrucks();
@@ -258,17 +264,17 @@ public class PickListService implements AlternateNamed, Reset, Serviced<PickList
 		assignedHelpers = new ArrayList<>();
 	}
 
-	private boolean isALeadHelper(User t) {
-		User u = get().getLeadHelper();
+	private boolean isALeadHelper(String t) {
+		String u = get().getLeadHelper();
 		return u != null && u.equals(t);
 	}
 
-	private boolean isAnAsstHelper(User t) {
-		User u = get().getAsstHelper();
+	private boolean isAnAsstHelper(String t) {
+		String u = get().getAsstHelper();
 		return u != null && u.equals(t);
 	}
 
-	private List<Truck> loadedTrucks() throws Exception {
+	private List<String> loadedTrucks() throws Exception {
 		return pickLists.stream().map(p -> p.getTruck()).collect(Collectors.toList());
 	}
 
@@ -278,8 +284,8 @@ public class PickListService implements AlternateNamed, Reset, Serviced<PickList
 		allHelpers = null;
 	}
 
-	private List<Booking> pickedBookings(LocalDate d) throws Exception {
-		List<Booking> b = new ArrayList<>();
+	private List<Billable> pickedBookings(LocalDate d) throws Exception {
+		List<Billable> b = new ArrayList<>();
 		pickLists(d).forEach(p -> b.addAll(p.getBookings()));
 		return b;
 	}
@@ -295,8 +301,23 @@ public class PickListService implements AlternateNamed, Reset, Serviced<PickList
 		return all.stream().filter(t -> !sub.contains(t)).collect(Collectors.toList());
 	}
 
-	private List<Booking> unpickedBookings(LocalDate d) throws Exception {
-		List<Booking> b = bookingService.listByPickDate(d);
+	private void setAllDrivers() throws Exception {
+		List<User> u = userService.listNamesByRole(DRIVER);
+		allDrivers = u.stream().map(d -> d.getUsername()).collect(toList());
+	}
+
+	private void setAllHelpers() throws Exception {
+		List<User> u = userService.listNamesByRole(HELPER);
+		allHelpers = u.stream().map(d -> d.getUsername()).collect(toList());
+	}
+
+	private void setAllTrucks() throws Exception {
+		List<Truck> l = truckService.list();
+		allTrucks = l.stream().map(t -> t.getName()).collect(Collectors.toList());
+	}
+
+	private List<Billable> unpickedBookings(LocalDate d) throws Exception {
+		List<Billable> b = bookingService.listByPickDate(d);
 		if (b == null)
 			throw new NothingToPickException(d);
 		return b;
@@ -310,7 +331,7 @@ public class PickListService implements AlternateNamed, Reset, Serviced<PickList
 	}
 
 	private void verifyThereAreBookingsToBePickedOnSaidDate(LocalDate date) throws Exception {
-		List<Booking> l = removeDuplicates(unpickedBookings(date), pickedBookings(date));
+		List<Billable> l = removeDuplicates(unpickedBookings(date), pickedBookings(date));
 		if (l.isEmpty())
 			throw new NothingToPickException(date);
 		unpickedBookings = new ArrayList<>(l);

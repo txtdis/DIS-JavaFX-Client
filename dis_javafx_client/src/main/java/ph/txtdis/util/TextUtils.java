@@ -1,17 +1,21 @@
 package ph.txtdis.util;
 
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.text.WordUtils;
+import static org.apache.commons.lang3.text.WordUtils.capitalizeFully;
+
+import static org.apache.commons.lang3.StringUtils.removeEnd;
+import static org.apache.commons.lang3.StringUtils.replaceEach;
+import static org.apache.commons.lang3.StringUtils.uncapitalize;
 
 import ph.txtdis.app.Launchable;
 import ph.txtdis.app.Startable;
 import ph.txtdis.fx.control.AppButton;
 import ph.txtdis.fx.dialog.AbstractDialog;
+import ph.txtdis.type.ModuleType;
 
-public class Text {
+public class TextUtils {
 
 	public static String capitalize(String uncapped) {
-		uncapped = WordUtils.capitalizeFully(uncapped, '_');
+		uncapped = capitalizeFully(uncapped, '_');
 		return uncapped.replace("_", " ");
 	}
 
@@ -20,27 +24,31 @@ public class Text {
 	}
 
 	public static String nameFromService(Object o) {
-		return StringUtils.uncapitalize(removeServiceSuffix(o));
+		return uncapitalize(removeServiceSuffix(o));
 	}
 
 	public static String toHeader(AbstractDialog d) {
-		return StringUtils.removeEnd(getClassname(d), "Dialog");
+		return removeEnd(getClassname(d), "Dialog");
+	}
+
+	public static String toHeader(ModuleType t) {
+		return capitalizeFully(t.toString(), '_').replace("_", " ");
 	}
 
 	public static String toHeader(Startable app) {
-		return StringUtils.capitalize(toSpaced(app));
+		return capitalize(toSpaced(app));
 	}
 
 	public static String toName(AppButton b) {
-		return StringUtils.uncapitalize(removeButtonSuffix(b));
+		return uncapitalize(removeButtonSuffix(b));
 	}
 
 	public static String toName(Launchable a) {
-		return StringUtils.uncapitalize(removeAppSuffix(a));
+		return uncapitalize(removeAppSuffix(a));
 	}
 
 	public static String toName(Startable a) {
-		return StringUtils.uncapitalize(removeAppSuffix(a));
+		return uncapitalize(removeAppSuffix(a));
 	}
 
 	public static String toString(Object o) {
@@ -52,19 +60,19 @@ public class Text {
 	}
 
 	private static String removeAppSuffix(Launchable a) {
-		return StringUtils.removeEnd(getClassname(a), "App");
+		return removeEnd(getClassname(a), "App");
 	}
 
 	private static String removeAppSuffix(Startable a) {
-		return StringUtils.removeEnd(getClassname(a), "App");
+		return removeEnd(getClassname(a), "App");
 	}
 
 	private static String removeButtonSuffix(AppButton b) {
-		return StringUtils.removeEnd(getClassname(b), "Button");
+		return removeEnd(getClassname(b), "Button");
 	}
 
 	private static String removeServiceSuffix(Object o) {
-		return StringUtils.removeEnd(getClassname(o), "Service");
+		return removeEnd(getClassname(o), "Service");
 	}
 
 	private static String[] spacedReplacements() {
@@ -73,7 +81,7 @@ public class Text {
 	}
 
 	private static String toSpaced(Startable app) {
-		return StringUtils.replaceEach(toName(app), upperCaseSearches(), spacedReplacements());
+		return replaceEach(toName(app), upperCaseSearches(), spacedReplacements());
 	}
 
 	private static String[] upperCaseSearches() {

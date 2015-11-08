@@ -14,7 +14,7 @@ import ph.txtdis.app.Launchable;
 import ph.txtdis.dto.Keyed;
 import ph.txtdis.excel.TabularColumn;
 import ph.txtdis.type.Type;
-import ph.txtdis.util.Text;
+import ph.txtdis.util.TextUtils;
 import ph.txtdis.util.TypeStyle;
 
 @Scope("prototype")
@@ -44,7 +44,7 @@ public class Column<S extends Keyed<?>, T> extends TableColumn<S, T> implements 
 
 	public Column<S, T> launches(Launchable app) {
 		this.app = app;
-		setUserData(Text.toName(app));
+		setUserData(TextUtils.toName(app));
 		return this;
 	}
 

@@ -40,17 +40,17 @@ public abstract class AbstractTableApp<AT extends AppTable<T>, AS extends Listed
 	}
 
 	@Override
-	protected String headerText() {
+	protected String getHeaderText() {
 		return capitalizedModule() + " List";
 	}
 
 	@Override
 	protected List<Node> mainVerticalPaneNodes() {
-		return Arrays.asList(box.hpane(table.build()));
+		return Arrays.asList(box.forHorizontalPane(table.build()));
 	}
 
 	@Override
-	protected String titleText() {
+	protected String getTitleText() {
 		return capitalizedModule() + " Master";
 	}
 }

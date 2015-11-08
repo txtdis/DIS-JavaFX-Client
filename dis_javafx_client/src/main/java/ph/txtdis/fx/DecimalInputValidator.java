@@ -12,7 +12,7 @@ public class DecimalInputValidator implements ChangeListener<String> {
 
 	public DecimalInputValidator(AppField<?> input) {
 		this.input = input;
-		this.restrict = "[0-9-.,]";
+		this.restrict = "[0-9-.,()₱]";
 	}
 
 	@Override

@@ -16,9 +16,15 @@ import ph.txtdis.fx.dialog.Inputted;
 @Component("appendContextMenu")
 public final class AppendContextMenu<S> {
 
+	private ContextMenu menu;
+
 	private Inputted<S> dialog;
 
 	private TableView<S> table;
+
+	public ContextMenu getContextMenu() {
+		return menu;
+	}
 
 	private void append() {
 		showAddItemDialog();
@@ -33,7 +39,7 @@ public final class AppendContextMenu<S> {
 	}
 
 	private ContextMenu createTableMenu() {
-		ContextMenu menu = new ContextMenu();
+		menu = new ContextMenu();
 		menu.getItems().addAll(createAppendMenuItem());
 		return menu;
 	}

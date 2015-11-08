@@ -1,9 +1,10 @@
 package ph.txtdis.service;
 
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
+
 import org.atteo.evo.inflector.English;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.ResourceAccessException;
@@ -38,7 +39,7 @@ public class SavingService<T> {
 			throw new NoServerConnectionException(server.location());
 		} catch (HttpClientErrorException e) {
 			e.printStackTrace();
-			if (e.getStatusCode() == HttpStatus.UNAUTHORIZED)
+			if (e.getStatusCode() == UNAUTHORIZED)
 				if (e.getResponseBodyAsString().contains("This connection has been closed"))
 					throw new StoppedServerException();
 				else

@@ -5,7 +5,7 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class PurchaseDetail extends SoldOrderDetail {
+public class PurchaseDetail extends BillableDetail {
 
 	private String justification;
 }

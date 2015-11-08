@@ -3,17 +3,17 @@ package ph.txtdis.converter;
 import java.time.ZonedDateTime;
 
 import javafx.util.StringConverter;
-import ph.txtdis.util.Temporal;
+import ph.txtdis.util.DateTimeUtils;
 
 public class DateTimeConverter extends StringConverter<ZonedDateTime> {
 
 	@Override
 	public String toString(ZonedDateTime dateTime) {
-		return Temporal.format(dateTime);
+		return DateTimeUtils.toTimestampText(dateTime);
 	}
 
 	@Override
 	public ZonedDateTime fromString(String text) {
-		return Temporal.toZonedDateTime(text);
+		return DateTimeUtils.toZonedDateTime(text);
 	}
 }

@@ -50,7 +50,7 @@ public abstract class AbstractTab extends Tab implements InputTab {
 	}
 
 	protected VBox mainVerticalPane() {
-		VBox vbox = box.vbox();
+		VBox vbox = box.forVerticals();
 		vbox.getChildren().addAll(mainVerticalPaneNodes());
 		return vbox;
 	}

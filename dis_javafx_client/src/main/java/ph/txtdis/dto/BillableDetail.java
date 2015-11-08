@@ -9,9 +9,9 @@ import ph.txtdis.type.UomType;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class OrderDetail extends AbstractId<Long> {
+public class BillableDetail extends AbstractId<Long> {
 
-	private Item item;
+	private String itemName;
 
 	private UomType uom;
 
@@ -19,11 +19,13 @@ public class OrderDetail extends AbstractId<Long> {
 
 	private QualityType quality;
 
-	public Long getItemId() {
-		return getItem() == null ? null : getItem().getId();
-	}
+	private BigDecimal priceValue;
 
-	public String getItemName() {
-		return getItem() == null ? null : getItem().getName();
+	public BigDecimal getSubtotalValue() {
+		try {
+			return getPriceValue().multiply(getQty());
+		} catch (Exception e) {
+			return null;
+		}
 	}
 }

@@ -1,12 +1,21 @@
 package ph.txtdis.util;
 
+import static javafx.geometry.Pos.CENTER_LEFT;
+import static javafx.geometry.Pos.CENTER_RIGHT;
+import static ph.txtdis.util.NumberUtils.persistPhone;
+import static ph.txtdis.util.NumberUtils.toBigDecimal;
+import static ph.txtdis.util.NumberUtils.toInteger;
+import static ph.txtdis.util.NumberUtils.toLong;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.ZonedDateTime;
 
-import org.apache.commons.lang3.StringUtils;
+import static org.apache.commons.lang3.StringUtils.trim;
 
-import javafx.geometry.Pos;
+import static ph.txtdis.util.DateTimeUtils.toTime;
+
 import ph.txtdis.fx.AlphabetOnlyValidator;
 import ph.txtdis.fx.DecimalInputValidator;
 import ph.txtdis.fx.IntegerInputValidator;
@@ -29,10 +38,10 @@ public class TypeStyle {
 			case INTEGER:
 			case PERCENT:
 			case PHONE:
-				field.setAlignment(Pos.CENTER_RIGHT);
+				field.setAlignment(CENTER_RIGHT);
 				break;
 			default:
-				field.setAlignment(Pos.CENTER_LEFT);
+				field.setAlignment(CENTER_LEFT);
 		}
 	}
 
@@ -43,23 +52,27 @@ public class TypeStyle {
 			case DECIMAL:
 			case FOURPLACE:
 			case PERCENT:
-				return (T) Numeric.parseBigDecimal(text);
+				return (T) toBigDecimal(text);
 			case ID:
-				return (T) Numeric.parseLong(text);
+				return (T) toLong(text);
 			case INTEGER:
-				return (T) Numeric.parseInteger(text);
+				return (T) toInteger(text);
 			case PHONE:
-				return (T) Numeric.persistPhone(text);
+				return (T) persistPhone(text);
+			case TIME:
+				return (T) toTime(text);
 			case ALPHA:
 			case CODE:
 			case TEXT:
-				return text == null ? null : (T) StringUtils.trim(text);
+				return text == null ? null : (T) trim(text);
 			default:
 				return null;
 		}
 	}
 
 	public static <T> void style(Type type, StylableTextField field, T value) {
+		if (type == null)
+			return;
 		switch (type) {
 			case CODE:
 				Styled.forCode(field, value);
@@ -91,6 +104,9 @@ public class TypeStyle {
 			case PHONE:
 				Styled.forPhone(field, (String) value);
 				break;
+			case TIME:
+				Styled.forTime(field, (LocalTime) value);
+				break;
 			case TIMESTAMP:
 				Styled.forTimestamp(field, (ZonedDateTime) value);
 				break;
@@ -121,6 +137,9 @@ public class TypeStyle {
 			case TEXT:
 				field.textProperty().addListener(new TextValidator(field));
 				break;
+			case TIME:
+				field.setPromptText("hh:mm");
+				break;
 			case ALPHA:
 				field.textProperty().addListener(new AlphabetOnlyValidator(field));
 				break;
@@ -135,10 +154,11 @@ public class TypeStyle {
 			case INTEGER:
 			case ENUM:
 			case FOURPLACE:
+			case TIME:
 				return 80;
 			case ID:
-				return 90;
 			case DATE:
+				return 90;
 			case DECIMAL:
 				return 110;
 			case TIMESTAMP:

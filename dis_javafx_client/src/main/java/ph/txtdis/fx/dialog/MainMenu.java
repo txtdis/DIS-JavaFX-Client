@@ -4,6 +4,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
+import static ph.txtdis.type.ModuleType.BOOKING;
+import static ph.txtdis.type.ModuleType.DELIVERY_REPORT;
+import static ph.txtdis.type.ModuleType.INVOICE;
+import static ph.txtdis.type.ModuleType.PURCHASING;
+import static ph.txtdis.type.ModuleType.RECEIVING;
+import static ph.txtdis.type.ModuleType.RMA;
+import static ph.txtdis.type.ModuleType.STOCK_TAKE;
+import static ph.txtdis.type.ModuleType.STOCK_TAKE_RECONCILIATION;
+
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
@@ -12,14 +21,15 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
 import ph.txtdis.app.AgingReceivableApp;
-import ph.txtdis.app.BookingApp;
 import ph.txtdis.app.ChannelApp;
 import ph.txtdis.app.CustomerApp;
 import ph.txtdis.app.InvoiceApp;
 import ph.txtdis.app.InvoiceBookletApp;
 import ph.txtdis.app.ItemFamilyApp;
 import ph.txtdis.app.ItemTreeApp;
+import ph.txtdis.app.MultiTyped;
 import ph.txtdis.app.PickListApp;
+import ph.txtdis.app.RemittanceApp;
 import ph.txtdis.app.RouteApp;
 import ph.txtdis.app.Startable;
 import ph.txtdis.app.TruckApp;
@@ -47,7 +57,7 @@ public class MainMenu extends Stage {
 	private BackupApp backupDialog;
 
 	@Autowired
-	private BookingApp bookingApp;
+	private InvoiceApp bookingApp;
 
 	@Autowired
 	private ChannelApp channelApp;
@@ -59,13 +69,10 @@ public class MainMenu extends Stage {
 	private VatApp dayEndApp;
 
 	@Autowired
-	private InvoiceApp deliveryApp;
+	private InvoiceApp app1, app2;
 
 	@Autowired
 	private VatApp inventoryApp;
-
-	@Autowired
-	private InvoiceApp invoiceApp;
 
 	@Autowired
 	private InvoiceBookletApp invoiceBookletApp;
@@ -80,25 +87,25 @@ public class MainMenu extends Stage {
 	private ItemTreeApp treeApp;
 
 	@Autowired
+	private InvoiceApp purchasingApp;
+
+	@Autowired
+	private InvoiceApp receivingApp;
+
+	@Autowired
+	private RemittanceApp remittanceApp;
+
+	@Autowired
+	private InvoiceApp rmaApp;
+
+	@Autowired
 	private PickListApp pickApp;
 
 	@Autowired
-	private InvoiceApp purchaseApp;
-
-	@Autowired
-	private InvoiceApp receiptApp;
-
-	@Autowired
-	private InvoiceApp remittanceApp;
-
-	@Autowired
-	private InvoiceApp returnApp;
+	private RouteApp routeApp;
 
 	@Autowired
 	private UserApp roleDialog;
-
-	@Autowired
-	private RouteApp routeApp;
 
 	@Autowired
 	private VatApp salesApp;
@@ -133,22 +140,31 @@ public class MainMenu extends Stage {
 		show();
 	}
 
+	private String appType(Startable app) {
+		return ((MultiTyped) app).type();
+	}
+
+	private AppButton button() {
+		return new AppButton().fontSize(44);
+	}
+
 	private AppButton button(BackupApp backup) {
-		AppButton button = newButton().icon("backup").build();
+		AppButton button = button().icon("backup").build();
 		button.setOnAction(event -> backup.chooseFolder(this));
 		return button;
 	}
 
 	private AppButton button(Startable app) {
-		AppButton button = newButton().app(app).build();
+		AppButton button = buttonType(app).build();
 		button.setOnAction(event -> app.start());
 		return button;
 	}
 
-	private AppButton button(Startable app, Stage stage) {
-		AppButton button = newButton().app(app).build();
-		button.setOnAction(event -> app.addParent(stage).start());
-		return button;
+	private AppButton buttonType(Startable app) {
+		AppButton button = button();
+		if (app instanceof MultiTyped)
+			return button.icon(appType(app));
+		return button.app(app);
 	}
 
 	private Scene createScene() {
@@ -171,12 +187,12 @@ public class MainMenu extends Stage {
 		gp.setVgap(5);
 		gp.setAlignment(Pos.CENTER);
 
-		gp.add(button(purchaseApp), 0, 0);
-		gp.add(button(receiptApp), 1, 0);
-		gp.add(button(bookingApp), 2, 0);
-		gp.add(button(returnApp), 3, 0);
+		gp.add(button(purchasingApp.type(PURCHASING)), 0, 0);
+		gp.add(button(receivingApp.type(RECEIVING)), 1, 0);
+		gp.add(button(bookingApp.type(BOOKING)), 2, 0);
+		gp.add(button(rmaApp.type(RMA)), 3, 0);
 		gp.add(button(pickApp), 4, 0);
-		gp.add(button(deliveryApp), 5, 0);
+		gp.add(button(app1.type(DELIVERY_REPORT)), 5, 0);
 		gp.add(button(agingApp), 6, 0);
 
 		gp.add(label.menu("Purchasing"), 0, 1);
@@ -192,8 +208,8 @@ public class MainMenu extends Stage {
 		gp.add(button(treeApp), 2, 2);
 		gp.add(button(warehouseApp), 3, 2);
 		gp.add(button(inventoryApp), 4, 2);
-		gp.add(button(stockTakeApp), 5, 2);
-		gp.add(button(stockTakeReconciliationApp), 6, 2);
+		gp.add(button(stockTakeApp.type(STOCK_TAKE)), 5, 2);
+		gp.add(button(stockTakeReconciliationApp.type(STOCK_TAKE_RECONCILIATION)), 6, 2);
 
 		gp.add(label.menu("Item Master"), 0, 3);
 		gp.add(label.menu("Item Family"), 1, 3);
@@ -208,7 +224,7 @@ public class MainMenu extends Stage {
 		gp.add(button(channelApp), 2, 4);
 		gp.add(button(customerApp), 3, 4);
 		gp.add(button(invoiceBookletApp), 4, 4);
-		gp.add(button(invoiceApp), 5, 4);
+		gp.add(button(app2.type(INVOICE)), 5, 4);
 		gp.add(button(remittanceApp), 6, 4);
 
 		gp.add(label.menu("Truck"), 0, 5);
@@ -219,9 +235,9 @@ public class MainMenu extends Stage {
 		gp.add(label.menu("Invoice"), 5, 5);
 		gp.add(label.menu("Remittance"), 6, 5);
 
-		gp.add(button(userDialog, this), 0, 6);
-		gp.add(button(roleDialog, this), 1, 6);
-		gp.add(button(styleDialog, this), 2, 6);
+		gp.add(button(userDialog.addParent(this)), 0, 6);
+		gp.add(button(roleDialog.addParent(this)), 1, 6);
+		gp.add(button(styleDialog.addParent(this)), 2, 6);
 		gp.add(button(backupDialog), 3, 6);
 		gp.add(button(vatApp), 4, 6);
 		gp.add(button(dayEndApp), 5, 6);
@@ -236,10 +252,6 @@ public class MainMenu extends Stage {
 		gp.add(label.menu("Month-End"), 6, 7);
 
 		return gp;
-	}
-
-	private AppButton newButton() {
-		return new AppButton().fontSize(44);
 	}
 
 	private void setSceneStyle() {

@@ -13,7 +13,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import ph.txtdis.dto.AbstractSoldOrder;
-import ph.txtdis.dto.SoldOrderDetail;
+import ph.txtdis.dto.BillableDetail;
 import ph.txtdis.fx.control.InputNode;
 import ph.txtdis.fx.control.LabeledCombo;
 import ph.txtdis.fx.control.LabeledField;
@@ -23,7 +23,7 @@ import ph.txtdis.type.UomType;
 
 @Lazy
 @Component("soldOrderDialog")
-public class SoldOrderDialog extends FieldDialog<SoldOrderDetail> {
+public class SoldOrderDialog extends FieldDialog<BillableDetail> {
 
 	@Autowired
 	private LabeledField<Long> itemIdField;
@@ -42,7 +42,7 @@ public class SoldOrderDialog extends FieldDialog<SoldOrderDetail> {
 
 	private SoldService<? extends AbstractSoldOrder<Long>, Long> service;
 
-	public SoldOrderDialog service(SoldService<? extends AbstractSoldOrder<Long>, Long> service) {
+	public SoldOrderDialog addService(SoldService<? extends AbstractSoldOrder<Long>, Long> service) {
 		this.service = service;
 		return this;
 	}
@@ -84,7 +84,7 @@ public class SoldOrderDialog extends FieldDialog<SoldOrderDetail> {
 	}
 
 	@Override
-	protected SoldOrderDetail createEntity() {
+	protected BillableDetail createEntity() {
 		return service.createDetail(uomCombo.getValue(), qtyField.getValue(), qualityCombo.getValue());
 	}
 

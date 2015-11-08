@@ -1,8 +1,13 @@
 package ph.txtdis.app;
 
+import java.util.Arrays;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
+import javafx.scene.Node;
 import ph.txtdis.dto.AgingReceivable;
 import ph.txtdis.fx.table.AgingReceivableTable;
 import ph.txtdis.service.AgingReceivableService;
@@ -10,12 +15,31 @@ import ph.txtdis.service.AgingReceivableService;
 @Lazy
 @Component("agingReceivableApp")
 public class AgingReceivableApp
-		extends AbstractTotaledApp<AgingReceivableTable, AgingReceivableService, AgingReceivable>
+		extends AbstractExcelApp<AgingReceivableTable, AgingReceivableService, AgingReceivable>
 {
+	@Autowired
+	private TotaledTableApp totaledTableApp;
+
+	@Override
+	public void refresh() {
+		try {
+			table.items(service.list());
+			totaledTableApp.refresh(service);
+			super.refresh();
+		} catch (Exception e) {
+			e.printStackTrace();
+			dialog.show(e).addParent(this).start();
+		}
+	}
 
 	@Override
 	public void start() {
-		createTotalDisplays(7);
+		totaledTableApp.addTotalDisplayPane(7);
 		super.start();
+	}
+
+	@Override
+	protected List<Node> mainVerticalPaneNodes() {
+		return Arrays.asList(totaledTableApp.addTablePane(table));
 	}
 }

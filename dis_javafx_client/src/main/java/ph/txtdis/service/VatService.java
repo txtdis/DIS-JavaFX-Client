@@ -1,5 +1,11 @@
 package ph.txtdis.service;
 
+import static ph.txtdis.util.DateTimeUtils.endOfMonth;
+import static ph.txtdis.util.DateTimeUtils.startOfMonth;
+import static ph.txtdis.util.DateTimeUtils.toDottedYearMonth;
+import static ph.txtdis.util.DateTimeUtils.toFullMonthYear;
+import static ph.txtdis.util.DateTimeUtils.toLongMonthYear;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Arrays;
@@ -9,11 +15,12 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import static java.math.BigDecimal.ZERO;
+
 import ph.txtdis.dto.Vat;
 import ph.txtdis.excel.ExcelWriter;
 import ph.txtdis.excel.Tabular;
-import ph.txtdis.util.Numeric;
-import ph.txtdis.util.Temporal;
+import ph.txtdis.util.NumberUtils;
 
 @Service("VatService")
 public class VatService implements Spreadsheet<Vat>, Spun {
@@ -47,13 +54,13 @@ public class VatService implements Spreadsheet<Vat>, Spun {
 	}
 
 	@Override
-	public String getSubheaderText() {
-		return Temporal.toFullMonthYear(getDate());
+	public String getSubhead() {
+		return toFullMonthYear(getDate());
 	}
 
 	@Override
 	public String getTitleText() {
-		return getAllCapModule() + " " + Temporal.toLongMonthYear(getDate());
+		return getAllCapModule() + " " + toLongMonthYear(getDate());
 	}
 
 	@Override
@@ -93,11 +100,11 @@ public class VatService implements Spreadsheet<Vat>, Spun {
 	private BigDecimal computeVat() throws Exception {
 		Vat v = readOnlyService.module(getModule()).getOne("/rate");
 		BigDecimal vat = v.getVatValue();
-		return Numeric.divide(vat, (v.getValue().subtract(vat)));
+		return NumberUtils.divide(vat, (v.getValue().subtract(vat)));
 	}
 
 	private LocalDate end() {
-		return Temporal.endOfMonth(getDate());
+		return endOfMonth(getDate());
 	}
 
 	private String getAllCapModule() {
@@ -105,22 +112,23 @@ public class VatService implements Spreadsheet<Vat>, Spun {
 	}
 
 	private String getExcelFileName() {
-		return getAllCapModule() + "." + Temporal.toFileMonthYear(getDate());
+		return getAllCapModule() + "." + toDottedYearMonth(getDate());
 	}
 
 	private String getExcelSheetName() {
-		return Temporal.toLongMonthYear(getDate());
+		return toLongMonthYear(getDate());
 	}
 
 	private BigDecimal getTotalInvoiceValue() {
-		return list.stream().map(v -> v.getValue()).reduce(BigDecimal.ZERO, (a, b) -> a.add(b));
+		return list.stream().filter(v -> v.getValue() != null).map(v -> v.getValue()).reduce(ZERO, (a, b) -> a.add(b));
 	}
 
 	private BigDecimal getTotalVatValue() {
-		return list.stream().map(v -> v.getVatValue()).reduce(BigDecimal.ZERO, (a, b) -> a.add(b));
+		return list.stream().filter(v -> v.getVatValue() != null).map(v -> v.getVatValue()).reduce(ZERO,
+				(a, b) -> a.add(b));
 	}
 
 	private LocalDate start() {
-		return Temporal.startOfMonth(getDate());
+		return startOfMonth(getDate());
 	}
 }

@@ -31,11 +31,15 @@ public class UserService {
 		return readOnlyService.module(USER).getList();
 	}
 
-	public List<User> listByRole(UserType type) throws Exception {
-		return readOnlyService.module(USER).getList("/role?name=" + type);
+	public List<User> listNamesByRole(UserType... types) throws Exception {
+		String roles = "/role?";
+		for (int i = 0; i < types.length; i++)
+			roles += (i == 0 ? "" : "&") + "name=" + types[i];
+		return readOnlyService.module(USER).getList(roles);
 	}
 
 	public User save(User entity) throws Exception {
 		return savingService.module(USER).save(entity);
 	}
+
 }

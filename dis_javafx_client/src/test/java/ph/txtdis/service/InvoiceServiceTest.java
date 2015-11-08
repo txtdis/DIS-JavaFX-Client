@@ -6,7 +6,7 @@ import static org.junit.Assert.fail;
 import org.junit.Before;
 import org.junit.Test;
 
-import ph.txtdis.dto.Invoice;
+import ph.txtdis.dto.Billable;
 
 public class InvoiceServiceTest {
 
@@ -25,7 +25,7 @@ public class InvoiceServiceTest {
 	@Test
 	public void testReset() {
 		service.reset();
-		assertSame(new Invoice(), service.get());
+		assertSame(new Billable(), service.get());
 	}
 
 	@Test

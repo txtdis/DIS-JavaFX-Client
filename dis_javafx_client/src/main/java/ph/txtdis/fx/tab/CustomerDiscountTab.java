@@ -46,6 +46,6 @@ public class CustomerDiscountTab extends AbstractTab {
 
 	@Override
 	protected List<Node> mainVerticalPaneNodes() {
-		return Arrays.asList(box.hpane(table.build()));
+		return Arrays.asList(box.forHorizontalPane(table.build()));
 	}
 }

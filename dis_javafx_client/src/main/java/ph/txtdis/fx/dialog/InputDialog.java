@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 import ph.txtdis.fx.control.AppButton;
 import ph.txtdis.fx.control.LabelFactory;
 import ph.txtdis.fx.pane.DialogButtonBox;
-import ph.txtdis.util.Text;
+import ph.txtdis.util.TextUtils;
 
 @NoArgsConstructor
 public abstract class InputDialog extends AbstractDialog {
@@ -54,7 +54,7 @@ public abstract class InputDialog extends AbstractDialog {
 	}
 
 	protected String headerText() {
-		return Text.toHeader(this);
+		return TextUtils.toHeader(this);
 	}
 
 	protected void setOnFiredCloseButton() {

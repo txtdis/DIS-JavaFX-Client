@@ -39,7 +39,7 @@ public class Item extends AbstractTrackedId<Long> {
 	public VolumeDiscount getLatestVolumeDiscount(LocalDate date) {
 		try {
 			return getVolumeDiscounts().stream().filter(vd -> vd.getStartDate().compareTo(date) <= 0)
-					.max(VolumeDiscount::compareTo).get();
+					.max((a, b) -> a.getStartDate().compareTo(b.getStartDate())).get();
 		} catch (Exception e) {
 			return null;
 		}

@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
+import javafx.scene.Node;
 import ph.txtdis.dto.Vat;
 import ph.txtdis.fx.control.AppButton;
 import ph.txtdis.fx.dialog.OpenByDateDialog;
@@ -16,7 +17,10 @@ import ph.txtdis.service.VatService;
 
 @Lazy
 @Component("vatApp")
-public class VatApp extends AbstractTotaledApp<VatTable, VatService, Vat> {
+public class VatApp extends AbstractExcelApp<VatTable, VatService, Vat> {
+
+	@Autowired
+	private TotaledTableApp totaledTableApp;
 
 	@Autowired
 	private AppButton backButton;
@@ -31,8 +35,20 @@ public class VatApp extends AbstractTotaledApp<VatTable, VatService, Vat> {
 	private OpenByDateDialog openDialog;
 
 	@Override
+	public void refresh() {
+		try {
+			table.items(service.list());
+			totaledTableApp.refresh(service);
+			super.refresh();
+		} catch (Exception e) {
+			e.printStackTrace();
+			dialog.show(e).addParent(this).start();
+		}
+	}
+
+	@Override
 	public void start() {
-		createTotalDisplays(2);
+		totaledTableApp.addTotalDisplayPane(2);
 		super.start();
 	}
 
@@ -54,7 +70,7 @@ public class VatApp extends AbstractTotaledApp<VatTable, VatService, Vat> {
 
 	private void startOpenByDateDialog() {
 		openDialog.header("List a Month's VAT");
-		openDialog.criteria("Enter a date of the desired month");
+		openDialog.prompt("Enter a date of the desired month");
 		openDialog.addParent(this).start();
 	}
 
@@ -99,6 +115,11 @@ public class VatApp extends AbstractTotaledApp<VatTable, VatService, Vat> {
 		openButton.icon("openByDate").tooltip("Open...").build();
 		nextButton.icon("next").tooltip("Next...").build();
 		super.createButtons();
+	}
+
+	@Override
+	protected List<Node> mainVerticalPaneNodes() {
+		return Arrays.asList(totaledTableApp.addTablePane(table));
 	}
 
 	@Override

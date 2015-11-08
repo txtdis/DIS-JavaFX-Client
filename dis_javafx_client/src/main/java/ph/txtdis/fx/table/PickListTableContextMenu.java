@@ -14,7 +14,7 @@ import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
-import ph.txtdis.dto.Booking;
+import ph.txtdis.dto.Billable;
 import ph.txtdis.dto.Route;
 import ph.txtdis.fx.dialog.MessageDialog;
 import ph.txtdis.service.PickListService;
@@ -29,9 +29,9 @@ public final class PickListTableContextMenu {
 	@Autowired
 	private PickListService service;
 
-	private TableView<Booking> table;
+	private TableView<Billable> table;
 
-	private void addBookingMenuItemsToDeleteMenu(TableView<Booking> t, ContextMenu m) {
+	private void addBookingMenuItemsToDeleteMenu(TableView<Billable> t, ContextMenu m) {
 		t.getContextMenu().getItems().forEach(b -> {
 			MenuItem i = new MenuItem(b.getText());
 			i.setGraphic(b.getGraphic());
@@ -41,7 +41,7 @@ public final class PickListTableContextMenu {
 	}
 
 	private void addBookings(Route r) {
-		ObservableList<Booking> c = FXCollections.observableArrayList(table.getItems());
+		ObservableList<Billable> c = FXCollections.observableArrayList(table.getItems());
 		c.addAll(service.listBookings(r));
 		table.setItems(c);
 	}
@@ -52,13 +52,13 @@ public final class PickListTableContextMenu {
 		refreshTable();
 	}
 
-	private MenuItem deleteMenuItem(TableRow<Booking> r) {
+	private MenuItem deleteMenuItem(TableRow<Billable> r) {
 		MenuItem i = new MenuItem("Delete row");
 		i.setOnAction(e -> deleteRow(r));
 		return i;
 	}
 
-	private void deleteRow(TableRow<Booking> r) {
+	private void deleteRow(TableRow<Billable> r) {
 		table.getItems().remove(r.getItem());
 		service.unpick(r.getItem());
 		service.get().setBookings(table.getItems());
@@ -89,9 +89,9 @@ public final class PickListTableContextMenu {
 		table.scrollTo(table.getItems().size() - 1);
 	}
 
-	private TableRow<Booking> row(TableView<Booking> t) {
+	private TableRow<Billable> row(TableView<Billable> t) {
 		// @formatter:off
-        TableRow<Booking> r = new TableRow<>();
+        TableRow<Billable> r = new TableRow<>();
         r.contextMenuProperty().bind(Bindings
                 .when(r.itemProperty().isNotNull())
                 .then(rowMenu(t, r))
@@ -100,14 +100,14 @@ public final class PickListTableContextMenu {
         // @formatter:on
 	}
 
-	private ContextMenu rowMenu(TableView<Booking> t, TableRow<Booking> r) {
+	private ContextMenu rowMenu(TableView<Billable> t, TableRow<Billable> r) {
 		ContextMenu m = new ContextMenu();
 		addBookingMenuItemsToDeleteMenu(t, m);
 		m.getItems().add(deleteMenuItem(r));
 		return m;
 	}
 
-	void setMenu(TableView<Booking> table) {
+	void setMenu(TableView<Billable> table) {
 		try {
 			this.table = table;
 			table.setContextMenu(menu());

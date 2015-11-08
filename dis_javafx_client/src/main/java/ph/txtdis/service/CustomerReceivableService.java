@@ -13,10 +13,10 @@ import ph.txtdis.dto.CustomerReceivable;
 import ph.txtdis.dto.CustomerReceivableReport;
 import ph.txtdis.excel.ExcelWriter;
 import ph.txtdis.excel.Tabular;
-import ph.txtdis.util.Temporal;
+import ph.txtdis.util.DateTimeUtils;
 
 @Service
-public class CustomerReceivableService implements Spreadsheet<CustomerReceivable>, Totaled {
+public class CustomerReceivableService implements Spreadsheet<CustomerReceivable> {
 
 	private final static int CUSTOMER_ID = 0;
 
@@ -83,8 +83,8 @@ public class CustomerReceivableService implements Spreadsheet<CustomerReceivable
 	}
 
 	@Override
-	public String getSubheaderText() {
-		return getCustomerName() + " A/R as of " + Temporal.format(getTimestamp());
+	public String getSubhead() {
+		return getCustomerName() + " A/R as of " + DateTimeUtils.toTimestampText(getTimestamp());
 	}
 
 	public ZonedDateTime getTimestamp() {
@@ -131,7 +131,7 @@ public class CustomerReceivableService implements Spreadsheet<CustomerReceivable
 	}
 
 	private String getExcelFileName() {
-		return dottedDayCount() + ".Receivables-" + dottedCustomerName() + Temporal.toFilename(getTimestamp());
+		return dottedDayCount() + ".Receivables-" + dottedCustomerName() + DateTimeUtils.toTimestampFilename(getTimestamp());
 	}
 
 	private String getExcelSheetName() {

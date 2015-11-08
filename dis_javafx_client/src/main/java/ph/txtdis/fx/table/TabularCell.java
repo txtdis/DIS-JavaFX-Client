@@ -12,7 +12,10 @@ import javafx.scene.control.TableRow;
 import javafx.scene.input.MouseEvent;
 import javafx.stage.Stage;
 import ph.txtdis.app.Launchable;
+import ph.txtdis.app.MultiTyped;
 import ph.txtdis.dto.Keyed;
+import ph.txtdis.dto.Typed;
+import ph.txtdis.type.ModuleType;
 import ph.txtdis.type.Type;
 
 @Scope("prototype")
@@ -56,8 +59,8 @@ public class TabularCell<S extends Keyed<?>, T> {
 	}
 
 	private void launchApp() {
-		app.addParent(stage).start();
-		app.tryOpening(selectionIds);
+		startApp();
+		app.launch(selectionIds);
 	}
 
 	private void launchAppIfAble() {
@@ -104,5 +107,17 @@ public class TabularCell<S extends Keyed<?>, T> {
 
 	private void setTableColumn() {
 		tableColumn = tableCell.getTableColumn();
+	}
+
+	private void startApp() {
+		app.addParent(stage);
+		if (app instanceof MultiTyped)
+			((MultiTyped) app).type(type());
+		app.start();
+	}
+
+	private ModuleType type() {
+		String s = ((Typed) tableItem).type();
+		return ModuleType.valueOf(s);
 	}
 }

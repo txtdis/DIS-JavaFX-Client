@@ -13,7 +13,7 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import ph.txtdis.dto.AbstractSoldOrder;
-import ph.txtdis.dto.SoldOrderDetail;
+import ph.txtdis.dto.BillableDetail;
 import ph.txtdis.fx.dialog.SoldOrderDialog;
 import ph.txtdis.service.SoldService;
 import ph.txtdis.type.QualityType;
@@ -21,34 +21,34 @@ import ph.txtdis.type.UomType;
 
 @Scope("prototype")
 @Component("soldOrderTable")
-public class SoldOrderTable extends AppTable<SoldOrderDetail> {
+public class SoldOrderTable extends AppTable<BillableDetail> {
 
 	@Autowired
-	private AppendContextMenu<SoldOrderDetail> append;
+	private AppendContextMenu<BillableDetail> append;
 
 	@Autowired
-	private DeleteContextMenu<SoldOrderDetail> subtract;
+	private DeleteContextMenu<BillableDetail> subtract;
 
 	@Autowired
-	private Column<SoldOrderDetail, Long> id;
+	private Column<BillableDetail, Long> id;
 
 	@Autowired
-	private Column<SoldOrderDetail, String> name;
+	private Column<BillableDetail, String> name;
 
 	@Autowired
-	private Column<SoldOrderDetail, UomType> uom;
+	private Column<BillableDetail, UomType> uom;
 
 	@Autowired
-	private Column<SoldOrderDetail, QualityType> quality;
+	private Column<BillableDetail, QualityType> quality;
 
 	@Autowired
-	private Column<SoldOrderDetail, BigDecimal> price;
+	private Column<BillableDetail, BigDecimal> price;
 
 	@Autowired
-	private Column<SoldOrderDetail, BigDecimal> quantity;
+	private Column<BillableDetail, BigDecimal> quantity;
 
 	@Autowired
-	private Column<SoldOrderDetail, BigDecimal> subtotal;
+	private Column<BillableDetail, BigDecimal> subtotal;
 
 	@Autowired
 	private SoldOrderDialog dialog;
@@ -65,7 +65,7 @@ public class SoldOrderTable extends AppTable<SoldOrderDetail> {
 	protected void addColumns() {
 	// @formatter:off
 		getColumns().setAll(
-			id.ofType(ID).build("ID No.", "itemId"),
+			id.ofType(ID).build("ID No.", "id"),
 			name.ofType(TEXT).width(180).build("Name", "itemName"),
 			uom.ofType(ENUM).build("UOM", "uom"),
 			quality.ofType(ENUM).build("Quality", "quality"),
@@ -77,7 +77,7 @@ public class SoldOrderTable extends AppTable<SoldOrderDetail> {
 
 	@Override
 	protected void addProperties() {
-		append.addMenu(this, dialog.service(service));
+		append.addMenu(this, dialog.addService(service));
 		subtract.addMenu(this);
 	}
 }

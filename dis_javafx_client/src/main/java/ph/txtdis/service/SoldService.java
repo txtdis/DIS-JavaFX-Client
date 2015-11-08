@@ -1,11 +1,18 @@
 package ph.txtdis.service;
 
+import static java.lang.Integer.valueOf;
+import static java.math.RoundingMode.HALF_EVEN;
+import static java.util.stream.Collectors.toList;
+import static ph.txtdis.util.NumberUtils.divide;
+import static ph.txtdis.util.NumberUtils.formatCurrency;
+import static ph.txtdis.util.NumberUtils.isZero;
+import static ph.txtdis.util.NumberUtils.toPercentRate;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -20,7 +27,7 @@ import static java.math.BigDecimal.ZERO;
 
 import lombok.NoArgsConstructor;
 import ph.txtdis.dto.AbstractSoldOrder;
-import ph.txtdis.dto.Audited;
+import ph.txtdis.dto.BillableDetail;
 import ph.txtdis.dto.Channel;
 import ph.txtdis.dto.CreditDetail;
 import ph.txtdis.dto.Customer;
@@ -31,32 +38,31 @@ import ph.txtdis.dto.Keyed;
 import ph.txtdis.dto.Price;
 import ph.txtdis.dto.PricingType;
 import ph.txtdis.dto.QtyPerUom;
-import ph.txtdis.dto.SoldOrderDetail;
+import ph.txtdis.dto.Tracked;
 import ph.txtdis.dto.VolumeDiscount;
 import ph.txtdis.exception.DateInTheFutureException;
 import ph.txtdis.exception.DifferentDiscountException;
 import ph.txtdis.exception.DuplicateException;
 import ph.txtdis.exception.NotAnItemToBeSoldToCustomerException;
-import ph.txtdis.exception.NotFoundException;
 import ph.txtdis.type.QualityType;
 import ph.txtdis.type.UomType;
 import ph.txtdis.type.VolumeDiscountType;
-import ph.txtdis.util.Numeric;
+import ph.txtdis.util.NumberUtils;
 import ph.txtdis.util.Util;
 
 @NoArgsConstructor
 public abstract class SoldService<T extends AbstractSoldOrder<PK>, PK>
-		implements Audited, Reset, Serviced<T, PK>, SpunById<PK>
+		implements Audited, Reset, Serviced<T, PK>, SpunById<PK>, Tracked
 {
 
 	@Autowired
 	private ItemFamilyService familyService;
 
 	@Autowired
-	private ItemService itemService;
+	protected ItemService itemService;
 
 	@Autowired
-	protected ReadOnlyService<T> readOnlyService;
+	private ReadOnlyService<T> readOnlyService;
 
 	@Autowired
 	private SavingService<T> savingService;
@@ -69,9 +75,13 @@ public abstract class SoldService<T extends AbstractSoldOrder<PK>, PK>
 
 	private BigDecimal unitPrice, vatDivisor;
 
+	private Customer customer;
+
 	private Item item;
 
 	private List<UomType> sellingUoms;
+
+	private List<Discount> discounts;
 
 	private List<VolumeDiscount> volumeDiscounts;
 
@@ -88,12 +98,13 @@ public abstract class SoldService<T extends AbstractSoldOrder<PK>, PK>
 
 	public void checkforDuplicates(String id) throws Exception {
 		if (readOnlyService.module(getModule()).getOne("/" + id) != null)
-			throw new DuplicateException("ID No. " + id);
+			throw new DuplicateException(getModuleId() + id);
 	}
 
-	public SoldOrderDetail createDetail(UomType uom, BigDecimal qty, QualityType quality) {
-		SoldOrderDetail sd = new SoldOrderDetail();
-		sd.setItem(item);
+	public BillableDetail createDetail(UomType uom, BigDecimal qty, QualityType quality) {
+		BillableDetail sd = new BillableDetail();
+		sd.setId(item.getId());
+		sd.setItemName(item.getName());
 		sd.setUom(uom);
 		sd.setQty(qty);
 		sd.setQuality(quality);
@@ -102,16 +113,20 @@ public abstract class SoldService<T extends AbstractSoldOrder<PK>, PK>
 	}
 
 	@Override
-	public T find(String id) throws Exception {
-		T e = readOnlyService.module(getModule()).getOne("/" + id);
-		if (e == null)
-			throw new NotFoundException("ID No. " + id);
-		return e;
+	public T get() {
+		if (entity == null)
+			reset();
+		return entity;
 	}
 
 	@Override
-	public T get() {
-		return entity;
+	public String getAuditedBy() {
+		return get().getAuditedBy();
+	}
+
+	@Override
+	public ZonedDateTime getAuditedOn() {
+		return get().getAuditedOn();
 	}
 
 	@Override
@@ -125,49 +140,30 @@ public abstract class SoldService<T extends AbstractSoldOrder<PK>, PK>
 	}
 
 	public CreditDetail getCredit() {
-		if (get().getCredit() == null && isNew())
-			get().setCredit(getLatestCredit());
-		return get().getCredit();
+		try {
+			return customer.getCreditDetails().stream().filter(p -> p.getStartDate().compareTo(getOrderDate()) <= 0)
+					.max((a, b) -> a.getStartDate().compareTo(b.getStartDate())).get();
+		} catch (Exception e) {
+			return null;
+		}
 	}
 
-	public String getCustomerAddress() {
-		return getCustomer() == null ? null : getCustomer().getAddress();
-	}
-
-	public Long getCustomerId() {
-		return getCustomer() == null ? null : getCustomer().getId();
-	}
-
-	public String getCustomerName() {
-		return getCustomer() == null ? null : getCustomer().getName();
-	}
-
-	public List<SoldOrderDetail> getDetails() {
+	public List<BillableDetail> getDetails() {
 		if (get().getDetails() == null)
 			setDetails(Collections.emptyList());
 		return get().getDetails();
 	}
 
-	public List<String> getDiscountTextList() {
-		if (getDiscounts().isEmpty())
-			return Collections.emptyList();
-		if (getDiscounts().size() == 1)
-			return showTheOnlyDiscountLevel();
-		return showTotalAndEachLevelDiscounts();
-	}
-
 	public BigDecimal getDiscountValue() {
-		BigDecimal discountValue = BigDecimal.ZERO;
-		BigDecimal grossValue = getGrossValue();
-		for (Discount d : getDiscounts()) {
-			discountValue = discountValue.add(grossValue.multiply(Numeric.toPercentRate(d.getPercent())));
-			grossValue = getGrossValue().subtract(discountValue);
+		BigDecimal discountValue = ZERO;
+		if (discounts != null) {
+			BigDecimal grossValue = getGross();
+			for (Discount d : discounts) {
+				discountValue = discountValue.add(grossValue.multiply(NumberUtils.toPercentRate(d.getPercent())));
+				grossValue = grossValue.subtract(discountValue);
+			}
 		}
 		return discountValue;
-	}
-
-	public LocalDate getDueDate() {
-		return getCustomer() == null ? null : getOrderDate().plusDays(creditTermsInDays());
 	}
 
 	@Override
@@ -175,8 +171,18 @@ public abstract class SoldService<T extends AbstractSoldOrder<PK>, PK>
 		return get().getId();
 	}
 
+	@Override
+	public Boolean getIsValid() {
+		return get().getIsValid();
+	}
+
 	public String getItemDescription() {
 		return item == null ? null : item.getDescription();
+	}
+
+	@Override
+	public ReadOnlyService<T> getReadOnlyService() {
+		return readOnlyService;
 	}
 
 	@Override
@@ -191,40 +197,25 @@ public abstract class SoldService<T extends AbstractSoldOrder<PK>, PK>
 	}
 
 	@Override
-	public PK getSpunId() {
-		return isNew() ? null : getId();
-	}
-
-	@Override
 	public SpunService<? extends Keyed<PK>, PK> getSpunService() {
 		return spunService;
 	}
 
-	public BigDecimal getTotalValue() {
-		return getGrossValue() == BigDecimal.ZERO ? null : getGrossValue().subtract(getDiscountValue());
+	public BigDecimal getTotal() {
+		return get().getTotalValue();
 	}
 
-	public BigDecimal getVatableValue() throws Exception {
-		return getTotalValue() == null ? null : Numeric.divide(getTotalValue(), getVatDivisor());
+	public BigDecimal getVat() throws Exception {
+		return getTotal() == null ? null : getTotal().subtract(getVatable());
 	}
 
-	public BigDecimal getVatValue() throws Exception {
-		return getTotalValue() == null ? null : getTotalValue().subtract(getVatableValue());
-	}
-
-	@Override
-	public boolean isNew() {
-		return getCreatedBy() == null;
+	public BigDecimal getVatable() throws Exception {
+		return getTotal() == null ? null : divide(getTotal(), getVatDivisor());
 	}
 
 	@Override
-	public void next() throws Exception {
-		set(spunService.module(getModule()).next(getSpunId()));
-	}
-
-	@Override
-	public void previous() throws Exception {
-		set(spunService.module(getModule()).previous(getSpunId()));
+	public void reset() {
+		discounts = null;
 	}
 
 	@Override
@@ -234,8 +225,16 @@ public abstract class SoldService<T extends AbstractSoldOrder<PK>, PK>
 			this.entity = (T) entity;
 	}
 
-	public void setDetails(List<SoldOrderDetail> details) {
-		get().setDetails(details);
+	public void setDetails(List<BillableDetail> details) {
+		if (isNew()) {
+			get().setDetails(details);
+			updateTotals();
+		}
+	}
+
+	@Override
+	public void setIsValid(Boolean isValid) {
+		get().setIsValid(isValid);
 	}
 
 	public void setItemUponValidation(Long id) throws Exception {
@@ -252,7 +251,7 @@ public abstract class SoldService<T extends AbstractSoldOrder<PK>, PK>
 	}
 
 	private boolean areChannelLimitsEqual(VolumeDiscount vd) {
-		return Util.areEqual(vd.getChannelLimit(), getCustomer().getChannel());
+		return Util.areEqual(vd.getChannelLimit(), customer.getChannel());
 	}
 
 	private Comparator<VolumeDiscount> compareSetTypeVolumeDiscountChannelLimits() {
@@ -271,17 +270,29 @@ public abstract class SoldService<T extends AbstractSoldOrder<PK>, PK>
 		return c2 == null ? -1 : c1.compareTo(c2);
 	}
 
+	private BigDecimal computeGross() {
+		try {
+			return getDetails().stream().map(d -> d.getQty().multiply(d.getPriceValue())).reduce(ZERO,
+					(a, b) -> a.add(b));
+		} catch (Exception e) {
+			return null;
+		}
+	}
+
+	private BigDecimal computeTotal() {
+		return getGross().subtract(getDiscountValue());
+	}
+
 	private BigDecimal computeUnitPrice(UomType uom, BigDecimal qty) {
 		BigDecimal qtyPerUom = getQtyPerUom(uom);
 		BigDecimal discountedPrice = computeDiscountedPrice(qty.multiply(qtyPerUom));
 		return discountedPrice.multiply(qtyPerUom);
 	}
 
-	private void confirmItemDiscountEqualsCurrent(List<ItemFamily> families) throws Exception {
-		List<Discount> discounts = getLatestDiscount(families);
-		if (getDetails().isEmpty())
-			get().setDiscounts(discounts);
-		else if (!getDiscounts().equals(discounts))
+	private void confirmItemDiscountEqualsCurrent(Item i) throws Exception {
+		if (customerNeverHadDiscountsOrItemIsFirstTableEntry(i))
+			return;
+		if (!discounts.equals(getLatestDiscounts(i)))
 			throw new DifferentDiscountException();
 	}
 
@@ -294,28 +305,28 @@ public abstract class SoldService<T extends AbstractSoldOrder<PK>, PK>
 			setLatestPrice(item);
 		} catch (Exception e) {
 			e.printStackTrace();
-			throw new NotAnItemToBeSoldToCustomerException(item, getCustomer());
+			throw new NotAnItemToBeSoldToCustomerException(item, customer);
 		}
 	}
 
-	private void confirmItemIsNotOnList(Item item) throws Exception {
-		if (getDetails().stream().filter(d -> d.getItem().equals(item)).findAny().isPresent())
-			throw new DuplicateException(item.getName());
+	private void confirmItemIsNotOnList(Item i) throws Exception {
+		if (getDetails().stream().filter(d -> d.getId() == i.getId()).findAny().isPresent())
+			throw new DuplicateException(i.getName());
 	}
 
-	private Discount createDiscount(Discount cd) {
-		Discount discount = new Discount();
-		discount.setLevel(cd.getLevel());
-		discount.setPercent(cd.getPercent());
-		return discount;
+	private String createEachLevelDiscountText(Discount d, BigDecimal total, BigDecimal net) {
+		BigDecimal perLevel = net.multiply(toPercentRate(d.getPercent()));
+		total = total.add(perLevel);
+		net = net.subtract(total);
+		return "[" + d.getLevel() + ": " + d.getPercent() + "%] " + formatCurrency(perLevel);
 	}
 
-	private Long creditTermsInDays() {
-		return getCredit() == null ? 0L : getCredit().getTermInDays();
-	}
-
-	private Customer getCustomer() {
-		return get().getCustomer();
+	private boolean customerNeverHadDiscountsOrItemIsFirstTableEntry(Item i) throws Exception {
+		if (discounts != null && !getDetails().isEmpty())
+			return discounts.isEmpty();
+		discounts = getLatestDiscounts(i);
+		get().setDiscountIds(listDiscountIds());
+		return true;
 	}
 
 	private BigDecimal getCutOff(VolumeDiscount vd) {
@@ -324,34 +335,24 @@ public abstract class SoldService<T extends AbstractSoldOrder<PK>, PK>
 		return cutoff.multiply(qtyPerUom);
 	}
 
-	private List<Discount> getDiscounts() {
-		if (get().getDiscounts() == null)
-			get().setDiscounts(Collections.emptyList());
-		return get().getDiscounts();
+	private List<String> getEachLevelDiscountTextList(List<String> list) {
+		BigDecimal net = getGross();
+		discounts.forEach(d -> list.add(createEachLevelDiscountText(d, ZERO, net)));
+		return list;
 	}
 
 	private List<ItemFamily> getFamilies(Item item) throws Exception {
 		return familyService.getItemAncestry(item);
 	}
 
-	private BigDecimal getGrossValue() {
-		return getDetails().isEmpty() ? BigDecimal.ZERO
-				: getDetails().stream().map(d -> d.getSubtotalValue()).reduce(BigDecimal.ZERO, (a, b) -> a.add(b));
+	private BigDecimal getGross() {
+		return get().getGrossValue();
 	}
 
 	private ItemFamily getHighestTierFamilyAmongDiscountLimits(List<ItemFamily> families) {
 		try {
 			return getLatestCustomerDiscountStream().filter(cd -> families.contains(cd.getFamilyLimit()))
-					.map(cd -> cd.getFamilyLimit()).min(ItemFamily::compareTo).get();
-		} catch (Exception e) {
-			return null;
-		}
-	}
-
-	private CreditDetail getLatestCredit() {
-		try {
-			return getCustomer().getCreditDetails().stream()
-					.filter(p -> p.getStartDate().compareTo(getOrderDate()) <= 0).max(CreditDetail::compareTo).get();
+					.map(cd -> cd.getFamilyLimit()).max((a, b) -> ordinal(a).compareTo(ordinal(b))).get();
 		} catch (Exception e) {
 			return null;
 		}
@@ -359,16 +360,21 @@ public abstract class SoldService<T extends AbstractSoldOrder<PK>, PK>
 
 	private Stream<Discount> getLatestCustomerDiscountStream() {
 		try {
-			return getCustomer().getDiscounts().stream().filter(cd -> cd.getStartDate().compareTo(getOrderDate()) <= 0);
+			return customer.getDiscounts().stream().filter(cd -> cd.getStartDate().compareTo(getOrderDate()) <= 0);
 		} catch (Exception e) {
 			return Stream.empty();
 		}
 	}
 
-	private List<Discount> getLatestDiscount(ItemFamily family) {
-		return getLatestFamilyFilteredCustomerDiscountStream(family)
-				.filter(cd -> cd.getStartDate().isEqual(getStartDateOfLatestDiscount(family)))
-				.map(cd -> createDiscount(cd)).collect(Collectors.toList());
+	private List<Discount> getLatestDiscounts(Item i) throws Exception {
+		List<ItemFamily> l = getFamilies(i);
+		ItemFamily f = getHighestTierFamilyAmongDiscountLimits(l);
+		return getLatestDiscounts(f);
+	}
+
+	private List<Discount> getLatestDiscounts(ItemFamily f) {
+		return getLatestFamilyFilteredCustomerDiscountStream(f)
+				.filter(cd -> cd.getStartDate().isEqual(getStartDateOfLatestDiscount(f))).collect(Collectors.toList());
 	}
 
 	private Stream<Discount> getLatestFamilyFilteredCustomerDiscountStream(ItemFamily family) {
@@ -381,24 +387,17 @@ public abstract class SoldService<T extends AbstractSoldOrder<PK>, PK>
 				.max(Price::compareTo);
 	}
 
-	private PricingType getPricingAlternateType() {
-		return getCustomer() == null ? null : getCustomer().getAlternatePricingType();
-	}
-
-	private PricingType getPricingPrimaryType() {
-		return getCustomer() == null ? null : getCustomer().getPrimaryPricingType();
-	}
-
 	private LocalDate getStartDateOfLatestDiscount(ItemFamily family) {
 		try {
-			return getLatestFamilyFilteredCustomerDiscountStream(family).max(Discount::compareTo).get().getStartDate();
+			return getLatestFamilyFilteredCustomerDiscountStream(family)
+					.max((a, b) -> a.getStartDate().compareTo(b.getStartDate())).get().getStartDate();
 		} catch (Exception e) {
 			return null;
 		}
 	}
 
-	private String getTotalDiscountInText() {
-		return Numeric.formatCurrency(getDiscountValue());
+	private String getTotalInText(BigDecimal t) {
+		return "[TOTAL] " + formatCurrency(t);
 	}
 
 	private BigDecimal getVatDivisor() throws Exception {
@@ -417,11 +416,11 @@ public abstract class SoldService<T extends AbstractSoldOrder<PK>, PK>
 				break;
 			}
 		BigDecimal net = qty.multiply(unitPrice).subtract(discount);
-		return net.divide(qty, 8, RoundingMode.HALF_EVEN);
+		return net.divide(qty, 8, HALF_EVEN);
 	}
 
 	private BigDecimal getVolumeDiscountOfTierTypePrice(BigDecimal qty) {
-		BigDecimal unitDiscount = BigDecimal.ZERO;
+		BigDecimal unitDiscount = ZERO;
 		volumeDiscounts.sort(compareTierTypeVolumeDiscountChannelLimitsThenReverseCutOff());
 		for (VolumeDiscount vd : volumeDiscounts)
 			if (getCutOff(vd).compareTo(qty) <= 0 && (areChannelLimitsEqual(vd) || isAnAllChannelVolumeDiscount(vd))) {
@@ -435,45 +434,46 @@ public abstract class SoldService<T extends AbstractSoldOrder<PK>, PK>
 		return vd.getChannelLimit() == null;
 	}
 
-	private boolean isAnAllItemDiscount() {
-		return getLatestFamilyFilteredCustomerDiscountStream(null).findAny().isPresent();
+	private List<Long> listDiscountIds() {
+		return discounts.stream().map(d -> d.getId()).collect(toList());
+	}
+
+	private List<String> listDiscounts() {
+		if (isZero(getDiscountValue()))
+			return null;
+		ArrayList<String> list = new ArrayList<>();
+		if (discounts.size() > 1)
+			list.add(getTotalInText(getDiscountValue()));
+		return getEachLevelDiscountTextList(list);
+	}
+
+	private Integer ordinal(ItemFamily b) {
+		return valueOf(b.getTier().ordinal());
 	}
 
 	private int reverseCompareCutOffsWhenChannelLimitsAreEqual(VolumeDiscount a, VolumeDiscount b) {
 		int comp = compareVolumeDiscountChannelLimits(a, b);
-		return comp != 0 ? comp : Integer.valueOf(b.getCutoff()).compareTo(Integer.valueOf(a.getCutoff()));
+		return comp != 0 ? comp : valueOf(b.getCutoff()).compareTo(valueOf(a.getCutoff()));
 	}
 
 	private void setVolumeDiscounts() {
 		List<VolumeDiscount> list = item.getVolumeDiscounts();
 		LocalDate date = list.stream().filter(vd -> !vd.getStartDate().isAfter(getOrderDate()))
-				.max(VolumeDiscount::compareTo).get().getStartDate();
+				.max((a, b) -> a.getStartDate().compareTo(b.getStartDate())).get().getStartDate();
 		volumeDiscounts = list.stream().filter(vd -> vd.getStartDate().isEqual(date)).collect(Collectors.toList());
 	}
 
-	private List<String> showTheOnlyDiscountLevel() {
-		return Arrays.asList("[" + getDiscounts().get(0).getPercent() + "%] " + getTotalDiscountInText());
-	}
-
-	private List<String> showTotalAndEachLevelDiscounts() {
-		BigDecimal total = BigDecimal.ZERO;
-		BigDecimal net = getGrossValue();
-		ArrayList<String> list = new ArrayList<>(Arrays.asList("[TOTAL] " + getTotalDiscountInText()));
-		for (Discount discount : getDiscounts()) {
-			BigDecimal perLevel = net.multiply(Numeric.toPercentRate(discount.getPercent()));
-			total = total.add(perLevel);
-			net = net.subtract(total);
-			list.add("[" + discount.getLevel() + "- " + discount.getPercent() + "%] "
-					+ Numeric.formatCurrency(perLevel));
-		}
-		return list;
+	private void updateTotals() {
+		get().setGrossValue(computeGross());
+		get().setTotalValue(computeTotal());
+		get().setDiscounts(listDiscounts());
 	}
 
 	private Item validateItem(Long id) throws Exception {
 		Item item = confirmItemExists(id);
 		confirmItemIsNotOnList(item);
 		confirmItemIsAllowedToBeSoldToCurrentCustomer(item);
-		confirmItemDiscountEqualsCurrent(getFamilies(item));
+		confirmItemDiscountEqualsCurrent(item);
 		return item;
 	}
 
@@ -495,13 +495,6 @@ public abstract class SoldService<T extends AbstractSoldOrder<PK>, PK>
 		return item;
 	}
 
-	List<Discount> getLatestDiscount(List<ItemFamily> families) {
-		ItemFamily family = getHighestTierFamilyAmongDiscountLimits(families);
-		if (!(family == null && !isAnAllItemDiscount()))
-			return getLatestDiscount(family);
-		return Collections.emptyList();
-	}
-
 	LocalDate getOrderDate() {
 		return get().getOrderDate();
 	}
@@ -521,15 +514,19 @@ public abstract class SoldService<T extends AbstractSoldOrder<PK>, PK>
 		return item.getVolumeDiscounts() != null;
 	}
 
+	void setCustomer(Customer customer) {
+		this.customer = customer;
+	}
+
 	void setItem(Item item) {
 		this.item = item;
 	}
 
 	void setLatestPrice(Item item) throws Exception {
 		unitPrice = null;
-		Optional<Price> optPrice = getOptionalPrice(item, getPricingPrimaryType());
-		if (!optPrice.isPresent() && getPricingAlternateType() != null)
-			optPrice = getOptionalPrice(item, getPricingAlternateType());
+		Optional<Price> optPrice = getOptionalPrice(item, customer.getPrimaryPricingType());
+		if (!optPrice.isPresent() && customer.getAlternatePricingType() != null)
+			optPrice = getOptionalPrice(item, customer.getAlternatePricingType());
 		unitPrice = optPrice.get().getPriceValue();
 	}
 

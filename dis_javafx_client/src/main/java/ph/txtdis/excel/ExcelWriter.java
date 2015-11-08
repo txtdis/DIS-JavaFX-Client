@@ -18,8 +18,8 @@ import org.apache.poi.ss.util.CellRangeAddress;
 import org.springframework.stereotype.Component;
 
 import ph.txtdis.util.Reflection;
-import ph.txtdis.util.Temporal;
-import ph.txtdis.util.Text;
+import ph.txtdis.util.DateTimeUtils;
+import ph.txtdis.util.TextUtils;
 
 @Component
 public class ExcelWriter {
@@ -253,23 +253,23 @@ public class ExcelWriter {
 	}
 
 	private void setDateValue(Cell c, Object o) {
-		c.setCellValue(Temporal.toUtilDate((LocalDate) o));
+		c.setCellValue(DateTimeUtils.toUtilDate((LocalDate) o));
 		c.setCellStyle(date);
 	}
 
 	private void setCenterValue(Cell c, Object o) {
-		c.setCellValue(Text.toString(o));
+		c.setCellValue(TextUtils.toString(o));
 		c.setCellStyle(center);
 	}
 
 	private void setRightValue(Cell c, Object o) {
-		String text = Text.toString(o);
+		String text = TextUtils.toString(o);
 		c.setCellValue(text);
 		c.setCellStyle(text.contains(">") ? red : right);
 	}
 
 	private void setTextValue(Cell c, Object o) {
-		String text = Text.toString(o);
+		String text = TextUtils.toString(o);
 		c.setCellValue(text);
 		c.setCellStyle(text.contains(">") ? red : left);
 	}

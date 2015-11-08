@@ -1,6 +1,10 @@
 package ph.txtdis.fx.control;
 
+import static javafx.scene.input.KeyCode.ENTER;
+import static javafx.scene.input.KeyEvent.KEY_PRESSED;
 import static ph.txtdis.type.Type.TEXT;
+import static ph.txtdis.util.TypeStyle.align;
+import static ph.txtdis.util.TypeStyle.style;
 
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
@@ -10,8 +14,6 @@ import com.sun.javafx.scene.control.skin.TextFieldSkin;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.value.ObservableBooleanValue;
 import javafx.scene.control.TextField;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
 import ph.txtdis.type.Type;
 import ph.txtdis.util.TypeStyle;
 
@@ -76,7 +78,7 @@ public class AppField<T> extends TextField implements ErrorHandling, InputContro
 
 	@Override
 	public void setValue(T value) {
-		TypeStyle.style(type, this, value);
+		style(type, this, value);
 	}
 
 	public AppField<T> width(int width) {
@@ -92,7 +94,7 @@ public class AppField<T> extends TextField implements ErrorHandling, InputContro
 	}
 
 	private void setAlignment() {
-		TypeStyle.align(type, this);
+		align(type, this);
 	}
 
 	private void setFieldWidth(int width) {
@@ -108,8 +110,8 @@ public class AppField<T> extends TextField implements ErrorHandling, InputContro
 	}
 
 	private void traverseOnPressedEnterKey() {
-		addEventFilter(KeyEvent.KEY_PRESSED, event -> {
-			if (event.getCode() == KeyCode.ENTER)
+		addEventFilter(KEY_PRESSED, event -> {
+			if (event.getCode() == ENTER)
 				((TextFieldSkin) getSkin()).getBehavior().traverseNext();
 		});
 	}

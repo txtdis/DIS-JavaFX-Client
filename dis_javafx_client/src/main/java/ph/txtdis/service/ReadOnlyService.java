@@ -55,6 +55,7 @@ public class ReadOnlyService<T> {
 		} catch (ResourceAccessException e) {
 			throw new NoServerConnectionException(server.location());
 		} catch (HttpClientErrorException e) {
+			e.printStackTrace();
 			if (e.getStatusCode() == HttpStatus.UNAUTHORIZED) {
 				if (e.getResponseBodyAsString().contains("This connection has been closed"))
 					throw new StoppedServerException();
