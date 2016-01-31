@@ -39,7 +39,7 @@ public class CustomerReceivableApp extends
 	}
 
 	@Override
-	public void launch(String... id) {
+	public void actOn(String... id) {
 		try {
 			open(id);
 		} catch (Exception e) {

@@ -9,7 +9,7 @@ import ph.txtdis.type.QualityType;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class StockTakeAdjustment extends AbstractTrackedId<Long> {
+public class StockTakeAdjustment extends EntityCreationTracked<Long> {
 
 	private LocalDate stockTakeDate;
 

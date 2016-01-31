@@ -5,7 +5,7 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class ItemTree extends AbstractTrackedId<Long> {
+public class ItemTree extends EntityCreationTracked<Long> {
 
 	private ItemFamily family;
 

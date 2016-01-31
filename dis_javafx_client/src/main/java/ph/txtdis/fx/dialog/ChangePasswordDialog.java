@@ -1,11 +1,11 @@
 package ph.txtdis.fx.dialog;
 
-import org.springframework.context.annotation.Lazy;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import ph.txtdis.fx.pane.AppGridPane;
 
-@Lazy
+@Scope("prototype")
 @Component("changePasswordDialog")
 public class ChangePasswordDialog extends PasswordDialog {
 

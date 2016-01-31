@@ -8,6 +8,7 @@ import javafx.beans.value.ObservableBooleanValue;
 import javafx.scene.Node;
 import javafx.scene.control.Tab;
 import javafx.scene.layout.VBox;
+import ph.txtdis.fx.control.ErrorHandling;
 import ph.txtdis.fx.dialog.MessageDialog;
 import ph.txtdis.fx.pane.AppBoxPaneFactory;
 import ph.txtdis.fx.pane.AppGridPane;
@@ -25,6 +26,7 @@ public abstract class AbstractTab extends Tab implements InputTab {
 
 	public AbstractTab(String name) {
 		setText(name);
+		setContent(null);
 	}
 
 	@Override
@@ -34,6 +36,8 @@ public abstract class AbstractTab extends Tab implements InputTab {
 
 	public InputTab build() {
 		setContent(mainVerticalPane());
+		setListeners();
+		setBindings();
 		return this;
 	}
 
@@ -41,19 +45,24 @@ public abstract class AbstractTab extends Tab implements InputTab {
 		disableProperty().bind(b);
 	}
 
-	public ObservableBooleanValue isDisabledNow() {
-		return disabledProperty();
-	}
-
 	public void select() {
 		getTabPane().getSelectionModel().select(this);
 	}
 
+	protected void handleError(ErrorHandling control, Exception e) {
+		dialog.show(e).addParent(this).start();
+		control.handleError();
+	}
+
 	protected VBox mainVerticalPane() {
-		VBox vbox = box.forVerticals();
-		vbox.getChildren().addAll(mainVerticalPaneNodes());
-		return vbox;
+		return box.forVerticals(mainVerticalPaneNodes());
 	}
 
 	protected abstract List<Node> mainVerticalPaneNodes();
+
+	protected void setBindings() {
+	}
+
+	protected void setListeners() {
+	}
 }

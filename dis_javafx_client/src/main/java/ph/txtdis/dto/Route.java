@@ -7,16 +7,19 @@ import java.util.Optional;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import ph.txtdis.type.DeliveryType;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class Route extends AbstractTrackedId<Long> {
+public class Route extends EntityCreationTracked<Long> {
 
-	private String name;
+	private Account account;
+
+	private DeliveryType type;
 
 	private List<Account> sellerHistory;
 
-	private Account account;
+	private String name;
 
 	public String getAssignedBy() {
 		return getAccount() == null ? null : getAccount().getCreatedBy();

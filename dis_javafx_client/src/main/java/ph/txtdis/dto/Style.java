@@ -5,7 +5,7 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class Style extends AbstractTrackedId<Long> {
+public class Style extends EntityCreationTracked<Long> {
 
 	private String base, font;
 }

@@ -8,15 +8,11 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class StockTake extends AbstractTrackedId<Long> {
+public class StockTake extends EntityCreationTracked<Long> {
 
-	private Warehouse warehouse;
+	private String warehouse, checker, taker, remarks;
 
-	private User taker;
-
-	private User checker;
-
-	private LocalDate stockTakeDate;
+	private LocalDate countDate;
 
 	private List<StockTakeDetail> details;
 }

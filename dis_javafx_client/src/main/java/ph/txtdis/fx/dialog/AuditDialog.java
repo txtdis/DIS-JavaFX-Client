@@ -1,20 +1,19 @@
 package ph.txtdis.fx.dialog;
 
 import static java.time.LocalDate.now;
+import static java.util.Arrays.asList;
 import static ph.txtdis.type.Type.TEXT;
+import static ph.txtdis.util.SpringUtil.username;
 
-import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
-import static ph.txtdis.util.Spring.username;
-
 import static ph.txtdis.util.DateTimeUtils.toDateDisplay;
 
-import javafx.beans.binding.BooleanBinding;
+import javafx.beans.value.ObservableBooleanValue;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -46,8 +45,13 @@ public class AuditDialog extends InputDialog {
 		super.close();
 	}
 
-	public AuditDialog disableAcceptanceIf(BooleanBinding b) {
+	public AuditDialog disableApprovalButtonIf(ObservableBooleanValue b) {
 		acceptButton.disableIf(b);
+		return this;
+	}
+
+	public AuditDialog disableRejectionButtonIf(ObservableBooleanValue b) {
+		rejectButton.disableIf(b);
 		return this;
 	}
 
@@ -70,7 +74,7 @@ public class AuditDialog extends InputDialog {
 
 	private void accept() {
 		isValid = true;
-		findings = tag("VALIDATED");
+		findings = tag("VALID");
 		close();
 	}
 
@@ -82,7 +86,7 @@ public class AuditDialog extends InputDialog {
 
 	private void reject() {
 		isValid = false;
-		findings = tag("REJECTED");
+		findings = tag("INVALID");
 		close();
 	}
 
@@ -112,11 +116,17 @@ public class AuditDialog extends InputDialog {
 
 	@Override
 	protected String headerText() {
-		return "Enter Audit Findinds";
+		return "Enter Remarks";
 	}
 
 	@Override
 	protected List<Node> nodes() {
-		return Arrays.asList(header(), textField.build(TEXT), buttonBox());
+		return asList(header(), textField.build(TEXT), buttonBox());
+	}
+
+	@Override
+	protected void setOnFiredCloseButton() {
+		isValid = null;
+		super.setOnFiredCloseButton();
 	}
 }

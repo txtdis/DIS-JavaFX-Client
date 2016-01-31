@@ -1,21 +1,21 @@
 package ph.txtdis.fx.table;
 
-import java.util.ArrayList;
+import static java.util.stream.Collectors.toList;
+import static javafx.beans.binding.Bindings.when;
+import static javafx.collections.FXCollections.observableArrayList;
+
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
-import javafx.beans.binding.Bindings;
-import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
-import ph.txtdis.dto.Billable;
-import ph.txtdis.dto.Route;
+import ph.txtdis.dto.Booking;
 import ph.txtdis.fx.dialog.MessageDialog;
 import ph.txtdis.service.PickListService;
 
@@ -29,9 +29,9 @@ public final class PickListTableContextMenu {
 	@Autowired
 	private PickListService service;
 
-	private TableView<Billable> table;
+	private TableView<Booking> table;
 
-	private void addBookingMenuItemsToDeleteMenu(TableView<Billable> t, ContextMenu m) {
+	private void addBookingMenuItemsToDeleteMenu(TableView<Booking> t, ContextMenu m) {
 		t.getContextMenu().getItems().forEach(b -> {
 			MenuItem i = new MenuItem(b.getText());
 			i.setGraphic(b.getGraphic());
@@ -40,29 +40,29 @@ public final class PickListTableContextMenu {
 		});
 	}
 
-	private void addBookings(Route r) {
-		ObservableList<Billable> c = FXCollections.observableArrayList(table.getItems());
-		c.addAll(service.listBookings(r));
+	private void addBookings(String route) {
+		ObservableList<Booking> c = observableArrayList(table.getItems());
+		c.addAll(service.listUnpickedBookings(route));
 		table.setItems(c);
 	}
 
-	private void append(Route r) {
-		addBookings(r);
+	private void append(String route) {
+		addBookings(route);
 		service.get().setBookings(table.getItems());
 		refreshTable();
 	}
 
-	private MenuItem deleteMenuItem(TableRow<Billable> r) {
-		MenuItem i = new MenuItem("Delete row");
-		i.setOnAction(e -> deleteRow(r));
-		return i;
-	}
-
-	private void deleteRow(TableRow<Billable> r) {
+	private void delete(TableRow<Booking> r) {
 		table.getItems().remove(r.getItem());
 		service.unpick(r.getItem());
 		service.get().setBookings(table.getItems());
 		refreshTable();
+	}
+
+	private MenuItem deleteMenuItem(TableRow<Booking> r) {
+		MenuItem i = new MenuItem("Remove");
+		i.setOnAction(e -> delete(r));
+		return i;
 	}
 
 	private ContextMenu menu() throws Exception {
@@ -71,16 +71,14 @@ public final class PickListTableContextMenu {
 		return m;
 	}
 
-	private MenuItem menuItem(Route r) {
-		MenuItem i = new MenuItem(r.getName());
-		i.setOnAction(e -> append(r));
+	private MenuItem menuItem(String route) {
+		MenuItem i = new MenuItem(route);
+		i.setOnAction(e -> append(route));
 		return i;
 	}
 
 	private List<MenuItem> menuItems() throws Exception {
-		List<MenuItem> i = new ArrayList<>();
-		service.listRoutes().forEach(r -> i.add(menuItem(r)));
-		return i;
+		return service.listRoutes().stream().map(r -> menuItem(r)).collect(toList());
 	}
 
 	private void refreshTable() {
@@ -89,25 +87,23 @@ public final class PickListTableContextMenu {
 		table.scrollTo(table.getItems().size() - 1);
 	}
 
-	private TableRow<Billable> row(TableView<Billable> t) {
-		// @formatter:off
-        TableRow<Billable> r = new TableRow<>();
-        r.contextMenuProperty().bind(Bindings
-                .when(r.itemProperty().isNotNull())
-                .then(rowMenu(t, r))
-                .otherwise((ContextMenu) null));
-        return r;
-        // @formatter:on
+	private TableRow<Booking> row(TableView<Booking> t) {
+		TableRow<Booking> r = new TableRow<>();
+		r.contextMenuProperty()
+				.bind(when(r.itemProperty().isNotNull())//
+						.then(rowMenu(t, r))//
+						.otherwise((ContextMenu) null));
+		return r;
 	}
 
-	private ContextMenu rowMenu(TableView<Billable> t, TableRow<Billable> r) {
+	private ContextMenu rowMenu(TableView<Booking> t, TableRow<Booking> r) {
 		ContextMenu m = new ContextMenu();
 		addBookingMenuItemsToDeleteMenu(t, m);
 		m.getItems().add(deleteMenuItem(r));
 		return m;
 	}
 
-	void setMenu(TableView<Billable> table) {
+	void setMenu(TableView<Booking> table) {
 		try {
 			this.table = table;
 			table.setContextMenu(menu());

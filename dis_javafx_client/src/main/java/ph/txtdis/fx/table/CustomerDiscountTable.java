@@ -1,5 +1,6 @@
 package ph.txtdis.fx.table;
 
+import static ph.txtdis.type.Type.BOOLEAN;
 import static ph.txtdis.type.Type.DATE;
 import static ph.txtdis.type.Type.INTEGER;
 import static ph.txtdis.type.Type.OTHERS;
@@ -12,54 +13,70 @@ import java.time.LocalDate;
 import java.time.ZonedDateTime;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
-import ph.txtdis.dto.Discount;
+import ph.txtdis.dto.CustomerDiscount;
 import ph.txtdis.dto.ItemFamily;
 import ph.txtdis.fx.dialog.CustomerDiscountDialog;
 
-@Lazy
+@Scope("prototype")
 @Component("customerDiscountTable")
-public class CustomerDiscountTable extends AppTable<Discount> {
+public class CustomerDiscountTable extends AppTable<CustomerDiscount> {
 
 	@Autowired
-	private AppendContextMenu<Discount> append;
+	private AppendContextMenu<CustomerDiscount> append;
 
 	@Autowired
-	private Column<Discount, Integer> level;
+	private Column<CustomerDiscount, Integer> level;
 
 	@Autowired
-	private Column<Discount, BigDecimal> percent;
+	private Column<CustomerDiscount, BigDecimal> percent;
 
 	@Autowired
-	private Column<Discount, ItemFamily> familyLimit;
+	private Column<CustomerDiscount, ItemFamily> familyLimit;
 
 	@Autowired
-	private Column<Discount, LocalDate> startDate;
+	private Column<CustomerDiscount, LocalDate> startDate;
 
 	@Autowired
-	private Column<Discount, String> givenBy;
+	private Column<CustomerDiscount, String> givenBy;
 
 	@Autowired
-	private Column<Discount, ZonedDateTime> givenOn;
+	private Column<CustomerDiscount, ZonedDateTime> givenOn;
 
 	@Autowired
-	private CustomerDiscountDialog dialog;
+	private Column<CustomerDiscount, Boolean> approved;
+
+	@Autowired
+	private Column<CustomerDiscount, String> decidedBy;
+
+	@Autowired
+	private Column<CustomerDiscount, ZonedDateTime> decidedOn;
+
+	@Autowired
+	private Column<CustomerDiscount, String> remarks;
+
+	@Autowired
+	private CustomerDiscountDialog customerDiscountDialog;
 
 	@Override
 	@SuppressWarnings("unchecked")
 	protected void addColumns() {
-		getColumns().setAll(level.ofType(INTEGER).width(100).build("Level", "level"),
+		getColumns().setAll(level.ofType(INTEGER).width(60).build("Level", "level"),
 				percent.ofType(PERCENT).build("Discount", "percent"),
 				familyLimit.ofType(OTHERS).build("Limited\nto", "familyLimit"),
 				startDate.ofType(DATE).build("Start\nDate", "startDate"),
 				givenBy.ofType(TEXT).width(100).build("Given\nby", "createdBy"),
-				givenOn.ofType(TIMESTAMP).build("Given\non", "createdOn"));
+				givenOn.ofType(TIMESTAMP).build("Given\non", "createdOn"),
+				approved.ofType(BOOLEAN).build("OK'd", "approved"),
+				decidedBy.ofType(TEXT).width(120).build("Dis/approved\nby", "decidedBy"),
+				decidedOn.ofType(TIMESTAMP).build("Dis/approved\non", "decidedOn"),
+				remarks.ofType(TEXT).width(320).build("Remarks", "remarks"));
 	}
 
 	@Override
 	protected void addProperties() {
-		append.addMenu(this, dialog);
+		append.addMenu(this, customerDiscountDialog);
 	}
 }

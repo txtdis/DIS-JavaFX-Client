@@ -1,16 +1,18 @@
 package ph.txtdis.app;
 
 import static java.time.ZonedDateTime.now;
+import static ph.txtdis.type.PaymentType.CASH;
+import static ph.txtdis.type.PaymentType.CHECK;
+import static ph.txtdis.type.PaymentType.values;
 import static ph.txtdis.type.Type.CURRENCY;
-import static ph.txtdis.type.Type.DATE;
 import static ph.txtdis.type.Type.ID;
+import static ph.txtdis.type.Type.OTHERS;
 import static ph.txtdis.type.Type.TEXT;
-import static ph.txtdis.type.Type.TIME;
 import static ph.txtdis.type.Type.TIMESTAMP;
+import static ph.txtdis.util.SpringUtil.username;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -20,12 +22,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
-import static ph.txtdis.util.Spring.username;
-
 import javafx.beans.binding.BooleanBinding;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.scene.Node;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
 import ph.txtdis.dto.Customer;
 import ph.txtdis.dto.Payment;
 import ph.txtdis.fx.control.AppButton;
@@ -37,85 +38,41 @@ import ph.txtdis.fx.dialog.DepositDialog;
 import ph.txtdis.fx.pane.AppGridPane;
 import ph.txtdis.fx.table.PaymentTable;
 import ph.txtdis.service.RemittanceService;
-import ph.txtdis.util.Spring;
+import ph.txtdis.type.PaymentType;
+import ph.txtdis.util.SpringUtil;
 
 @Scope("prototype")
 @Component("remittanceApp")
-public class RemittanceApp extends AbstractIdApp<Payment, RemittanceService, Long, Long> {
-
-	private enum Form {
-		CASH, CHECK;
-	}
-
-	private static final int WIDTH = 300;
+public class RemittanceApp extends AbstractIdApp<RemittanceService, Long, Long> {
 
 	private static final String PROMPT = "Select date whose first entry will opened";
 
 	@Autowired
-	private AppButton openByDateButton;
+	private AppButton checkSearchButton, depositButton, historyButton, openByDateButton, transferButton;
 
 	@Autowired
-	private AppButton checkSearchButton;
-
-	@Autowired
-	private AppButton depositButton;
-
-	@Autowired
-	private AppButton transferButton;
-
-	@Autowired
-	private AppCombo<Form> paymentCombo;
-
-	@Autowired
-	private AppField<BigDecimal> amountInput;
+	private AppCombo<PaymentType> paymentCombo;
 
 	@Autowired
 	private AppCombo<String> collectorCombo;
 
 	@Autowired
-	private AppField<Long> idDisplay;
+	private AppCombo<Customer> draweeBankCombo;
 
 	@Autowired
-	private AppField<Long> checkIdInput;
+	private AppField<Long> idDisplay, checkIdInput;
 
 	@Autowired
-	private AppField<String> acctNoInput;
+	private AppField<BigDecimal> amountInput;
 
 	@Autowired
-	private AppField<Long> bankIdInput;
+	private AppField<Customer> depositorBankDisplay;
 
 	@Autowired
-	private AppField<String> bankDisplay;
+	private AppField<String> depositorDisplay, receivedByDisplay;
 
 	@Autowired
-	private AppField<Long> payorIdInput;
-
-	@Autowired
-	private AppField<String> payorDisplay;
-
-	@Autowired
-	private AppField<String> receivedByDisplay;
-
-	@Autowired
-	private AppField<ZonedDateTime> receivedOnDisplay;
-
-	@Autowired
-	private AppField<Long> depositorBankIdDisplay;
-
-	@Autowired
-	private AppField<String> depositorBankDisplay;
-
-	@Autowired
-	private AppField<LocalDate> depositDateDisplay;
-
-	@Autowired
-	private AppField<LocalTime> depositTimeDisplay;
-
-	@Autowired
-	private AppField<String> depositorDisplay;
-
-	@Autowired
-	private AppField<ZonedDateTime> depositorOnDisplay;
+	private AppField<ZonedDateTime> receivedOnDisplay, depositedOnDisplay, depositorOnDisplay;
 
 	@Autowired
 	private LocalDatePicker paymentDatePicker;
@@ -127,34 +84,29 @@ public class RemittanceApp extends AbstractIdApp<Payment, RemittanceService, Lon
 	private DepositDialog depositDialog;
 
 	@Autowired
+	private PaymentHistoryApp historyApp;
+
+	@Autowired
 	private PaymentTable table;
+
+	private BooleanProperty userAllowedToMakeCashDeposits, userAllowedToMakeCheckDeposits,
+			userAllowedToPostCollectionData, userAllowedToReceiveFundTransfer;
 
 	@Override
 	public void refresh() {
+		super.refresh();
 		paymentDatePicker.setValue(payment().getPaymentDate());
 		amountInput.setValue(payment().getValue());
-		collectorCombo.items(service.getCollectorNames());
+		refreshInputsAfterPaymentInput();
 		idDisplay.setValue(service.getId());
-		checkIdInput.setValue(checkId());
-		acctNoInput.setValue(payment().getAccountNo());
-		bankIdInput.setValue(payment().getDraweeBankId());
-		bankDisplay.setValue(payment().getDraweeBank());
-		paymentCombo.setValue(checkId() == null ? Form.CASH : Form.CHECK);
-		payorIdInput.setValue(payment().getPayorId());
-		payorDisplay.setValue(payment().getPayor());
 		receivedByDisplay.setValue(payment().getReceivedBy());
 		receivedOnDisplay.setValue(payment().getReceivedOn());
-		depositorBankIdDisplay.setValue(payment().getDepositorBankId());
 		depositorBankDisplay.setValue(payment().getDepositorBank());
-		depositDateDisplay.setValue(payment().getDepositDate());
-		depositTimeDisplay.setValue(payment().getDepositTime());
+		depositedOnDisplay.setValue(payment().getDepositedOn());
 		depositorDisplay.setValue(payment().getDepositor());
 		depositorOnDisplay.setValue(payment().getDepositorOn());
 		remarksDisplay.setValue(service.getRemarks());
-		table.items(service.get().getDetails());
-		remarksDisplay.setValue(service.getRemarks());
-		auditedApp.refresh(service);
-		super.refresh();
+		decisionNeededApp.refresh(service);
 	}
 
 	@Override
@@ -163,66 +115,71 @@ public class RemittanceApp extends AbstractIdApp<Payment, RemittanceService, Lon
 			paymentDatePicker.requestFocus();
 	}
 
-	private BooleanBinding audited() {
-		return auditedApp.isAudited();
+	private AppButton auditButton() {
+		return decisionButton = decisionNeededApp.addDecisionButton();
 	}
 
-	private HBox bankBox() {
-		return box.forHorizontals(bankIdInput.build(ID), bankDisplay.readOnly().width(WIDTH).build(TEXT));
+	private BooleanBinding audited() {
+		return decisionNeededApp.isAudited();
 	}
 
 	private HBox basicInfoBox() {
-	// @formatter:off
-		return box.forGridGroup(paymentDatePicker,
-			label.field("Type"), paymentCombo.items(Form.values()),
-			label.field("Amount"), amountInput.build(CURRENCY),
-			label.field("Received from"), collectorCombo.items(service.getCollectorNames()),
-			label.field("Collection Record No."), idDisplay.readOnly().build(ID));
-	// @formatter:on
+		return box.forGridGroup(paymentDatePicker, //
+				label.field("Amount"), amountInput.build(CURRENCY), //
+				label.field("Received from"), collectorCombo.width(180).items(service.getCollectorNames()), //
+				label.field("Collection Record No."), idDisplay.readOnly().build(ID));
 	}
 
 	private BooleanBinding cash() {
-		return paymentCombo.is(Form.CASH);
+		return paymentCombo.is(CASH);
 	}
 
 	private HBox checkBox() {
-	// @formatter:off
-		return box.forGridGroup(checkIdInput.build(ID),
-			label.field("Account No."), acctNoInput.width(160).build(TEXT),
-			label.field("Bank"), bankBox());
-	// @formatter:on
+		return box.forGridGroup(//
+				paymentCombo.items(values()), //
+				label.field("Check No."), checkIdInput.build(ID), //
+				label.field("Bank"), draweeBankCombo.items(service.getBanks()));
 	}
 
 	private Long checkId() {
 		return payment().getCheckId();
 	}
 
+	private void clearNodesAfterPaymentComboAndValidateNoCashCollectionHasBeenReceivedFromCollector() {
+		try {
+			if (paymentCombo.getValue() == CASH)
+				service.validateCashCollection();
+		} catch (Exception e) {
+			clearControlAfterShowingErrorDialog(e, paymentCombo);
+		} finally {
+			service.resetInputDataRelatedToPayment();
+			refreshInputsAfterPaymentCombo();
+		}
+	}
+
+	private void clearPaymentInputSucceedingNodes() {
+		service.resetInputDataRelatedToPayment();
+		refreshInputsAfterPaymentInput();
+	}
+
 	private HBox depositBox() {
-	// @formatter:off
-		return box.forGridGroup(depositedToBox(),
-			label.field("on"), depositDateDisplay.readOnly().build(DATE),
-			label.field("at"), depositTimeDisplay.readOnly().build(TIME),
-			label.field("per"), depositorDisplay.readOnly().width(120).build(TEXT),
-			label.field("on"), depositorOnDisplay.readOnly().build(TIMESTAMP));
-	// @formatter:on
+		return box.forGridGroup(depositorBankDisplay.readOnly().width(240).build(OTHERS), //
+				label.field("on"), depositedOnDisplay.readOnly().build(TIMESTAMP), //
+				label.field("per"), depositorDisplay.readOnly().width(120).build(TEXT), //
+				label.field("on"), depositorOnDisplay.readOnly().build(TIMESTAMP));
 	}
 
 	private BooleanBinding deposited() {
 		return depositorOnDisplay.isNotEmpty();
 	}
 
-	private HBox depositedToBox() {
-		return box.forHorizontals(depositorBankIdDisplay.readOnly().build(ID),
-				depositorBankDisplay.readOnly().width(WIDTH).build(TEXT));
-	}
-
 	private AppGridPane gridPane() {
 		gridPane.getChildren().clear();
 		gridPane.add(label.field("Date"), 0, 0);
 		gridPane.add(basicInfoBox(), 1, 0);
-		gridPane.add(label.field("Check No"), 0, 1);
+		gridPane.add(label.field("Type"), 0, 1);
 		gridPane.add(checkBox(), 1, 1);
-		gridPane.add(label.field("Payor"), 0, 2);
+		gridPane.add(label.field("Fund Transfer"), 0, 2);
 		gridPane.add(transferBox(), 1, 2);
 		gridPane.add(label.field("Deposited to"), 0, 3);
 		gridPane.add(depositBox(), 1, 3);
@@ -233,12 +190,12 @@ public class RemittanceApp extends AbstractIdApp<Payment, RemittanceService, Lon
 
 	private void inputDepositData() {
 		depositDialog.addParent(this).start();
-		if (depositDialog.getDate() != null)
+		if (depositDialog.getTimestamp() != null)
 			saveDeposit();
 	}
 
 	private void logTransfer() {
-		payment().setReceivedBy(Spring.username());
+		payment().setReceivedBy(SpringUtil.username());
 		payment().setReceivedOn(now());
 		save();
 	}
@@ -256,43 +213,45 @@ public class RemittanceApp extends AbstractIdApp<Payment, RemittanceService, Lon
 		}
 	}
 
+	private void openHistoryApp() {
+		historyApp.addParent(this).start();
+		Long id = historyApp.getSelectedId();
+		if (id != null)
+			actOn(id.toString());
+	}
+
 	private Payment payment() {
 		return service.get();
 	}
 
-	private HBox payorBox() {
-		return box.forHorizontals(payorIdInput.build(ID), payorDisplay.readOnly().width(WIDTH).build(TEXT));
+	private void refreshInputsAfterPaymentCombo() {
+		table.items(service.get().getDetails());
+		checkIdInput.setValue(checkId());
+		draweeBankCombo.items(service.getDraweeBank());
+	}
+
+	private void refreshInputsAfterPaymentInput() {
+		collectorCombo.items(service.getCollectorNames());
+		paymentCombo.items(service.getPaymentTypes());
+		refreshInputsAfterPaymentCombo();
 	}
 
 	private void saveDeposit() {
-		payment().setDepositorBankId(depositDialog.getBankId());
-		payment().setDepositorBank(depositDialog.getBankName());
-		payment().setDepositDate(depositDialog.getDate());
-		payment().setDepositTime(depositDialog.getTime());
+		payment().setDepositorBank(depositDialog.getBank());
+		payment().setDepositedOn(depositDialog.getTimestamp());
 		payment().setDepositor(username());
 		payment().setDepositorOn(now());
 		save();
 	}
 
-	private void setBindings() {
-		saveButton.disableIf((table.isEmpty().and(remarksDisplay.isNot("CANCELLED"))).or(posted()));
-		transferButton.disableIf(notPosted().or(transferred().or(deposited()).or(audited())));
-		depositButton.disableIf(notPosted().or(deposited()).or(audited()));
-		auditButton.disableIf(notPosted());
-		paymentCombo.disableIf(noDate());
-		amountInput.disableIf(noDate());
-		collectorCombo.disableIf(amountInput.isEmpty());
-		checkIdInput.disableIf(cash().or(collectorCombo.isEmpty()));
-		acctNoInput.disableIf(cash().or(checkIdInput.isEmpty()));
-		bankIdInput.disableIf(cash().or(acctNoInput.isEmpty()));
-		payorIdInput.disableIf(cash().or(bankIdInput.isEmpty()));
-		table.disableIf(whenCashAndNoCollectorOrWhenCheckAndNoPayor());
+	private void setPayment() {
+		service.setPayment(amountInput.getValue());
+		clearPaymentInputSucceedingNodes();
 	}
 
 	private void showAuditDialogToValidateOrder() {
-		auditDialog.disableAcceptanceIf(deposited().not()).addParent(this).start();
-		if (auditDialog.isValid() != null)
-			saveAudit();
+		decisionNeededApp.showDecisionDialogForValidation(this, service);
+		refresh();
 	}
 
 	private void showCheckSearchDialog() {
@@ -305,8 +264,8 @@ public class RemittanceApp extends AbstractIdApp<Payment, RemittanceService, Lon
 
 	private void showOpenByDateDialog() {
 		String h = service.getOpenDialogHeading();
-		dateDialog.header(h).prompt(PROMPT).addParent(this).start();
-		LocalDate d = dateDialog.getDate();
+		openByDateDialog.header(h).prompt(PROMPT).addParent(this).start();
+		LocalDate d = openByDateDialog.getDate();
 		if (d != null)
 			open(d);
 	}
@@ -316,66 +275,116 @@ public class RemittanceApp extends AbstractIdApp<Payment, RemittanceService, Lon
 	}
 
 	private HBox transferBox() {
-	// @formatter:off
-		return box.forGridGroup(payorBox(),
-			label.field("Fund Transfer Received by"), receivedByDisplay.readOnly().width(120).build(TEXT),
-			label.field("on"), receivedOnDisplay.readOnly().build(TIMESTAMP));
-	// @formatter:on
+		return box.forGridGroup(//
+				label.field("Received by"), //
+				receivedByDisplay.readOnly().width(120).build(TEXT), //
+				label.field("on"), //
+				receivedOnDisplay.readOnly().build(TIMESTAMP));
 	}
 
 	private BooleanBinding transferred() {
 		return receivedOnDisplay.isNotEmpty();
 	}
 
-	private void updateUponDateValidation() {
-		try {
-			service.setOrderDateUponValidation(paymentDatePicker.getValue());
-			refresh();
-		} catch (Exception e) {
-			clearControlAfterShowingErrorDialog(e, paymentDatePicker);
+	private void updateUponCheckAndBankValidation() {
+		if (table.isEmpty().get() && !checkIdInput.isEmpty().get()) {
+			try {
+				service.validateBankCheckBeforeSetting(draweeBankCombo.getValue());
+			} catch (Exception e) {
+				showErrorDialog(e);
+				checkIdInput.setValue(null);
+				draweeBankCombo.items(service.getBanks());
+				checkIdInput.requestFocus();
+			}
 		}
 	}
 
-	private BooleanBinding whenCashAndNoCollectorOrWhenCheckAndNoPayor() {
-		return (cash().or(collectorCombo.isEmpty())).or(paymentCombo.is(Form.CHECK).or(payorDisplay.isEmpty()));
+	private void updateUponDateValidation() {
+		try {
+			service.validateOrderDateBeforeSetting(paymentDatePicker.getValue());
+		} catch (Exception e) {
+			showErrorDialog(e);
+		} finally {
+			refresh();
+			paymentDatePicker.requestFocus();
+		}
+	}
+
+	private BooleanBinding whenUnknownPaymentTypeOrWhenCheckWithoutDraweeBank() {
+		return (paymentCombo.disabledProperty()//
+				.or(cash().not().and(draweeBankCombo.disabledProperty())));
 	}
 
 	@Override
 	protected List<AppButton> addButtons() {
 		List<AppButton> b = new ArrayList<>(super.addButtons());
+		b.add(historyButton.icon("list").tooltip("Show collection records\nof the last 15 days").build());
 		b.add(2, openByDateButton.icon("openByDate").tooltip("Open a date's\nfirst entry").build());
-		b.add(checkSearchButton.icon("checkSearch").tooltip("Find a check...").build());
-		b.add(transferButton.icon("transfer").tooltip("Fund transfer\receipt...").build());
-		b.add(depositButton.icon("deposit").tooltip("Enter deposit\ndata...").build());
-		b.add(auditButton = auditedApp.addAuditButton());
+		b.add(checkSearchButton.icon("checkSearch").tooltip("Find a check").build());
+		b.add(transferButton.icon("transfer").tooltip("Fund transfer\receipt").build());
+		b.add(depositButton.icon("deposit").tooltip("Enter deposit\ndata").build());
+		b.add(auditButton());
 		return b;
 	}
 
 	@Override
-	protected HBox auditPane() {
-		return auditedApp.addAuditDisplays(super.auditPane());
-	}
-
-	@Override
-	protected VBox mainVerticalPane() {
-		VBox vbox = super.mainVerticalPane();
-		setBindings();
-		return vbox;
-	}
-
-	@Override
 	protected List<Node> mainVerticalPaneNodes() {
-		return Arrays.asList(gridPane(), table());
+		return Arrays.asList(gridPane(), table(), trackedPane());
+	}
+
+	@Override
+	protected void setBindings() {
+		userAllowedToMakeCashDeposits = new SimpleBooleanProperty(service.userAllowedToMakeCashDeposits());
+		userAllowedToMakeCheckDeposits = new SimpleBooleanProperty(service.userAllowedToMakeCheckDeposits());
+		userAllowedToPostCollectionData = new SimpleBooleanProperty(service.userAllowedToPostCollectionData());
+		userAllowedToReceiveFundTransfer = new SimpleBooleanProperty(service.userAllowedToReceiveFundTransfer());
+		saveButton.disableIf(isPosted()//
+				.or(table.isEmpty().and(remarksDisplay.isNot("CANCELLED")))//
+				.or(userAllowedToPostCollectionData.not()));
+		transferButton.disableIf(notPosted()//
+				.or(transferred())//
+				.or(deposited())//
+				.or(audited())//
+				.or(userAllowedToReceiveFundTransfer.not()));
+		depositButton.disableIf(notPosted()//
+				.or(deposited())//
+				.or(audited())//
+				.or(paymentCombo.is(CASH).and(userAllowedToMakeCashDeposits.not()))//
+				.or(paymentCombo.is(CHECK).and(userAllowedToMakeCheckDeposits.not())));
+		decisionButton.disableIf(notPosted());
+		amountInput.disableIf(noDate().or(paymentCombo.isEmpty().not()));
+		collectorCombo.disableIf(amountInput.isEmpty());
+		paymentCombo.disableIf(collectorCombo.disabledProperty());
+		checkIdInput.disableIf(cash());
+		draweeBankCombo.disableIf(cash()//
+				.or(checkIdInput.isEmpty()));
+		table.disableIf(whenUnknownPaymentTypeOrWhenCheckWithoutDraweeBank());
 	}
 
 	@Override
 	protected void setListeners() {
 		super.setListeners();
 		checkSearchButton.setOnAction(e -> showCheckSearchDialog());
+		historyButton.setOnAction(e -> openHistoryApp());
 		transferButton.setOnAction(e -> logTransfer());
+		openByDateButton.setOnAction(e -> showOpenByDateDialog());
+		decisionNeededApp.setDecisionButtonOnAction(e -> showAuditDialogToValidateOrder());
+		amountInput.setOnAction(e -> setPayment());
+		collectorCombo.setOnAction(e -> service.setCollector(collectorCombo.getValue()));
+		checkIdInput.setOnAction(e -> service.setCheckId(checkIdInput.getValue()));
+		draweeBankCombo.setOnAction(e -> updateUponCheckAndBankValidation());
 		depositButton.setOnAction(e -> inputDepositData());
 		paymentDatePicker.setOnAction(a -> updateUponDateValidation());
-		openByDateButton.setOnAction(e -> showOpenByDateDialog());
-		auditedApp.setOnAuditButtonClick(e -> showAuditDialogToValidateOrder());
+		paymentCombo
+				.setOnAction(e -> clearNodesAfterPaymentComboAndValidateNoCashCollectionHasBeenReceivedFromCollector());
+	}
+
+	@Override
+	protected HBox trackedPane() {
+		HBox b = super.trackedPane();
+		List<Node> l = new ArrayList<>(b.getChildren());
+		l.addAll(decisionNeededApp.addAuditNodes());
+		b.getChildren().setAll(l);
+		return b;
 	}
 }

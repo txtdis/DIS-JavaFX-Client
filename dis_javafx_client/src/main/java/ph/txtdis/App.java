@@ -2,7 +2,7 @@ package ph.txtdis;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.ApplicationContext;
 
 import javafx.animation.FadeTransition;
 import javafx.application.Application;
@@ -46,7 +46,7 @@ public class App extends Application {
 
 	@Override
 	public void start(Stage stage) throws Exception {
-		Task<ConfigurableApplicationContext> task = initApp();
+		Task<ApplicationContext> task = initApp();
 		setSplashToFadeOnInitCompletion(stage, task, () -> showLoginDialog(task.getValue()));
 		showSplash(stage);
 		new Thread(task).start();
@@ -67,10 +67,10 @@ public class App extends Application {
 		ft.play();
 	}
 
-	private Task<ConfigurableApplicationContext> initApp() {
-		return new Task<ConfigurableApplicationContext>() {
+	private Task<ApplicationContext> initApp() {
+		return new Task<ApplicationContext>() {
 			@Override
-			protected ConfigurableApplicationContext call() throws InterruptedException {
+			protected ApplicationContext call() throws InterruptedException {
 				return SpringApplication.run(App.class);
 			}
 		};
@@ -108,7 +108,7 @@ public class App extends Application {
 		});
 	}
 
-	private void showLoginDialog(ConfigurableApplicationContext context) {
+	private void showLoginDialog(ApplicationContext context) {
 		LoginDialog ld = context.getBean(LoginDialog.class);
 		ld.showAndWait();
 	}

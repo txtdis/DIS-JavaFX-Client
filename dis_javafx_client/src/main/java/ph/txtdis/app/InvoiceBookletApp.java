@@ -10,4 +10,14 @@ import ph.txtdis.service.InvoiceBookletService;
 @Lazy
 @Component("invoiceBookleApp")
 public class InvoiceBookletApp extends AbstractTableApp<InvoiceBookletTable, InvoiceBookletService, InvoiceBooklet> {
+
+	@Override
+	protected String getHeaderText() {
+		return "Invoice Booklet List";
+	}
+
+	@Override
+	protected String getTitleText() {
+		return "S/I Booklets";
+	}
 }

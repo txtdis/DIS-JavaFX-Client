@@ -38,14 +38,12 @@ public class CustomerListTable extends AppTable<Customer> {
 	@Override
 	@SuppressWarnings("unchecked")
 	protected void addColumns() {
-	// @formatter:off
-		getColumns().setAll(
-			id.ofType(ID).build("ID No.", "id"),
-			name.ofType(Type.TEXT).build("Name", "name"),
-			route.ofType(OTHERS).build("Route", "route"),
-			street.ofType(TEXT).build("Street", "street"),
-			barangay.ofType(OTHERS).width(180).build("Barangay", "barangay"),
-			city.ofType(OTHERS).build("City", "city"));
-	// @formatter:on
+		getColumns().setAll(//
+				id.ofType(ID).build("ID No.", "id"), //
+				name.ofType(Type.TEXT).build("Name", "name"), //
+				route.ofType(OTHERS).build("Route", "route"), //
+				street.ofType(TEXT).build("Street", "street"), //
+				barangay.ofType(OTHERS).width(180).build("Barangay", "barangay"), //
+				city.ofType(OTHERS).build("City", "city"));
 	}
 }

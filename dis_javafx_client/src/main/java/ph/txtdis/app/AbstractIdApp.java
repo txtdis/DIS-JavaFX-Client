@@ -1,5 +1,6 @@
 package ph.txtdis.app;
 
+import static java.util.Arrays.asList;
 import static ph.txtdis.type.Type.TEXT;
 import static ph.txtdis.type.Type.TIMESTAMP;
 
@@ -14,61 +15,37 @@ import javafx.beans.binding.BooleanBinding;
 import javafx.beans.binding.BooleanExpression;
 import javafx.scene.Node;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
-import ph.txtdis.dto.Keyed;
-import ph.txtdis.dto.Tracked;
+import ph.txtdis.dto.CreationTracked;
 import ph.txtdis.fx.control.AppButton;
 import ph.txtdis.fx.control.AppField;
 import ph.txtdis.fx.control.InputControl;
-import ph.txtdis.fx.dialog.AuditDialog;
 import ph.txtdis.fx.dialog.OpenByDateDialog;
 import ph.txtdis.fx.dialog.OpenByIdDialog;
 import ph.txtdis.fx.pane.AppGridPane;
 import ph.txtdis.info.SuccessfulSaveInfo;
-import ph.txtdis.service.Audited;
+import ph.txtdis.service.Iconed;
 import ph.txtdis.service.Reset;
 import ph.txtdis.service.Serviced;
 
-public abstract class AbstractIdApp<T extends Keyed<PK>, AS extends Serviced<T, PK>, PK, ID> extends AbstractApp
-		implements Launchable
-{
+public abstract class AbstractIdApp<AS extends Serviced<PK>, PK, ID> extends AbstractApp implements Launchable {
+
 	@Autowired
 	protected AS service;
 
 	@Autowired
-	protected AuditedApp auditedApp;
+	protected AppButton decisionButton, newButton, backButton, openByIdButton, nextButton, saveButton;
 
 	@Autowired
-	protected AuditDialog auditDialog;
-
-	protected AppButton auditButton;
+	protected DecisionNeededApp decisionNeededApp;
 
 	@Autowired
-	protected AppButton newButton;
+	protected OpenByIdDialog<ID> openByIdDialog;
 
 	@Autowired
-	protected AppButton backButton;
+	protected OpenByDateDialog openByDateDialog;
 
 	@Autowired
-	protected AppButton openByIdButton;
-
-	@Autowired
-	protected AppButton nextButton;
-
-	@Autowired
-	protected AppButton saveButton;
-
-	@Autowired
-	protected OpenByIdDialog<ID> openDialog;
-
-	@Autowired
-	protected OpenByDateDialog dateDialog;
-
-	@Autowired
-	protected AppField<String> remarksDisplay;
-
-	@Autowired
-	protected AppField<String> createdByDisplay;
+	protected AppField<String> remarksDisplay, createdByDisplay;
 
 	@Autowired
 	protected AppField<ZonedDateTime> createdOnDisplay;
@@ -78,8 +55,10 @@ public abstract class AbstractIdApp<T extends Keyed<PK>, AS extends Serviced<T, 
 
 	protected HBox summaryBox, userHBox;
 
+	protected Boolean isNew;
+
 	@Override
-	public void launch(String... id) {
+	public void actOn(String... id) {
 		try {
 			service.open(id[0]);
 		} catch (Exception e) {
@@ -107,12 +86,9 @@ public abstract class AbstractIdApp<T extends Keyed<PK>, AS extends Serviced<T, 
 		}
 	}
 
-	private String newModule() {
-		return "New " + getHeaderText();
-	}
-
 	private void openNext() {
 		try {
+			isNew = false;
 			service.next();
 		} catch (Exception e) {
 			showErrorDialog(e);
@@ -123,6 +99,7 @@ public abstract class AbstractIdApp<T extends Keyed<PK>, AS extends Serviced<T, 
 
 	private void openPrevious() {
 		try {
+			isNew = false;
 			service.previous();
 		} catch (Exception e) {
 			showErrorDialog(e);
@@ -131,24 +108,18 @@ public abstract class AbstractIdApp<T extends Keyed<PK>, AS extends Serviced<T, 
 		}
 	}
 
-	@Override
-	protected List<AppButton> addButtons() {
-	// @formatter:off
-		return Arrays.asList(
-			newButton.icon("new").tooltip("New entry").build(),
-			backButton.icon("back").tooltip("Previous entry").build(),
-			openByIdButton.icon("openByNo").tooltip("Open an entry").build(),
-			nextButton.icon("next").tooltip("Next entry").build(),
-			saveButton.icon("save").tooltip("Save entry").build());
-	// @formatter:on
+	private String prompt() {
+		return "Enter ID of " + getHeaderText() + " to open";
 	}
 
-	protected HBox auditPane() {
-	// @formatter:off
-		return box.forHorizontalPane(Arrays.asList(
-			label.name("Created by"), createdByDisplay.readOnly().width(120).build(TEXT),
-			label.name("on"), createdOnDisplay.readOnly().build(TIMESTAMP)));
-	// @formatter:on
+	@Override
+	protected List<AppButton> addButtons() {
+		return Arrays.asList(//
+				newButton.icon("new").tooltip("New entry").build(), //
+				backButton.icon("back").tooltip("Previous entry").build(), //
+				openByIdButton.icon("openByNo").tooltip("Open an entry").build(), //
+				nextButton.icon("next").tooltip("Next entry").build(), //
+				saveButton.icon("save").tooltip("Save entry").build());
 	}
 
 	protected void clearControl(InputControl<?> control) {
@@ -162,8 +133,14 @@ public abstract class AbstractIdApp<T extends Keyed<PK>, AS extends Serviced<T, 
 	}
 
 	protected String getDialogInput() {
-		openDialog.addParent(this).start();
-		return openDialog.getId();
+		String h = service.getOpenDialogHeading();
+		openByIdDialog.header(h).prompt(prompt()).addParent(this).start();
+		return openByIdDialog.getId();
+	}
+
+	@Override
+	protected String getFontIcon() {
+		return ((Iconed) service).getFontIcon();
 	}
 
 	@Override
@@ -173,19 +150,25 @@ public abstract class AbstractIdApp<T extends Keyed<PK>, AS extends Serviced<T, 
 
 	@Override
 	protected String getTitleText() {
-		return service.getId() == null ? newModule() : service.getModuleId();
+		return isNew() ? newModule() : service.getModuleId() + service.getId();
 	}
 
-	@Override
-	protected VBox mainVerticalPane() {
-		VBox v = super.mainVerticalPane();
-		v.getChildren().add(auditPane());
-		setListeners();
-		return v;
+	protected boolean isNew() {
+		if (isNew == null)
+			isNew = createdOnDisplay.isEmpty().get();
+		return isNew;
+	}
+
+	protected BooleanExpression isPosted() {
+		return createdOnDisplay.isNotEmpty();
+	}
+
+	protected String newModule() {
+		return "New " + getHeaderText();
 	}
 
 	protected BooleanBinding notPosted() {
-		return posted().not();
+		return isPosted().not();
 	}
 
 	protected void open(LocalDate d) {
@@ -201,31 +184,23 @@ public abstract class AbstractIdApp<T extends Keyed<PK>, AS extends Serviced<T, 
 	protected void openSelected() {
 		String id = getDialogInput();
 		if (id != null && !id.isEmpty())
-			launch(id);
-	}
-
-	protected BooleanExpression posted() {
-		return createdByDisplay.isNotEmpty();
+			actOn(id);
 	}
 
 	protected void reset() {
 		((Reset) service).reset();
+		isNew = null;
 		refresh();
 	}
 
-	protected void saveAudit() {
-		((Audited) service).setRemarks(auditDialog.getFindings());
-		((Audited) service).updatePerValidity(auditDialog.isValid());
-		save();
-	}
-
+	@Override
 	protected void setListeners() {
+		setOnHidden(e -> ((Reset) service).reset());
 		newButton.setOnAction(e -> reset());
 		backButton.setOnAction(e -> openPrevious());
 		nextButton.setOnAction(e -> openNext());
 		saveButton.setOnAction(e -> save());
 		openByIdButton.setOnAction(e -> openSelected());
-		setOnHidden(e -> ((Reset) service).reset());
 	}
 
 	protected void showErrorDialog(Exception e) {
@@ -233,10 +208,16 @@ public abstract class AbstractIdApp<T extends Keyed<PK>, AS extends Serviced<T, 
 		dialog.show(e).addParent(this).start();
 	}
 
+	protected HBox trackedPane() {
+		return box.forHorizontalPane(asList(//
+				label.name("Created by"), createdByDisplay.readOnly().width(120).build(TEXT), //
+				label.name("on"), createdOnDisplay.readOnly().build(TIMESTAMP)));//
+	}
+
 	protected void updateLogNodes() {
 		if (createdByDisplay != null) {
-			createdByDisplay.setValue(((Tracked) service).getCreatedBy());
-			createdOnDisplay.setValue(((Tracked) service).getCreatedOn());
+			createdByDisplay.setValue(((CreationTracked) service).getCreatedBy());
+			createdOnDisplay.setValue(((CreationTracked) service).getCreatedOn());
 		}
 	}
 }

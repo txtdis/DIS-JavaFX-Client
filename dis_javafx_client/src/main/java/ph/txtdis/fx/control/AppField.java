@@ -4,6 +4,7 @@ import static javafx.scene.input.KeyCode.ENTER;
 import static javafx.scene.input.KeyEvent.KEY_PRESSED;
 import static ph.txtdis.type.Type.TEXT;
 import static ph.txtdis.util.TypeStyle.align;
+import static ph.txtdis.util.TypeStyle.parse;
 import static ph.txtdis.util.TypeStyle.style;
 
 import org.springframework.context.annotation.Scope;
@@ -24,7 +25,7 @@ public class AppField<T> extends TextField implements ErrorHandling, InputContro
 
 	private Type type;
 
-	private int width;
+	private int length, width;
 
 	public AppField() {
 		setStyle("-fx-opacity: 1; ");
@@ -40,17 +41,13 @@ public class AppField<T> extends TextField implements ErrorHandling, InputContro
 		return this;
 	}
 
-	public ObservableBooleanValue disabled() {
-		return disabledProperty();
-	}
-
-	public void disableIf(BooleanBinding b) {
+	public void disableIf(ObservableBooleanValue b) {
 		disableProperty().bind(b);
 	}
 
 	@Override
 	public T getValue() {
-		return TypeStyle.parse(type, getText());
+		return parse(type, getText());
 	}
 
 	@Override
@@ -69,6 +66,15 @@ public class AppField<T> extends TextField implements ErrorHandling, InputContro
 
 	public BooleanBinding isNotEmpty() {
 		return isEmpty().not();
+	}
+
+	public int length() {
+		return length;
+	}
+
+	public AppField<T> length(int length) {
+		this.length = length;
+		return this;
 	}
 
 	public AppField<T> readOnly() {

@@ -5,7 +5,7 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class LocationTree extends AbstractTrackedId<Long> {
+public class LocationTree extends EntityCreationTracked<Long> {
 
 	private Location location;
 

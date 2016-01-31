@@ -6,4 +6,6 @@ import lombok.Data;
 public class Backup {
 
 	private byte[] file;
+
+	private String message;
 }

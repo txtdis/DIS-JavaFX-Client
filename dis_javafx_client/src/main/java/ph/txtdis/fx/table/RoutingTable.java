@@ -7,14 +7,14 @@ import java.time.LocalDate;
 import java.time.ZonedDateTime;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import ph.txtdis.dto.Routing;
 import ph.txtdis.fx.dialog.RoutingDialog;
 import ph.txtdis.type.Type;
 
-@Lazy
+@Scope("prototype")
 @Component("routingTable")
 public class RoutingTable extends AppTable<Routing> {
 
@@ -34,12 +34,12 @@ public class RoutingTable extends AppTable<Routing> {
 	private Column<Routing, ZonedDateTime> designatedOn;
 
 	@Autowired
-	private RoutingDialog dialog;
+	private RoutingDialog routingDialog;
 
 	@Override
 	@SuppressWarnings("unchecked")
 	protected void addColumns() {
-		getColumns().setAll(designatedRoute.ofType(TEXT).width(100).build("Designated\nRoute", "route"),
+		getColumns().setAll(designatedRoute.ofType(TEXT).width(180).build("Designated\nRoute", "route"),
 				startDate.ofType(Type.DATE).build("Start\nDate", "startDate"),
 				designatedBy.ofType(TEXT).width(100).build("Designated\nby", "createdBy"),
 				designatedOn.ofType(TIMESTAMP).build("Designated\non", "createdOn"));
@@ -47,6 +47,6 @@ public class RoutingTable extends AppTable<Routing> {
 
 	@Override
 	protected void addProperties() {
-		append.addMenu(this, dialog);
+		append.addMenu(this, routingDialog);
 	}
 }

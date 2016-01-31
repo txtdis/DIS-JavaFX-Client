@@ -1,7 +1,8 @@
 package ph.txtdis.fx.dialog;
 
+import static java.util.Arrays.asList;
+
 import java.time.LocalDate;
-import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,20 +27,8 @@ public class OpenByDateDialog extends InputDialog {
 
 	private LocalDate date;
 
-	private String headerText, prompt;
-
 	public LocalDate getDate() {
 		return date;
-	}
-
-	public OpenByDateDialog header(String headerText) {
-		this.headerText = headerText;
-		return this;
-	}
-
-	public OpenByDateDialog prompt(String prompt) {
-		this.prompt = prompt;
-		return this;
 	}
 
 	@Override
@@ -48,6 +37,7 @@ public class OpenByDateDialog extends InputDialog {
 	}
 
 	private LocalDatePicker datePicker() {
+		datePicker.setValue(null);
 		datePicker.setOnAction(e -> onPick());
 		return datePicker;
 	}
@@ -63,22 +53,18 @@ public class OpenByDateDialog extends InputDialog {
 	}
 
 	@Override
-	protected String headerText() {
-		return headerText;
-	}
-
-	@Override
 	protected List<Node> nodes() {
 		Label help = new Label(prompt);
 		grid.getChildren().clear();
 		grid.add(help, 0, 0);
 		grid.add(datePicker(), 0, 1);
-		return Arrays.asList(header(), grid, buttonBox());
+		return asList(header(), grid, buttonBox());
 	}
 
 	@Override
 	protected void setOnFiredCloseButton() {
 		date = null;
+		datePicker.setValue(date);
 		super.setOnFiredCloseButton();
 	}
 }

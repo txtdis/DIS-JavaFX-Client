@@ -3,32 +3,58 @@ package ph.txtdis.service;
 import java.time.LocalDate;
 
 import ph.txtdis.dto.Keyed;
+import ph.txtdis.exception.DeactivatedException;
+import ph.txtdis.exception.FailedAuthenticationException;
+import ph.txtdis.exception.InvalidException;
+import ph.txtdis.exception.NoServerConnectionException;
+import ph.txtdis.exception.NoVendorIdPurchasedItemException;
 import ph.txtdis.exception.NotFoundException;
+import ph.txtdis.exception.RestException;
+import ph.txtdis.exception.StoppedServerException;
 import ph.txtdis.util.DateTimeUtils;
 
-public interface Serviced<T extends Keyed<PK>, PK> extends AlternateNamed, SpunById<PK>, Saved<T, PK> {
+public interface Serviced<PK> extends AlternateNamed, Iconed, SpunById<PK>, Saved<PK> {
 
-	default T find(LocalDate d) throws Exception {
-		T e = getReadOnlyService().module(getSpunModule()).getOne("/date?on=" + d);
+	@SuppressWarnings("unchecked")
+	default <T> T find(LocalDate d) throws NoServerConnectionException, StoppedServerException,
+			FailedAuthenticationException, InvalidException, NotFoundException, RestException {
+		T e = (T) getReadOnlyService().module(getSpunModule()).getOne("/date?on=" + d);
 		if (e == null)
 			throw new NotFoundException(getHeaderText() + " dated " + DateTimeUtils.toDateDisplay(d));
 		return e;
 	}
 
-	default T find(String id) throws Exception {
-		T e = getReadOnlyService().module(getModule()).getOne("/" + id);
+	default <T> T find(Long id)
+			throws NoServerConnectionException, StoppedServerException, FailedAuthenticationException, InvalidException,
+			NotFoundException, DeactivatedException, RestException, NoVendorIdPurchasedItemException {
+		return find(id.toString());
+	}
+
+	@SuppressWarnings("unchecked")
+	default <T> T find(String id) throws NoServerConnectionException, StoppedServerException,
+			FailedAuthenticationException, InvalidException, NotFoundException, DeactivatedException, RestException {
+		String endpt = "/" + (getSpunModule().equals(getModule()) ? id : getSpunModule() + "?id=" + id);
+		T e = (T) getReadOnlyService().module(getModule()).getOne(endpt);
 		if (e == null)
 			throw new NotFoundException(getModuleId() + id);
 		return e;
 	}
 
-	ReadOnlyService<T> getReadOnlyService();
+	<T extends Keyed<PK>> ReadOnlyService<T> getReadOnlyService();
 
-	default void open(LocalDate d) throws Exception {
+	default void open(LocalDate d) throws NoServerConnectionException, StoppedServerException,
+			FailedAuthenticationException, InvalidException, NotFoundException, RestException {
 		set(find(d));
 	}
 
-	default void open(String id) throws Exception {
+	default void open(Long id)
+			throws NoServerConnectionException, StoppedServerException, FailedAuthenticationException, InvalidException,
+			NotFoundException, DeactivatedException, NoVendorIdPurchasedItemException, RestException {
+		set(find(id));
+	}
+
+	default void open(String id) throws NoServerConnectionException, StoppedServerException,
+			FailedAuthenticationException, InvalidException, NotFoundException, DeactivatedException, RestException {
 		set(find(id));
 	}
 }

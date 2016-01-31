@@ -1,26 +1,31 @@
 package ph.txtdis.service;
 
+import static org.springframework.http.HttpMethod.GET;
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
+
 import java.util.List;
 
 import org.atteo.evo.inflector.English;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Scope;
 import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.ResourceAccessException;
 
 import ph.txtdis.exception.FailedAuthenticationException;
 import ph.txtdis.exception.InvalidException;
 import ph.txtdis.exception.NoServerConnectionException;
+import ph.txtdis.exception.RestException;
 import ph.txtdis.exception.StoppedServerException;
 import ph.txtdis.util.HttpHeader;
 import ph.txtdis.util.Server;
 import ph.txtdis.util.TypeMap;
 
-@Service
+@Scope("prototype")
+@Service("readOnlyService")
 public class ReadOnlyService<T> {
 
 	@Autowired
@@ -37,7 +42,8 @@ public class ReadOnlyService<T> {
 
 	private String module;
 
-	public List<T> getList() throws Exception {
+	public List<T> getList() throws NoServerConnectionException, StoppedServerException, FailedAuthenticationException,
+			InvalidException, RestException {
 		return getList("");
 	}
 
@@ -49,22 +55,23 @@ public class ReadOnlyService<T> {
 		return English.plural(single());
 	}
 
-	private ResponseEntity<?> responseEntity(String endpoint, String path) throws Exception {
+	private ResponseEntity<?> responseEntity(String endpoint, String path) throws NoServerConnectionException,
+			StoppedServerException, FailedAuthenticationException, InvalidException, RestException {
 		try {
-			return restService.exchange(url() + endpoint, HttpMethod.GET, httpEntity(null), response.type(path));
+			return restService.init().exchange(url() + endpoint, GET, httpEntity(null), response.type(path));
 		} catch (ResourceAccessException e) {
 			throw new NoServerConnectionException(server.location());
-		} catch (HttpClientErrorException e) {
-			e.printStackTrace();
-			if (e.getStatusCode() == HttpStatus.UNAUTHORIZED) {
+		} catch (HttpClientErrorException | HttpServerErrorException e) {
+			if (e.getStatusCode() == UNAUTHORIZED) {
 				if (e.getResponseBodyAsString().contains("This connection has been closed"))
 					throw new StoppedServerException();
 				else
 					throw new FailedAuthenticationException();
-			} else if (e.getStatusCode() == HttpStatus.INTERNAL_SERVER_ERROR) {
-				throw new InvalidException(e.getResponseBodyAsString());
-			}
-			throw new InvalidException(e.getResponseBodyAsString());
+			} else
+				throw new RestException(e);
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new InvalidException(e.getMessage());
 		}
 	}
 
@@ -73,12 +80,14 @@ public class ReadOnlyService<T> {
 	}
 
 	@SuppressWarnings("unchecked")
-	protected List<T> getList(String endpoint) throws Exception {
+	protected List<T> getList(String endpoint) throws NoServerConnectionException, StoppedServerException,
+			FailedAuthenticationException, InvalidException, RestException {
 		return (List<T>) responseEntity(endpoint, plural()).getBody();
 	}
 
 	@SuppressWarnings("unchecked")
-	protected T getOne(String endpoint) throws Exception {
+	protected T getOne(String endpoint) throws NoServerConnectionException, StoppedServerException,
+			FailedAuthenticationException, InvalidException, RestException {
 		return (T) responseEntity(endpoint, single()).getBody();
 	}
 

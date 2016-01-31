@@ -4,7 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import ph.txtdis.dto.Account;
@@ -13,7 +13,7 @@ import ph.txtdis.fx.control.LabeledCombo;
 import ph.txtdis.fx.control.LabeledDatePicker;
 import ph.txtdis.service.RouteService;
 
-@Lazy
+@Scope("prototype")
 @Component("accountDialog")
 public class AccountDialog extends FieldDialog<Account> {
 
@@ -56,5 +56,10 @@ public class AccountDialog extends FieldDialog<Account> {
 	@Override
 	protected Account createEntity() {
 		return save(new Account());
+	}
+
+	@Override
+	protected String headerText() {
+		return "Add New Seller";
 	}
 }

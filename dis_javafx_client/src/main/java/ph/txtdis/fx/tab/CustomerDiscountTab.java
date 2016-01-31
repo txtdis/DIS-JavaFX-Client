@@ -1,10 +1,11 @@
 package ph.txtdis.fx.tab;
 
-import java.util.Arrays;
+import static java.util.Arrays.asList;
+
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import javafx.geometry.Pos;
@@ -13,7 +14,7 @@ import javafx.scene.layout.VBox;
 import ph.txtdis.fx.table.CustomerDiscountTable;
 import ph.txtdis.service.CustomerService;
 
-@Lazy
+@Scope("prototype")
 @Component("customerDiscountTab")
 public class CustomerDiscountTab extends AbstractTab {
 
@@ -21,7 +22,7 @@ public class CustomerDiscountTab extends AbstractTab {
 	private CustomerService service;
 
 	@Autowired
-	private CustomerDiscountTable table;
+	private CustomerDiscountTable customerDiscountTable;
 
 	public CustomerDiscountTab() {
 		super("Customer Discount");
@@ -29,12 +30,12 @@ public class CustomerDiscountTab extends AbstractTab {
 
 	@Override
 	public void refresh() {
-		table.items(service.getDiscounts());
+		customerDiscountTable.items(service.get().getCustomerDiscounts());
 	}
 
 	@Override
 	public void save() {
-		service.setDiscounts(table.getItems());
+		service.get().setCustomerDiscounts(customerDiscountTable.getItems());
 	}
 
 	@Override
@@ -46,6 +47,6 @@ public class CustomerDiscountTab extends AbstractTab {
 
 	@Override
 	protected List<Node> mainVerticalPaneNodes() {
-		return Arrays.asList(box.forHorizontalPane(table.build()));
+		return asList(box.forHorizontalPane(customerDiscountTable.build()));
 	}
 }

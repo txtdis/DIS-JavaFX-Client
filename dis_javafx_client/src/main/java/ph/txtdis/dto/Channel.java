@@ -2,18 +2,22 @@ package ph.txtdis.dto;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+import ph.txtdis.type.BillingType;
 
 @Data
+@NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-public class Channel extends AbstractTrackedId<Long>implements Comparable<Channel> {
+public class Channel extends EntityCreationTracked<Long> {
+
+	private BillingType type;
 
 	private String name;
 
-	@Override
-	public int compareTo(Channel o) {
-		if (o == null)
-			return 1;
-		return toString().compareTo(o.toString());
+	private boolean visited;
+
+	public Channel(String name) {
+		this.name = name;
 	}
 
 	@Override

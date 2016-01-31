@@ -1,15 +1,13 @@
 package ph.txtdis.service;
 
-import static ph.txtdis.util.DateTimeUtils.endOfMonth;
-import static ph.txtdis.util.DateTimeUtils.startOfMonth;
-import static ph.txtdis.util.DateTimeUtils.toDottedYearMonth;
-import static ph.txtdis.util.DateTimeUtils.toFullMonthYear;
-import static ph.txtdis.util.DateTimeUtils.toLongMonthYear;
+import static java.time.LocalDate.now;
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
+import static ph.txtdis.util.NumberUtils.divide;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,13 +15,23 @@ import org.springframework.stereotype.Service;
 
 import static java.math.BigDecimal.ZERO;
 
+import static ph.txtdis.util.DateTimeUtils.endOfMonth;
+import static ph.txtdis.util.DateTimeUtils.startOfMonth;
+import static ph.txtdis.util.DateTimeUtils.toDottedYearMonth;
+import static ph.txtdis.util.DateTimeUtils.toFullMonthYear;
+import static ph.txtdis.util.DateTimeUtils.toLongMonthYear;
+
 import ph.txtdis.dto.Vat;
 import ph.txtdis.excel.ExcelWriter;
 import ph.txtdis.excel.Tabular;
-import ph.txtdis.util.NumberUtils;
+import ph.txtdis.exception.FailedAuthenticationException;
+import ph.txtdis.exception.InvalidException;
+import ph.txtdis.exception.NoServerConnectionException;
+import ph.txtdis.exception.RestException;
+import ph.txtdis.exception.StoppedServerException;
 
-@Service("VatService")
-public class VatService implements Spreadsheet<Vat>, Spun {
+@Service("vatService")
+public class VatService implements Iconed, Spreadsheet<Vat>, Spun {
 
 	@Autowired
 	private ExcelWriter excel;
@@ -39,7 +47,7 @@ public class VatService implements Spreadsheet<Vat>, Spun {
 
 	public LocalDate getDate() {
 		if (date == null)
-			date = LocalDate.now();
+			date = now();
 		return date;
 	}
 
@@ -54,6 +62,11 @@ public class VatService implements Spreadsheet<Vat>, Spun {
 	}
 
 	@Override
+	public ReadOnlyService<Vat> getReadOnlyService() {
+		return readOnlyService;
+	}
+
+	@Override
 	public String getSubhead() {
 		return toFullMonthYear(getDate());
 	}
@@ -65,13 +78,18 @@ public class VatService implements Spreadsheet<Vat>, Spun {
 
 	@Override
 	public List<BigDecimal> getTotals() {
-		return Arrays.asList(getTotalInvoiceValue(), getTotalVatValue());
+		return asList(getTotalInvoiceValue(), getTotalVatValue());
 	}
 
 	@Override
-	public List<Vat> list() throws Exception {
-		list = readOnlyService.module(getModule()).getList("/list?start=" + start() + "&end=" + end());
-		return list != null ? list : Collections.emptyList();
+	public List<Vat> list() {
+		try {
+			List<Vat> l = readOnlyService.module(getModule()).getList("/list?start=" + start() + "&end=" + end());
+			return list = (l != null ? l : emptyList());
+		} catch (Exception e) {
+			e.printStackTrace();
+			return list = emptyList();
+		}
 	}
 
 	@Override
@@ -85,7 +103,7 @@ public class VatService implements Spreadsheet<Vat>, Spun {
 	}
 
 	@Override
-	public void saveAsExcel(Tabular... tables) throws Exception {
+	public void saveAsExcel(Tabular... tables) throws IOException {
 		excel.filename(getExcelFileName()).sheetname(getExcelSheetName()).table(tables).write();
 	}
 
@@ -93,14 +111,16 @@ public class VatService implements Spreadsheet<Vat>, Spun {
 		this.date = date;
 	}
 
-	public BigDecimal vatRate() throws Exception {
+	public BigDecimal vatRate() throws NoServerConnectionException, StoppedServerException,
+			FailedAuthenticationException, InvalidException, RestException {
 		return vatRate == null ? computeVat() : vatRate;
 	}
 
-	private BigDecimal computeVat() throws Exception {
+	private BigDecimal computeVat() throws NoServerConnectionException, StoppedServerException,
+			FailedAuthenticationException, InvalidException, RestException {
 		Vat v = readOnlyService.module(getModule()).getOne("/rate");
 		BigDecimal vat = v.getVatValue();
-		return NumberUtils.divide(vat, (v.getValue().subtract(vat)));
+		return divide(vat, (v.getValue().subtract(vat)));
 	}
 
 	private LocalDate end() {
@@ -120,12 +140,12 @@ public class VatService implements Spreadsheet<Vat>, Spun {
 	}
 
 	private BigDecimal getTotalInvoiceValue() {
-		return list.stream().filter(v -> v.getValue() != null).map(v -> v.getValue()).reduce(ZERO, (a, b) -> a.add(b));
+		return list.stream().filter(v -> v.getValue() != null).map(v -> v.getValue()).reduce(ZERO, BigDecimal::add);
 	}
 
 	private BigDecimal getTotalVatValue() {
 		return list.stream().filter(v -> v.getVatValue() != null).map(v -> v.getVatValue()).reduce(ZERO,
-				(a, b) -> a.add(b));
+				BigDecimal::add);
 	}
 
 	private LocalDate start() {

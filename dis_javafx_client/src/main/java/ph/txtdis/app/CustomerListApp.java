@@ -18,6 +18,7 @@ public class CustomerListApp extends AbstractExcelApp<CustomerListTable, Custome
 	@Override
 	public void start() {
 		setStage(mainVerticalPane());
+		table.setItem(null);
 		refresh();
 		showAndWait();
 	}

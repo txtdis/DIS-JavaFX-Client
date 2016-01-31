@@ -1,5 +1,6 @@
 package ph.txtdis.service;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -9,10 +10,19 @@ import org.apache.commons.lang3.text.WordUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import static ph.txtdis.util.DateTimeUtils.toTimestampFilename;
+
 import ph.txtdis.dto.CustomerReceivable;
 import ph.txtdis.dto.CustomerReceivableReport;
 import ph.txtdis.excel.ExcelWriter;
 import ph.txtdis.excel.Tabular;
+import ph.txtdis.exception.DeactivatedException;
+import ph.txtdis.exception.FailedAuthenticationException;
+import ph.txtdis.exception.InvalidException;
+import ph.txtdis.exception.NoServerConnectionException;
+import ph.txtdis.exception.NotFoundException;
+import ph.txtdis.exception.RestException;
+import ph.txtdis.exception.StoppedServerException;
 import ph.txtdis.util.DateTimeUtils;
 
 @Service
@@ -62,7 +72,7 @@ public class CustomerReceivableService implements Spreadsheet<CustomerReceivable
 			case MORE_THAN_THIRTY:
 				return ">30 Day Overdue";
 			case AGING:
-				return "Aging";
+				return "Aged";
 			default:
 				return "All";
 		}
@@ -80,6 +90,11 @@ public class CustomerReceivableService implements Spreadsheet<CustomerReceivable
 	@Override
 	public String getModule() {
 		return "customerReceivable";
+	}
+
+	@Override
+	public ReadOnlyService<CustomerReceivable> getReadOnlyService() {
+		return null;
 	}
 
 	@Override
@@ -106,19 +121,25 @@ public class CustomerReceivableService implements Spreadsheet<CustomerReceivable
 		return report == null ? new ArrayList<>() : report.getReceivables();
 	}
 
-	public void listInvoicesByCustomerBetweenTwoDayCounts(String... ids) throws Exception {
+	public void listInvoicesByCustomerBetweenTwoDayCounts(String... ids)
+			throws NoServerConnectionException, StoppedServerException, FailedAuthenticationException, InvalidException,
+			NotFoundException, DeactivatedException, RestException {
 		columnIndex = Integer.valueOf(ids[COLUMN_INDEX]);
-		// @formatter:off
-		report = readOnlyService.module(getModule()).getOne(
-				"?customer=" + ids[CUSTOMER_ID] +
-				"&lowerDayCount="+ lowerDayCount() +
-				"&upperDayCount=" + upperDayCount());
-		// @formatter:off
+		report = readOnlyService.module(getModule()).getOne(//
+				"?customer=" + ids[CUSTOMER_ID] + "&lowerDayCount=" + lowerDayCount() + //
+						"&upperDayCount=" + upperDayCount());
 		customerName = customerService.find(ids[CUSTOMER_ID]).getName();
 	}
 
+	public List<CustomerReceivable> listReceivables(String... ids)
+			throws NoServerConnectionException, StoppedServerException, FailedAuthenticationException, InvalidException,
+			NotFoundException, DeactivatedException, RestException {
+		listInvoicesByCustomerBetweenTwoDayCounts(ids);
+		return list();
+	}
+
 	@Override
-	public void saveAsExcel(Tabular... tables) throws Exception {
+	public void saveAsExcel(Tabular... tables) throws IOException {
 		excel.filename(getExcelFileName()).sheetname(getExcelSheetName()).table(tables).write();
 	}
 
@@ -131,7 +152,7 @@ public class CustomerReceivableService implements Spreadsheet<CustomerReceivable
 	}
 
 	private String getExcelFileName() {
-		return dottedDayCount() + ".Receivables-" + dottedCustomerName() + DateTimeUtils.toTimestampFilename(getTimestamp());
+		return dottedDayCount() + ".Receivables-" + dottedCustomerName() + toTimestampFilename(getTimestamp());
 	}
 
 	private String getExcelSheetName() {

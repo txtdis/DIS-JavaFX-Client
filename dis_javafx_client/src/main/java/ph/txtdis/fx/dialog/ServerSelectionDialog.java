@@ -4,7 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import javafx.scene.Node;
@@ -15,7 +15,7 @@ import ph.txtdis.fx.control.RadioControl;
 import ph.txtdis.fx.pane.AppGridPane;
 import ph.txtdis.util.Server;
 
-@Lazy
+@Scope("prototype")
 @Component("serverSelectionDialog")
 public class ServerSelectionDialog extends InputDialog {
 
@@ -51,7 +51,7 @@ public class ServerSelectionDialog extends InputDialog {
 
 	@Override
 	protected Button[] buttons() {
-		return new Button[] { button("OK") };
+		return new Button[] { closeButton("OK") };
 	}
 
 	@Override

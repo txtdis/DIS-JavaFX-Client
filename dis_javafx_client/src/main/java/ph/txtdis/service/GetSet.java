@@ -4,7 +4,7 @@ import ph.txtdis.dto.Keyed;
 
 public interface GetSet<PK> {
 
-	Keyed<PK> get();
+	<T extends Keyed<PK>> T get();
 
-	void set(Keyed<PK> entity);
+	<T extends Keyed<PK>> void set(T t);
 }

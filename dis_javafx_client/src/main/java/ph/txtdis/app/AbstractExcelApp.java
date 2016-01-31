@@ -1,6 +1,8 @@
 package ph.txtdis.app;
 
-import java.util.Arrays;
+import static java.util.Arrays.asList;
+
+import java.io.IOException;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,7 +11,9 @@ import ph.txtdis.fx.control.AppButton;
 import ph.txtdis.fx.table.AppTable;
 import ph.txtdis.service.Excel;
 
-public abstract class AbstractExcelApp<AT extends AppTable<T>, AS extends Excel<?>, T> extends AbstractTableApp<AT, AS, T> {
+public abstract class AbstractExcelApp<AT extends AppTable<T>, AS extends Excel<?>, T>
+		extends AbstractTableApp<AT, AS, T>
+{
 
 	@Autowired
 	private AppButton mailButton;
@@ -17,24 +21,7 @@ public abstract class AbstractExcelApp<AT extends AppTable<T>, AS extends Excel<
 	@Autowired
 	private AppButton excelButton;
 
-	@Override
-	protected List<AppButton> addButtons() {
-		createButtons();
-		setOnButtonClick();
-		return Arrays.asList(mailButton, excelButton);
-	}
-
-	protected void createButtons() {
-		mailButton.icon("mail").tooltip("E-mail this...").build();
-		excelButton.icon("excel").tooltip("Save to\na spreadsheet...").build();
-	}
-
-	protected void setOnButtonClick() {
-		mailButton.setOnAction(e -> tryMailingCurrentlyDisplayedTableItems());
-		excelButton.setOnAction(e -> trySavingCurrentlyDisplayedTableItemsToASpreadsheet());
-	}
-
-	private void tryMailingCurrentlyDisplayedTableItems() {
+	private void mailExcelFile() {
 		try {
 			// showTheNextMonthAging();
 		} catch (Exception e) {
@@ -43,12 +30,33 @@ public abstract class AbstractExcelApp<AT extends AppTable<T>, AS extends Excel<
 		}
 	}
 
-	private void trySavingCurrentlyDisplayedTableItemsToASpreadsheet() {
+	private void saveAsExcel() {
 		try {
-			service.saveAsExcel(table);
+			saveAsExcel(table);
 		} catch (Exception e) {
 			e.printStackTrace();
 			dialog.show(e).addParent(this).start();
 		}
+	}
+
+	@Override
+	protected List<AppButton> addButtons() {
+		createButtons();
+		setOnButtonClick();
+		return asList(mailButton, excelButton);
+	}
+
+	protected void createButtons() {
+		excelButton.icon("excel").tooltip("Save to a spreadsheet").build();
+		mailButton.icon("mail").tooltip("E-mail spreadsheet").build();
+	}
+
+	protected void saveAsExcel(AT table) throws IOException {
+		service.saveAsExcel(table);
+	}
+
+	protected void setOnButtonClick() {
+		mailButton.setOnAction(e -> mailExcelFile());
+		excelButton.setOnAction(e -> saveAsExcel());
 	}
 }

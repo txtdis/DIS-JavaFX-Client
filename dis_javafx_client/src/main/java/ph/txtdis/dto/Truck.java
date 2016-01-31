@@ -5,7 +5,7 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class Truck extends AbstractTrackedId<Long> {
+public class Truck extends EntityCreationTracked<Long> {
 
 	private String name;
 

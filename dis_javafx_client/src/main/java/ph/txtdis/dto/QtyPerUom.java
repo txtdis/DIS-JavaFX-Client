@@ -8,11 +8,11 @@ import ph.txtdis.type.UomType;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class QtyPerUom extends AbstractTrackedId<Long> {
+public class QtyPerUom extends EntityCreationTracked<Long> {
 
 	private UomType uom;
 
 	private BigDecimal qty;
 
-	private boolean isPurchased, isSold, isReported;
+	private Boolean purchased, sold, reported;
 }

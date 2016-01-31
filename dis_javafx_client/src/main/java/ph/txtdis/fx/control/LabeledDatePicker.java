@@ -1,7 +1,8 @@
 package ph.txtdis.fx.control;
 
+import static java.util.Arrays.asList;
+
 import java.time.LocalDate;
-import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,15 +26,6 @@ public class LabeledDatePicker implements InputNode<LocalDate> {
 
 	private List<Node> nodes;
 
-	public LabeledDatePicker name(String name) {
-		nodes = Arrays.asList(label.field(name), datePicker);
-		return this;
-	}
-
-	public void setOnAction(EventHandler<ActionEvent> value) {
-		datePicker.setOnAction(value);
-	}
-
 	@Override
 	public List<Node> getNodes() {
 		return nodes;
@@ -45,8 +37,13 @@ public class LabeledDatePicker implements InputNode<LocalDate> {
 	}
 
 	@Override
-	public void reset() {
-		datePicker.setValue(null);
+	public BooleanBinding isEmpty() {
+		return datePicker.valueProperty().isNull();
+	}
+
+	public LabeledDatePicker name(String name) {
+		nodes = asList(label.field(name), datePicker);
+		return this;
 	}
 
 	@Override
@@ -55,7 +52,11 @@ public class LabeledDatePicker implements InputNode<LocalDate> {
 	}
 
 	@Override
-	public BooleanBinding isEmpty() {
-		return datePicker.valueProperty().isNull();
+	public void reset() {
+		datePicker.setValue(null);
+	}
+
+	public void setOnAction(EventHandler<ActionEvent> value) {
+		datePicker.setOnAction(value);
 	}
 }

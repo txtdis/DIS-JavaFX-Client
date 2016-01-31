@@ -9,15 +9,18 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class PickList extends AbstractTrackedId<Long> {
+public class PickList extends EntityCreationTracked<Long> {
 
 	private String truck, driver, leadHelper, asstHelper, remarks, printedBy;
 
 	private LocalDate pickDate;
 
-	private List<Billable> bookings;
+	private List<Booking> bookings;
 
 	private ZonedDateTime printedOn;
 
-	private Boolean printedAll;
+	@Override
+	public String toString() {
+		return "Pick List No. " + getId();
+	}
 }

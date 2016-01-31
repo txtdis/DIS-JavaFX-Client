@@ -8,18 +8,13 @@ public class TextValidator implements ChangeListener<String> {
 
 	private boolean ignore;
 
-	private int maxLength;
-
 	private AppField<?> input;
 
 	private String restrict;
 
 	public TextValidator(AppField<?> input) {
 		this.input = input;
-		this.restrict = "[a-zA-Z0-9-\\[\\]:,.&' ]";
-		maxLength = Integer.MAX_VALUE;
-		if (input.getMinWidth() < 240)
-			maxLength = (int) input.getMinWidth() / 20;
+		this.restrict = "[a-zA-Z0-9-\\[\\]*:,.&'+/!% ]";
 	}
 
 	@Override
@@ -30,9 +25,9 @@ public class TextValidator implements ChangeListener<String> {
 			ignore = true;
 			input.setText(oldValue);
 			ignore = false;
-		} else if (newValue.length() > maxLength) {
+		} else if (input.length() > 0 && newValue.length() > input.length()) {
 			ignore = true;
-			input.setText(newValue.substring(0, maxLength));
+			input.setText(newValue.substring(0, input.length()));
 			ignore = false;
 		} else {
 			input.setText(newValue.toUpperCase());

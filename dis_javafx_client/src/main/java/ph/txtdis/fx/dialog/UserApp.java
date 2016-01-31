@@ -5,7 +5,7 @@ import static ph.txtdis.type.Type.TEXT;
 import java.util.Arrays;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import javafx.scene.control.Button;
@@ -18,7 +18,7 @@ import ph.txtdis.fx.control.LabelFactory;
 import ph.txtdis.fx.pane.AppGridPane;
 import ph.txtdis.type.UserType;
 
-@Lazy
+@Scope("prototype")
 @Component("userApp")
 public class UserApp extends PasswordDialog implements Startable {
 

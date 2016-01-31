@@ -1,11 +1,9 @@
 package ph.txtdis.dto;
 
-import static ph.txtdis.util.NumberUtils.toBigDecimal;
+import static ph.txtdis.util.NumberUtils.isNegative;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-
-import static java.math.BigDecimal.ZERO;
 
 import static ph.txtdis.type.ModuleType.DELIVERY_REPORT;
 import static ph.txtdis.type.ModuleType.INVOICE;
@@ -19,30 +17,14 @@ public class CustomerReceivable implements Keyed<Long>, Typed {
 
 	private String orderNo;
 
-	private LocalDate orderDate;
+	private LocalDate orderDate, dueDate;
 
-	private LocalDate dueDate;
+	private BigDecimal unpaidValue, totalValue;
 
 	private int daysOverCount;
 
-	private BigDecimal unpaidValue;
-
-	private BigDecimal totalValue;
-
-	public String getOrderNo() {
-		return isNegative() ? orderNo.replace("-", "(") + ")" : orderNo;
-	}
-
 	@Override
 	public String type() {
-		return (isNegative() ? DELIVERY_REPORT : INVOICE).toString();
-	}
-
-	private boolean isNegative() {
-		try {
-			return toBigDecimal(orderNo).compareTo(ZERO) < 0;
-		} catch (Exception e) {
-			return false;
-		}
+		return (isNegative(orderNo) ? DELIVERY_REPORT : INVOICE).toString();
 	}
 }

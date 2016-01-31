@@ -1,5 +1,6 @@
 package ph.txtdis.fx.table;
 
+import static ph.txtdis.type.Type.ENUM;
 import static ph.txtdis.type.Type.ID;
 import static ph.txtdis.type.Type.TEXT;
 import static ph.txtdis.type.Type.TIMESTAMP;
@@ -13,33 +14,38 @@ import org.springframework.stereotype.Component;
 import ph.txtdis.app.AccountApp;
 import ph.txtdis.dto.Route;
 import ph.txtdis.fx.dialog.RouteDialog;
+import ph.txtdis.type.DeliveryType;
 
 @Lazy
 @Component("routeTable")
 public class RouteTable extends NameListTable<Route, RouteDialog> {
 
 	@Autowired
-	private AccountApp accountApp;
+	private AccountApp app;
 
 	@Autowired
-	protected Column<Route, String> seller;
+	private Column<Route, DeliveryType> type;
 
 	@Autowired
-	protected Column<Route, String> assignedBy;
+	private Column<Route, String> seller;
 
 	@Autowired
-	protected Column<Route, ZonedDateTime> assignedOn;
+	private Column<Route, String> assignedBy;
+
+	@Autowired
+	private Column<Route, ZonedDateTime> assignedOn;
 
 	@Override
 	@SuppressWarnings("unchecked")
 	protected void addColumns() {
-		getColumns().setAll(id.ofType(ID).launches(accountApp).build("ID No.", "id"),
-				name.ofType(TEXT).launches(accountApp).width(180).build("Name", "name"),
-				createdBy.ofType(TEXT).launches(accountApp).width(100).build("Created by", "createdBy"),
-				createdOn.ofType(TIMESTAMP).launches(accountApp).build("Created on", "createdOn"),
-				seller.ofType(TEXT).launches(accountApp).width(100).build("Current Seller", "seller"),
-				assignedBy.ofType(TEXT).launches(accountApp).width(100).build("Assigned by", "assignedBy"),
-				assignedOn.ofType(TIMESTAMP).launches(accountApp).build("Assigned\non", "assignedOn"));
+		getColumns().setAll(id.ofType(ID).launches(app).build("ID No.", "id"),
+				name.ofType(TEXT).launches(app).width(180).build("Name", "name"),
+				type.ofType(ENUM).build("Delivery Type", "type"),
+				createdBy.ofType(TEXT).launches(app).width(100).build("Created by", "createdBy"),
+				createdOn.ofType(TIMESTAMP).launches(app).build("Created on", "createdOn"),
+				seller.ofType(TEXT).launches(app).width(100).build("Current Seller", "seller"),
+				assignedBy.ofType(TEXT).launches(app).width(100).build("Assigned by", "assignedBy"),
+				assignedOn.ofType(TIMESTAMP).launches(app).build("Assigned\non", "assignedOn"));
 	}
 
 }

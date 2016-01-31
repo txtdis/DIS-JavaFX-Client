@@ -9,6 +9,7 @@ import com.sun.javafx.scene.control.behavior.TextFieldBehavior;
 import com.sun.javafx.scene.control.skin.TextFieldSkin;
 
 import javafx.beans.binding.BooleanBinding;
+import javafx.beans.value.ObservableBooleanValue;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
@@ -28,12 +29,22 @@ public class LocalDatePicker extends DatePicker implements InputControl<LocalDat
 		getEditor().textProperty().addListener(new DateInputValidator(this));
 	}
 
+	@Override
 	public void clear() {
 		setValue(null);
 	}
 
+	public void disableIf(ObservableBooleanValue b) {
+		disableProperty().bind(b);
+	}
+
+	public void editableIf(BooleanBinding b) {
+		editableProperty().bind(b);
+		focusTraversableProperty().bind(editableProperty());
+	}
+
 	public BooleanBinding isEmpty() {
-		return getEditor().textProperty().isEmpty();
+		return valueProperty().isNull();
 	}
 
 	private void setPickerWidth(double w) {

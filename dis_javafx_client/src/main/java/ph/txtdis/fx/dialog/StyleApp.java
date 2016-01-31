@@ -4,7 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import javafx.scene.Node;
@@ -20,9 +20,9 @@ import ph.txtdis.fx.control.BaseColorPicker;
 import ph.txtdis.fx.control.LabelFactory;
 import ph.txtdis.fx.pane.AppGridPane;
 import ph.txtdis.service.UserService;
-import ph.txtdis.util.Spring;
+import ph.txtdis.util.SpringUtil;
 
-@Lazy
+@Scope("prototype")
 @Component("styleApp")
 public class StyleApp extends InputDialog {
 
@@ -126,11 +126,11 @@ public class StyleApp extends InputDialog {
 	private void updateUser() throws Exception {
 		user.setStyle(style);
 		user = service.save(user);
-		Spring.updateUser(user);
+		SpringUtil.updateUser(user);
 	}
 
 	private User user() {
-		return user = Spring.user();
+		return user = SpringUtil.user();
 	}
 
 	@Override

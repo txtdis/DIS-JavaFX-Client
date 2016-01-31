@@ -1,16 +1,27 @@
 package ph.txtdis.service;
 
 import ph.txtdis.dto.Keyed;
+import ph.txtdis.exception.FailedAuthenticationException;
+import ph.txtdis.exception.InvalidException;
+import ph.txtdis.exception.NoServerConnectionException;
+import ph.txtdis.exception.RestException;
+import ph.txtdis.exception.StoppedServerException;
 import ph.txtdis.info.SuccessfulSaveInfo;
 
-public interface Saved<T extends Keyed<PK>, PK> extends Moduled, GetSet<PK> {
+public interface Saved<PK> extends AlternateNamed, GetSet<PK>, Moduled {
 
-	SavingService<T> getSavingService();
+	default String getOrderNo() {
+		PK id = get().getId();
+		return id == null ? null : id.toString();
+	}
+
+	<T> SavingService<T> getSavingService();
 
 	@SuppressWarnings("unchecked")
-	default void save() throws Exception, SuccessfulSaveInfo {
-		set(getSavingService().module(getModule()).save((T) get()));
+	default <T extends Keyed<PK>> void save() throws SuccessfulSaveInfo, NoServerConnectionException,
+			StoppedServerException, FailedAuthenticationException, InvalidException, RestException {
+		set((T) getSavingService().module(getModule()).save(get()));
 		if (get() != null)
-			throw new SuccessfulSaveInfo(get());
+			throw new SuccessfulSaveInfo(getModuleId() + getOrderNo());
 	}
 }

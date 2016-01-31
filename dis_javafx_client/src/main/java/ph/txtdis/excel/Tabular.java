@@ -5,17 +5,21 @@ import java.util.List;
 
 public interface Tabular {
 
-	String getId();
-
 	int getColumnCount();
-
-	List<?> getColumns();
-
-	List<?> getItems();
-
-	List<BigDecimal> getColumnTotals();
 
 	int getColumnIndexOfFirstTotal();
 
+	List<?> getColumns();
+
+	List<BigDecimal> getColumnTotals();
+
+	String getId();
+
+	List<?> getItems();
+
 	int getLastRowIndex();
+
+	void items(List<?> items);
+
+	void setId(String id);
 }

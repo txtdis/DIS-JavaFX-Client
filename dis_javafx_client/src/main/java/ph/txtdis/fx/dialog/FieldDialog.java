@@ -1,6 +1,7 @@
 package ph.txtdis.fx.dialog;
 
-import java.util.Arrays;
+import static java.util.Arrays.asList;
+
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -66,7 +67,7 @@ public abstract class FieldDialog<T> extends InputDialog implements Inputted<T> 
 	protected Button addButton() {
 		addButton.large("Add").build();
 		addButton.setOnAction(event -> addItem());
-		addButton.disableIf(getAddButtonBindings());
+		addButton.disableIf(getAddButtonDisableBindings());
 		return addButton;
 	}
 
@@ -85,7 +86,7 @@ public abstract class FieldDialog<T> extends InputDialog implements Inputted<T> 
 
 	protected abstract T createEntity();
 
-	protected BooleanBinding getAddButtonBindings() {
+	protected BooleanBinding getAddButtonDisableBindings() {
 		BooleanBinding binding = inputNodes.get(0).isEmpty();
 		for (int i = 1; i < inputNodes.size(); i++)
 			binding = binding.or(inputNodes.get(i).isEmpty());
@@ -99,7 +100,7 @@ public abstract class FieldDialog<T> extends InputDialog implements Inputted<T> 
 
 	@Override
 	protected List<Node> nodes() {
-		return Arrays.asList(header(), grid(), buttonBox());
+		return asList(header(), grid(), buttonBox());
 	}
 
 	protected void resetNodesOnError(Exception e) {

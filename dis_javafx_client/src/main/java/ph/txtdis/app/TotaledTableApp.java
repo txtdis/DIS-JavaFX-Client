@@ -19,7 +19,7 @@ import ph.txtdis.fx.pane.AppBoxPaneFactory;
 import ph.txtdis.fx.table.AppTable;
 import ph.txtdis.service.TotaledTable;
 
-@Component("totaledTableFeature")
+@Component("totaledTableApp")
 public class TotaledTableApp {
 
 	@Autowired

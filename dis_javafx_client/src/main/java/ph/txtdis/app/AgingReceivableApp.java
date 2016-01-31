@@ -1,6 +1,7 @@
 package ph.txtdis.app;
 
-import java.util.Arrays;
+import static java.util.Arrays.asList;
+
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,6 +41,6 @@ public class AgingReceivableApp
 
 	@Override
 	protected List<Node> mainVerticalPaneNodes() {
-		return Arrays.asList(totaledTableApp.addTablePane(table));
+		return asList(totaledTableApp.addTablePane(table));
 	}
 }

@@ -1,5 +1,9 @@
 package ph.txtdis.util;
 
+import static ph.txtdis.util.SpringUtil.setAuthentication;
+import static ph.txtdis.util.SpringUtil.setCredentialsForValidation;
+import static ph.txtdis.util.SpringUtil.toGranted;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -13,9 +17,9 @@ public class LoginService {
 	private UserService service;
 
 	public void validate(String username, String password) throws Exception {
-		Spring.setCredentialsForValidation(username, password);
+		setCredentialsForValidation(username, password);
 		User user = checkVsDatabase(username);
-		Spring.setAuthentication(user, password, Spring.toGranted(user.getRoles()));
+		setAuthentication(user, password, toGranted(user.getRoles()));
 	}
 
 	private User checkVsDatabase(String username) throws Exception {

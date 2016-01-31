@@ -4,9 +4,9 @@ import javafx.stage.Stage;
 
 public interface Launchable {
 
+	void actOn(String... id);
+
 	Startable addParent(Stage stage);
 
 	void start();
-
-	void launch(String... id);
 }

@@ -9,9 +9,9 @@ import ph.txtdis.type.UomType;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class StockTakeDetail extends AbstractTrackedId<Long> {
+public class StockTakeDetail extends AbstractId<Long> {
 
-	private Item item;
+	private String name;
 
 	private UomType uom;
 

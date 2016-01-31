@@ -12,15 +12,20 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
-import ph.txtdis.app.InvoiceApp;
+import ph.txtdis.app.SalesApp;
 import ph.txtdis.dto.PaymentDetail;
+import ph.txtdis.fx.dialog.PaymentDialog;
+import ph.txtdis.service.RemittanceService;
 
 @Lazy
-@Component("remittanceTable")
+@Component("paymentTable")
 public class PaymentTable extends AppTable<PaymentDetail> {
 
 	@Autowired
-	private InvoiceApp invoiceApp;
+	private SalesApp salesApp;
+
+	@Autowired
+	private AppendContextMenu<PaymentDetail> append;
 
 	@Autowired
 	private Column<PaymentDetail, String> orderNo;
@@ -37,13 +42,25 @@ public class PaymentTable extends AppTable<PaymentDetail> {
 	@Autowired
 	private Column<PaymentDetail, BigDecimal> payment;
 
+	@Autowired
+	private PaymentDialog dialog;
+
+	@Autowired
+	private RemittanceService service;
+
 	@Override
 	@SuppressWarnings("unchecked")
 	protected void addColumns() {
-		getColumns().setAll(orderNo.launches(invoiceApp).ofType(CODE).width(120).build("S/I(D/R) No.", "orderNo"),
-				customer.launches(invoiceApp).ofType(TEXT).build("Customer", "customerName"),
-				dueDate.launches(invoiceApp).ofType(DATE).build("Due Date", "dueDate"),
-				total.launches(invoiceApp).ofType(CURRENCY).build("Amount Due", "totalDueValue"),
-				payment.launches(invoiceApp).ofType(CURRENCY).build("Payment", "paymentValue"));
+		getColumns().setAll(//
+				orderNo.launches(salesApp).ofType(CODE).width(120).build("S/I(D/R) No.", "orderNo"), //
+				customer.launches(salesApp).ofType(TEXT).width(320).build("Customer", "customerName"), //
+				dueDate.launches(salesApp).ofType(DATE).build("Due Date", "dueDate"), //
+				total.launches(salesApp).ofType(CURRENCY).build("Amount Due", "totalDueValue"), //
+				payment.launches(salesApp).ofType(CURRENCY).build("Payment", "paymentValue"));
+	}
+
+	@Override
+	protected void addProperties() {
+		append.addMenu(this, dialog, service);
 	}
 }

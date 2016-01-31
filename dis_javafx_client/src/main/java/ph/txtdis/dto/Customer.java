@@ -1,43 +1,38 @@
 package ph.txtdis.dto;
 
 import java.time.LocalDate;
-import java.time.ZonedDateTime;
 import java.util.List;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import ph.txtdis.type.CustomerType;
+import ph.txtdis.type.PartnerType;
 import ph.txtdis.type.VisitFrequency;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class Customer extends AbstractTrackedId<Long> {
-
-	private String name;
-
-	private String deactivatedBy;
-
-	private ZonedDateTime deactivatedOn;
-
-	private String street, contactName, contactSurname, contactTitle, mobile;
-
-	private Location barangay, city, province;
-
-	private CustomerType type;
-
-	private PricingType primaryPricingType, alternatePricingType;
+public class Customer extends EntityModificationTracked<Long> {
 
 	private Channel channel;
 
-	private VisitFrequency visitFrequency;
+	private Customer parent;
 
-	private List<Routing> routeHistory;
+	private PartnerType type;
 
 	private List<CreditDetail> creditDetails;
 
-	private List<Discount> discounts;
+	private List<CustomerDiscount> customerDiscounts;
 
-	private Customer parent;
+	private List<Routing> routeHistory;
+
+	private List<WeeklyVisit> visitSchedule;
+
+	private Location barangay, city, province;
+
+	private PricingType alternatePricingType, primaryPricingType;
+
+	private String contactName, contactSurname, contactTitle, mobile, name, street;
+
+	private VisitFrequency visitFrequency;
 
 	public String getAddress() {
 		return street() + barangay() + city() + province();

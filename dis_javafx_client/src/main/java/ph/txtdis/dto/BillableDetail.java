@@ -1,6 +1,10 @@
 package ph.txtdis.dto;
 
+import static ph.txtdis.util.NumberUtils.isNegative;
+
 import java.math.BigDecimal;
+
+import static java.math.BigDecimal.ZERO;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -15,17 +19,32 @@ public class BillableDetail extends AbstractId<Long> {
 
 	private UomType uom;
 
-	private BigDecimal qty;
+	private BigDecimal initialQty, returnedQty;
 
 	private QualityType quality;
 
 	private BigDecimal priceValue;
 
+	private Integer onPurchaseDaysLevel, onReceiptDaysLevel;
+
+	public BigDecimal getQty() {
+		BigDecimal d = initialQty().subtract(returnedQty());
+		return isNegative(d) ? ZERO : d;
+	}
+
 	public BigDecimal getSubtotalValue() {
-		try {
-			return getPriceValue().multiply(getQty());
-		} catch (Exception e) {
-			return null;
-		}
+		return price().multiply(getQty());
+	}
+
+	private BigDecimal initialQty() {
+		return initialQty == null ? ZERO : initialQty;
+	}
+
+	private BigDecimal price() {
+		return priceValue == null ? ZERO : priceValue;
+	}
+
+	private BigDecimal returnedQty() {
+		return returnedQty == null ? ZERO : returnedQty;
 	}
 }

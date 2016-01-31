@@ -2,7 +2,6 @@ package ph.txtdis.dto;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.time.ZonedDateTime;
 import java.util.List;
 
@@ -15,17 +14,21 @@ public class Payment extends AbstractAuditedId<Long> implements Remarked<Long> {
 
 	private BigDecimal value;
 
+	private Customer depositorBank, draweeBank;
+
 	private List<PaymentDetail> details;
 
-	private LocalDate paymentDate, depositDate;
+	private LocalDate paymentDate;
 
-	private LocalTime depositTime;
+	private Long checkId;
 
-	private Long checkId, depositorBankId, draweeBankId, payorId;
+	private String depositor, receivedBy, remarks, collector;
 
-	private String accountNo, draweeBank, depositor, depositorBank, payor, receivedBy, remarks, collector;
+	private ZonedDateTime receivedOn, depositedOn, depositorOn;
 
-	private ZonedDateTime receivedOn, depositorOn;
+	public boolean isDeposited() {
+		return depositedOn != null;
+	}
 
 	@Override
 	public String toString() {

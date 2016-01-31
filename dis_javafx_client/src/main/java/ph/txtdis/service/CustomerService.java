@@ -1,7 +1,13 @@
 package ph.txtdis.service;
 
 import static java.time.LocalDate.now;
+import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.toList;
+import static org.springframework.util.StringUtils.capitalize;
+import static ph.txtdis.type.UserType.MANAGER;
+import static ph.txtdis.util.SpringUtil.isUser;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
@@ -10,43 +16,64 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 
-import static ph.txtdis.type.ItemTier.PRINCIPAL;
-
-import static ph.txtdis.util.DateTimeUtils.toDateDisplay;
 import static ph.txtdis.util.DateTimeUtils.toHypenatedYearMonthDay;
+import static ph.txtdis.util.DateTimeUtils.validateDateIsNotInThePast;
+import static ph.txtdis.util.DateTimeUtils.validateDateIsUnique;
 
 import ph.txtdis.dto.Channel;
 import ph.txtdis.dto.CreditDetail;
 import ph.txtdis.dto.Customer;
-import ph.txtdis.dto.Discount;
+import ph.txtdis.dto.CustomerDiscount;
+import ph.txtdis.dto.EntityDecisionNeeded;
 import ph.txtdis.dto.ItemFamily;
 import ph.txtdis.dto.Keyed;
 import ph.txtdis.dto.Location;
+import ph.txtdis.dto.PricingType;
 import ph.txtdis.dto.Route;
 import ph.txtdis.dto.Routing;
 import ph.txtdis.dto.StartDated;
+import ph.txtdis.dto.WeeklyVisit;
 import ph.txtdis.excel.ExcelWriter;
 import ph.txtdis.excel.Tabular;
 import ph.txtdis.exception.DateInThePastException;
+import ph.txtdis.exception.DeactivatedException;
 import ph.txtdis.exception.DuplicateException;
+import ph.txtdis.exception.FailedAuthenticationException;
+import ph.txtdis.exception.InvalidException;
+import ph.txtdis.exception.NoServerConnectionException;
+import ph.txtdis.exception.NotFoundException;
+import ph.txtdis.exception.RestException;
+import ph.txtdis.exception.StoppedServerException;
 import ph.txtdis.info.SuccessfulSaveInfo;
-import ph.txtdis.type.CustomerType;
+import ph.txtdis.type.PartnerType;
 import ph.txtdis.type.VisitFrequency;
-import ph.txtdis.util.Spring;
+import ph.txtdis.util.NumberUtils;
+import ph.txtdis.util.SpringUtil;
 
-@Service
-public class CustomerService implements Excel<Customer>, Reset, SpunById<Long>, Serviced<Customer, Long> {
+@Service("customerService")
+public class CustomerService
+		implements DecisionNeeded, Excel<Customer>, ItemFamilyLimited, Reset, Serviced<Long>, ServiceDeactivated<Long>
+{
+
+	private static final String DISCOUNT_TAB = "Customer Discount";
+
+	private static final String CREDIT_TAB = "Credit Details";
 
 	@Autowired
 	private ChannelService channelService;
+
+	@Autowired
+	private ExcelWriter excel;
 
 	@Autowired
 	private ItemFamilyService familyService;
 
 	@Autowired
 	private LocationService locationService;
+
+	@Autowired
+	private PricingTypeService pricingTypeService;
 
 	@Autowired
 	private ReadOnlyService<Customer> readOnlyService;
@@ -60,17 +87,19 @@ public class CustomerService implements Excel<Customer>, Reset, SpunById<Long>, 
 	@Autowired
 	private SpunService<Customer, Long> spunService;
 
-	@Autowired
-	private ExcelWriter excel;
-
 	private Customer customer;
 
 	private List<Customer> customers;
 
-	private ItemFamily allItemFamilies;
+	private String tab;
 
 	public CustomerService() {
 		reset();
+	}
+
+	@Override
+	public boolean canApprove() {
+		return isUser(MANAGER);
 	}
 
 	public CreditDetail createCreditLineUponValidation(int term, int gracePeriod, BigDecimal creditLimit,
@@ -79,10 +108,10 @@ public class CustomerService implements Excel<Customer>, Reset, SpunById<Long>, 
 		return createCreditLine(term, gracePeriod, creditLimit, startDate);
 	}
 
-	public Discount createDiscountUponValidation(int level, BigDecimal percent, ItemFamily family, LocalDate startDate)
-			throws Exception {
-		validateStartDate(discounts(), startDate);
-		return createCustomerDiscount(level, percent, familyLimit(family), startDate);
+	public CustomerDiscount createDiscountUponValidation(int level, BigDecimal percent, ItemFamily family,
+			LocalDate startDate) throws Exception {
+		validateStartDate(customerDiscounts(), startDate);
+		return createCustomerDiscount(level, percent, nullIfAll(family), startDate);
 	}
 
 	public Routing createRouteAssignmentUponValidation(Route route, LocalDate startDate) throws Exception {
@@ -90,13 +119,73 @@ public class CustomerService implements Excel<Customer>, Reset, SpunById<Long>, 
 		return createRouteAssignment(route, startDate);
 	}
 
-	public void deactivate() throws Exception, SuccessfulSaveInfo {
-		get().setDeactivatedBy(Spring.username());
-		get().setDeactivatedOn(ZonedDateTime.now());
-		save();
+	@Override
+	@SuppressWarnings("unchecked")
+	public Customer find(String id) throws NoServerConnectionException, StoppedServerException,
+			FailedAuthenticationException, InvalidException, NotFoundException, DeactivatedException, RestException {
+		Customer c = Serviced.super.find(id);
+		if (c.getDeactivatedOn() != null)
+			throw new DeactivatedException(c.getName());
+		return c;
+	}
+
+	public Customer findNoContactDetails() throws NoServerConnectionException, StoppedServerException,
+			FailedAuthenticationException, InvalidException, RestException {
+		return readOnlyService.module(getModule()).getOne("/noContactDetails");
+	}
+
+	public Customer findNoDesignation() throws NoServerConnectionException, StoppedServerException,
+			FailedAuthenticationException, InvalidException, RestException {
+		return readOnlyService.module(getModule()).getOne("/noDesignation");
+	}
+
+	public Customer findNoMobileNo() throws NoServerConnectionException, StoppedServerException,
+			FailedAuthenticationException, InvalidException, RestException {
+		return readOnlyService.module(getModule()).getOne("/noMobile");
+	}
+
+	public Customer findNoStreetAddress() throws NoServerConnectionException, StoppedServerException,
+			FailedAuthenticationException, InvalidException, RestException {
+		return readOnlyService.module(getModule()).getOne("/noStreetAddress");
+	}
+
+	public Customer findNoSurname() throws NoServerConnectionException, StoppedServerException,
+			FailedAuthenticationException, InvalidException, RestException {
+		return readOnlyService.module(getModule()).getOne("/noSurname");
+	}
+
+	public Customer findNotCorrectBarangayAddress() throws NoServerConnectionException, StoppedServerException,
+			FailedAuthenticationException, InvalidException, RestException {
+		return readOnlyService.module(getModule()).getOne("/notCorrectBarangayAddress");
+	}
+
+	public Customer findNotCorrectCityAddress() throws NoServerConnectionException, StoppedServerException,
+			FailedAuthenticationException, InvalidException, RestException {
+		return readOnlyService.module(getModule()).getOne("/notCorrectCityAddress");
+	}
+
+	public Customer findNotCorrectProvincialAddress() throws NoServerConnectionException, StoppedServerException,
+			FailedAuthenticationException, InvalidException, RestException {
+		return readOnlyService.module(getModule()).getOne("/notCorrectProvincialAddress");
+	}
+
+	public Customer findNotTheSameVisitFrequencyAndSchedule() throws NoServerConnectionException,
+			StoppedServerException, FailedAuthenticationException, InvalidException, RestException {
+		return readOnlyService.module(getModule()).getOne("/notTheSameVisitFrequencyAndSchedule");
+	}
+
+	public Customer findNotTheSameWeeksOneAndFiveVisitSchedule() throws NoServerConnectionException,
+			StoppedServerException, FailedAuthenticationException, InvalidException, RestException {
+		return readOnlyService.module(getModule()).getOne("/notTheSameWeeksOneAndFiveVisitSchedules");
+	}
+
+	public Customer findNoVisitSchedule() throws NoServerConnectionException, StoppedServerException,
+			FailedAuthenticationException, InvalidException, RestException {
+		return readOnlyService.module(getModule()).getOne("/noVisitSchedule");
 	}
 
 	@Override
+	@SuppressWarnings("unchecked")
 	public Customer get() {
 		if (customer == null)
 			reset();
@@ -109,27 +198,12 @@ public class CustomerService implements Excel<Customer>, Reset, SpunById<Long>, 
 
 	@Override
 	public String getAlternateName() {
-		return StringUtils.capitalize(getModule());
+		return capitalize(getModule());
 	}
 
-	public List<Customer> getBanks() throws Exception {
+	public List<Customer> getBanks() throws NoServerConnectionException, StoppedServerException,
+			FailedAuthenticationException, InvalidException, RestException {
 		return readOnlyService.module(getModule()).getList("/banks");
-	}
-
-	public Location getBarangay() {
-		return get().getBarangay();
-	}
-
-	public Channel getChannel() {
-		return get().getChannel();
-	}
-
-	public Location getCity() {
-		return get().getCity();
-	}
-
-	public String getContactTitle() {
-		return get().getContactTitle();
 	}
 
 	@Override
@@ -142,28 +216,14 @@ public class CustomerService implements Excel<Customer>, Reset, SpunById<Long>, 
 		return get().getCreatedOn();
 	}
 
-	public String getCreditContactName() {
-		return get().getContactName();
-	}
-
-	public String getCreditContactSurname() {
-		return get().getContactSurname();
-	}
-
-	public List<CreditDetail> getCreditDetails() {
-		return get().getCreditDetails();
-	}
-
+	@Override
 	public String getDeactivatedBy() {
 		return get().getDeactivatedBy();
 	}
 
+	@Override
 	public ZonedDateTime getDeactivatedOn() {
 		return get().getDeactivatedOn();
-	}
-
-	public List<Discount> getDiscounts() {
-		return get().getDiscounts();
 	}
 
 	@Override
@@ -171,17 +231,14 @@ public class CustomerService implements Excel<Customer>, Reset, SpunById<Long>, 
 		return get().getId();
 	}
 
-	public String getMobile() {
-		return get().getMobile();
+	@Override
+	public ItemFamilyService getItemFamilyService() {
+		return familyService;
 	}
 
 	@Override
 	public String getModule() {
 		return "customer";
-	}
-
-	public String getName() {
-		return get().getName();
 	}
 
 	public Long getParentId() {
@@ -192,20 +249,14 @@ public class CustomerService implements Excel<Customer>, Reset, SpunById<Long>, 
 		return getParent() == null ? null : getParent().getName();
 	}
 
-	public Location getProvince() {
-		return get().getProvince();
-	}
-
 	@Override
+	@SuppressWarnings("unchecked")
 	public ReadOnlyService<Customer> getReadOnlyService() {
 		return readOnlyService;
 	}
 
-	public List<Routing> getRouteHistory() {
-		return get().getRouteHistory();
-	}
-
 	@Override
+	@SuppressWarnings("unchecked")
 	public SavingService<Customer> getSavingService() {
 		return savingService;
 	}
@@ -215,117 +266,120 @@ public class CustomerService implements Excel<Customer>, Reset, SpunById<Long>, 
 		return spunService;
 	}
 
-	public String getStreet() {
-		return get().getStreet();
+	public Customer getVendor() throws NoServerConnectionException, StoppedServerException,
+			FailedAuthenticationException, InvalidException, RestException {
+		return readOnlyService.module(getModule()).getOne("/vendor");
 	}
 
-	public CustomerType getType() {
-		return get().getType();
-	}
-
-	public VisitFrequency getVisitFrequency() {
-		return get().getVisitFrequency();
+	public List<WeeklyVisit> getVisitSchedule(Channel c) {
+		return c != null && isAVisitedChannel(c) ? visitSchedule() : null;
 	}
 
 	@Override
-	public List<Customer> list() throws Exception {
+	public List<Customer> list() {
 		return customers;
 	}
 
-	public List<ItemFamily> listAllFamilies() throws Exception {
-		List<ItemFamily> list = new ArrayList<>();
-		list.add(getAllItemFamilies());
-		list.addAll(familyService.list());
-		return list;
+	public List<Location> listBarangays(Location city) {
+		try {
+			return locationService.listBarangays(city);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
 	}
 
-	public List<Location> listBarangays(Location city) throws Exception {
-		return locationService.listBarangays(city);
+	public List<Channel> listChannels() {
+		try {
+			return channelService.list();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
 	}
 
-	public List<Channel> listChannels() throws Exception {
-		return channelService.list();
+	public List<Location> listCities(Location province) {
+		try {
+			return locationService.listCities(province);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
 	}
 
-	public List<Location> listCities(Location province) throws Exception {
-		return locationService.listCities(province);
+	public List<Location> listProvinces() {
+		try {
+			return locationService.listProvinces();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
 	}
 
-	public List<Location> listProvinces() throws Exception {
-		return locationService.listProvinces();
-	}
-
-	public List<Route> listRoutes() throws Exception {
+	public List<Route> listRoutes() throws NoServerConnectionException, StoppedServerException,
+			FailedAuthenticationException, InvalidException, RestException {
 		return routeService.list();
+	}
+
+	public List<Channel> listVisitedChannels() {
+		return channelService.listVisitedChannels();
+	}
+
+	public boolean noChangesNeedingApproval(String tab) {
+		this.tab = tab;
+		if (tab.equals(CREDIT_TAB))
+			return noChanges(get().getCreditDetails());
+		if (tab.equals(DISCOUNT_TAB))
+			return noChanges(get().getCustomerDiscounts());
+		return true;
 	}
 
 	@Override
 	public void reset() {
 		set(new Customer());
+		customers = null;
+		tab = null;
 	}
 
 	@Override
-	public void saveAsExcel(Tabular... tables) throws Exception {
+	public <T extends Keyed<Long>> void save() throws SuccessfulSaveInfo, NoServerConnectionException,
+			StoppedServerException, FailedAuthenticationException, InvalidException, RestException {
+		PricingType type = pricingTypeService.findByName("DEALER");
+		get().setPrimaryPricingType(type);
+		Serviced.super.save();
+	}
+
+	@Override
+	public void saveAsExcel(Tabular... tables) throws IOException {
 		excel.filename(getExcelFileName()).sheetname(getExcelSheetName()).table(tables).write();
 	}
 
-	public List<Customer> search(String text) throws Exception {
-		String endpoint = text.isEmpty() ? "" : "/find?name=" + text;
+	@Override
+	public void saveDecision() throws SuccessfulSaveInfo, NoServerConnectionException, StoppedServerException,
+			FailedAuthenticationException, InvalidException, RestException {
+		save();
+	}
+
+	public List<Customer> search(String text) throws NoServerConnectionException, StoppedServerException,
+			FailedAuthenticationException, InvalidException, RestException {
+		String endpoint = text.isEmpty() ? "" : "/search?name=" + text;
 		return customers = readOnlyService.module(getModule()).getList(endpoint);
 	}
 
 	@Override
-	public void set(Keyed<Long> customer) {
-		this.customer = (Customer) customer;
+	public <T extends Keyed<Long>> void set(T t) {
+		customer = (Customer) t;
 	}
 
-	public void setBarangay(Location value) {
-		get().setBarangay(value);
-	}
-
-	public void setChannel(Channel value) {
-		get().setChannel(value);
-	}
-
-	public void setCity(Location value) {
-		get().setCity(value);
-	}
-
-	public void setContactTitle(String text) {
-		get().setContactTitle(text);
-	}
-
-	public void setCreditContactName(String text) {
-		get().setContactName(text);
-	}
-
-	public void setCreditContactSurname(String text) {
-		get().setContactSurname(text);
-	}
-
-	public void setCreditDetails(List<CreditDetail> list) {
-		get().setCreditDetails(list);
-	}
-
-	public void setDiscounts(List<Discount> list) {
-		get().setDiscounts(list);
-	}
-
-	public void setMobile(String text) {
-		get().setMobile(text);
-	}
-
-	public void setName(String text) {
+	public void setNameIfUnique(String text) throws NoServerConnectionException, StoppedServerException,
+			FailedAuthenticationException, InvalidException, DuplicateException, RestException {
+		if (readOnlyService.module(getModule()).getOne("/find?name=" + text) != null)
+			throw new DuplicateException(text);
 		get().setName(text);
 	}
 
-	public void setNameIfUnique(String text) throws Exception {
-		if (readOnlyService.module(getModule()).getOne("/find?name=" + text) != null)
-			throw new DuplicateException(text);
-		setName(text);
-	}
-
-	public void setParentIfExists(Long id) throws Exception {
+	public void setParentIfExists(Long id) throws NoServerConnectionException, StoppedServerException,
+			FailedAuthenticationException, InvalidException, NotFoundException, DeactivatedException, RestException {
 		get().setParent(find(id.toString()));
 	}
 
@@ -341,12 +395,51 @@ public class CustomerService implements Excel<Customer>, Reset, SpunById<Long>, 
 		get().setStreet(text);
 	}
 
-	public void setType(CustomerType value) {
+	public void setType(PartnerType value) {
 		get().setType(value);
 	}
 
 	public void setVisitFrequency(VisitFrequency value) {
 		get().setVisitFrequency(value);
+	}
+
+	public void setVisitSchedule(List<WeeklyVisit> items) {
+		get().setVisitSchedule(items);
+	}
+
+	@Override
+	public void updatePerValidity(Boolean isValid, String remarks) {
+		if (tab.equals(CREDIT_TAB))
+			approveCreditDetail(isValid, remarks);
+		if (tab.equals(DISCOUNT_TAB))
+			approveDiscount(isValid, remarks);
+	}
+
+	public void validatePhoneNo(String ph) throws InvalidException {
+		if (!NumberUtils.isPhone(ph))
+			throw new InvalidException(ph + " is an invalid phone number");
+		get().setMobile(NumberUtils.persistPhone(ph));
+	}
+
+	private <T extends EntityDecisionNeeded<Long>> List<T> approve(List<T> list, Boolean isValid, String remarks) {
+		return list.stream().map(d -> updateApprovalStatus(d, isValid, remarks)).collect(toList());
+	}
+
+	private void approveCreditDetail(Boolean isValid, String remarks) {
+		List<CreditDetail> list = approve(get().getCreditDetails(), isValid, remarks);
+		get().setCreditDetails(list);
+	}
+
+	private void approveDiscount(Boolean isValid, String remarks) {
+		List<CustomerDiscount> list = approve(get().getCustomerDiscounts(), isValid, remarks);
+		get().setCustomerDiscounts(list);
+	}
+
+	private List<WeeklyVisit> blankSchedule() {
+		List<WeeklyVisit> l = new ArrayList<>();
+		for (int i = 1; i <= 5; i++)
+			l.add(new WeeklyVisit(i, false, false, false, false, false, false, false));
+		return l;
 	}
 
 	private CreditDetail createCreditLine(int term, int gracePeriod, BigDecimal creditLimit, LocalDate startDate) {
@@ -359,8 +452,9 @@ public class CustomerService implements Excel<Customer>, Reset, SpunById<Long>, 
 		return c;
 	}
 
-	private Discount createCustomerDiscount(int level, BigDecimal percent, ItemFamily family, LocalDate startDate) {
-		Discount d = new Discount();
+	private CustomerDiscount createCustomerDiscount(int level, BigDecimal percent, ItemFamily family,
+			LocalDate startDate) {
+		CustomerDiscount d = new CustomerDiscount();
 		d.setLevel(level);
 		d.setPercent(percent);
 		d.setFamilyLimit(family);
@@ -378,26 +472,15 @@ public class CustomerService implements Excel<Customer>, Reset, SpunById<Long>, 
 	}
 
 	private List<CreditDetail> creditDetails() {
-		if (getCreditDetails() == null)
-			setCreditDetails(new ArrayList<>());
-		return getCreditDetails();
+		if (get().getCreditDetails() == null)
+			get().setCreditDetails(new ArrayList<>());
+		return get().getCreditDetails();
 	}
 
-	private List<Discount> discounts() {
-		if (getDiscounts() == null)
-			setDiscounts(new ArrayList<>());
-		return getDiscounts();
-	}
-
-	private ItemFamily familyLimit(ItemFamily family) {
-		return family.equals(allItemFamilies) ? null : family;
-	}
-
-	private ItemFamily getAllItemFamilies() {
-		allItemFamilies = new ItemFamily();
-		allItemFamilies.setName("ALL");
-		allItemFamilies.setTier(PRINCIPAL);
-		return allItemFamilies;
+	private List<CustomerDiscount> customerDiscounts() {
+		if (get().getCustomerDiscounts() == null)
+			get().setCustomerDiscounts(new ArrayList<>());
+		return get().getCustomerDiscounts();
 	}
 
 	private String getExcelFileName() {
@@ -412,46 +495,57 @@ public class CustomerService implements Excel<Customer>, Reset, SpunById<Long>, 
 		return get().getParent();
 	}
 
-	private List<Routing> routeHistory() {
-		if (getRouteHistory() == null)
-			setRouteHistory(new ArrayList<>());
-		return getRouteHistory();
+	private boolean isAVisitedChannel(Channel c) {
+		String n = c.getName();
+		return !listVisitedChannels().contains(n);
 	}
 
-	private boolean startDateExists(List<? extends StartDated> list, LocalDate startDate) {
-		return list.stream().filter(r -> r.getStartDate().equals(startDate)).findAny().isPresent();
+	private <T extends EntityDecisionNeeded<Long>> boolean noChanges(List<T> l) {
+		return l == null ? true : !l.stream().anyMatch(d -> d.getApproved() == null);
+	}
+
+	private List<Routing> routeHistory() {
+		if (get().getRouteHistory() == null)
+			setRouteHistory(emptyList());
+		return get().getRouteHistory();
+	}
+
+	private <T extends EntityDecisionNeeded<Long>> T updateApprovalStatus(T d, Boolean isValid, String remarks) {
+		if (d.getApproved() == null && isValid != null) {
+			d.setApproved(isValid);
+			d.setRemarks(remarks);
+			d.setDecidedBy(SpringUtil.username());
+			d.setDecidedOn(ZonedDateTime.now());
+		}
+		return d;
 	}
 
 	private void updateCreditDetails(CreditDetail credit) {
-		List<CreditDetail> list = new ArrayList<>(getCreditDetails());
+		List<CreditDetail> list = new ArrayList<>(get().getCreditDetails());
 		list.add(credit);
-		setCreditDetails(list);
+		get().setCreditDetails(list);
 	}
 
-	private void updateCustomerDiscounts(Discount discount) {
-		List<Discount> list = new ArrayList<>(getDiscounts());
-		list.add(discount);
-		setDiscounts(list);
+	private void updateCustomerDiscounts(CustomerDiscount customerDiscount) {
+		List<CustomerDiscount> list = new ArrayList<>(get().getCustomerDiscounts());
+		list.add(customerDiscount);
+		get().setCustomerDiscounts(list);
 	}
 
 	private void updateRouteHistory(Routing routing) {
-		List<Routing> list = new ArrayList<>(getRouteHistory());
+		List<Routing> list = new ArrayList<>(get().getRouteHistory());
 		list.add(routing);
 		setRouteHistory(list);
 	}
 
-	private void validateDateIsNotInThePast(LocalDate startDate) throws Exception {
-		if (startDate.isBefore(now()))
-			throw new DateInThePastException();
-	}
-
-	private void validateDateIsUnique(List<? extends StartDated> list, LocalDate startDate) throws Exception {
-		if (startDateExists(list, startDate))
-			throw new DuplicateException(toDateDisplay(startDate));
-	}
-
-	private void validateStartDate(List<? extends StartDated> list, LocalDate startDate) throws Exception {
+	private void validateStartDate(List<? extends StartDated> list, LocalDate startDate)
+			throws DateInThePastException, DuplicateException {
 		validateDateIsNotInThePast(startDate);
 		validateDateIsUnique(list, startDate);
+	}
+
+	private List<WeeklyVisit> visitSchedule() {
+		List<WeeklyVisit> l = get().getVisitSchedule();
+		return l.isEmpty() ? blankSchedule() : l;
 	}
 }

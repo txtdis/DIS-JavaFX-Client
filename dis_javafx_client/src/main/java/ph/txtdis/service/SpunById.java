@@ -1,9 +1,9 @@
 package ph.txtdis.service;
 
 import ph.txtdis.dto.Keyed;
-import ph.txtdis.dto.Tracked;
+import ph.txtdis.dto.CreationTracked;
 
-public interface SpunById<PK> extends Tracked, GetSet<PK>, Keyed<PK>, Moduled, Spun {
+public interface SpunById<PK> extends CreationTracked, GetSet<PK>, Keyed<PK>, Moduled, Spun {
 
 	default PK getSpunId() {
 		return isNew() ? null : getId();
@@ -16,7 +16,7 @@ public interface SpunById<PK> extends Tracked, GetSet<PK>, Keyed<PK>, Moduled, S
 	SpunService<? extends Keyed<PK>, PK> getSpunService();
 
 	default boolean isNew() {
-		return getCreatedBy() == null;
+		return getCreatedOn() == null;
 	}
 
 	@Override

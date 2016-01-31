@@ -14,7 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
-import ph.txtdis.app.InvoiceApp;
+import ph.txtdis.app.SalesApp;
 import ph.txtdis.dto.Vat;
 
 @Lazy
@@ -22,7 +22,7 @@ import ph.txtdis.dto.Vat;
 public class VatTable extends AppTable<Vat> {
 
 	@Autowired
-	private InvoiceApp app;
+	private SalesApp app;
 
 	@Autowired
 	private Column<Vat, String> prefix;
@@ -51,7 +51,7 @@ public class VatTable extends AppTable<Vat> {
 		getColumns().setAll(prefix.launches(app).ofType(CODE).width(60).build("Code", "prefix"),
 				idNo.launches(app).ofType(ID).build("No.", "nbrId"),
 				suffix.launches(app).ofType(ALPHA).width(65).build("Series", "suffix"),
-				customer.launches(app).ofType(TEXT).width(180).build("Customer", "customer"),
+				customer.launches(app).ofType(TEXT).build("Customer", "customer"),
 				orderDate.launches(app).ofType(DATE).build("Date", "orderDate"),
 				value.launches(app).ofType(CURRENCY).build("Value", "value"),
 				vat.launches(app).ofType(CURRENCY).build("Vat", "vatValue"));

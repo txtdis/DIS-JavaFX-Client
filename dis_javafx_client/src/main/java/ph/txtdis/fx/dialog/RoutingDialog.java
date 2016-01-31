@@ -1,10 +1,11 @@
 package ph.txtdis.fx.dialog;
 
-import java.util.Arrays;
+import static java.util.Arrays.asList;
+
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import ph.txtdis.dto.Route;
@@ -14,7 +15,7 @@ import ph.txtdis.fx.control.LabeledCombo;
 import ph.txtdis.fx.control.LabeledDatePicker;
 import ph.txtdis.service.CustomerService;
 
-@Lazy
+@Scope("prototype")
 @Component("routingDialog")
 public class RoutingDialog extends FieldDialog<Routing> {
 
@@ -57,11 +58,16 @@ public class RoutingDialog extends FieldDialog<Routing> {
 	@Override
 	protected List<InputNode<?>> addNodes() {
 		routeCombo.name("Route").items(getRoutes()).build();
-		return Arrays.asList(routeCombo, startDatePicker());
+		return asList(routeCombo, startDatePicker());
 	}
 
 	@Override
 	protected Routing createEntity() {
 		return routing;
+	}
+
+	@Override
+	protected String headerText() {
+		return "Add New Routing";
 	}
 }

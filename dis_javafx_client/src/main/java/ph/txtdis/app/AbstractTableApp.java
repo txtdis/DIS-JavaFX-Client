@@ -1,13 +1,16 @@
 package ph.txtdis.app;
 
-import java.util.Arrays;
+import static java.util.Arrays.asList;
+
 import java.util.List;
 
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import static org.apache.commons.lang3.StringUtils.capitalize;
 
 import javafx.scene.Node;
 import ph.txtdis.fx.table.AppTable;
+import ph.txtdis.service.Iconed;
 import ph.txtdis.service.Listed;
 
 public abstract class AbstractTableApp<AT extends AppTable<T>, AS extends Listed<?>, T> extends AbstractApp {
@@ -35,8 +38,12 @@ public abstract class AbstractTableApp<AT extends AppTable<T>, AS extends Listed
 	}
 
 	private String capitalizedModule() {
-		String module = service.getModule();
-		return StringUtils.capitalize(module);
+		return capitalize(service.getModule());
+	}
+
+	@Override
+	protected String getFontIcon() {
+		return ((Iconed) service).getFontIcon();
 	}
 
 	@Override
@@ -45,12 +52,12 @@ public abstract class AbstractTableApp<AT extends AppTable<T>, AS extends Listed
 	}
 
 	@Override
-	protected List<Node> mainVerticalPaneNodes() {
-		return Arrays.asList(box.forHorizontalPane(table.build()));
+	protected String getTitleText() {
+		return capitalizedModule() + " Master";
 	}
 
 	@Override
-	protected String getTitleText() {
-		return capitalizedModule() + " Master";
+	protected List<Node> mainVerticalPaneNodes() {
+		return asList(box.forHorizontalPane(table.build()));
 	}
 }

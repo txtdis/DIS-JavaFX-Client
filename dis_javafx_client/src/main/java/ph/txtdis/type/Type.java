@@ -1,6 +1,22 @@
 package ph.txtdis.type;
 
 public enum Type {
-
-	ALPHA, CODE, CURRENCY, DATE, DECIMAL, ENUM, FOURPLACE, ID, INTEGER, PERCENT, PHONE, TEXT, TIME, TIMESTAMP, OTHERS;
+	ALPHA, //
+	BOOLEAN, //
+	CODE, //
+	CHECKBOX, //
+	CURRENCY, //
+	DATE, //
+	ENUM, //
+	FOURPLACE, //
+	ID, //
+	INTEGER, //
+	PERCENT, //
+	PHONE, //
+	QUANTITY, //
+	TEXT, //
+	TIME, //
+	TIMESTAMP, //
+	TWOPLACE, //
+	OTHERS;
 }

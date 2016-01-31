@@ -14,7 +14,7 @@ import ph.txtdis.fx.control.LabelFactory;
 import ph.txtdis.fx.control.PasswordInput;
 import ph.txtdis.fx.pane.AppGridPane;
 import ph.txtdis.service.UserService;
-import ph.txtdis.util.Spring;
+import ph.txtdis.util.SpringUtil;
 
 public abstract class PasswordDialog extends InputDialog {
 
@@ -61,7 +61,7 @@ public abstract class PasswordDialog extends InputDialog {
 	}
 
 	protected String encodedPassword() {
-		return Spring.encode(password2());
+		return SpringUtil.encode(password2());
 	}
 
 	protected AppGridPane grid() {
@@ -83,7 +83,7 @@ public abstract class PasswordDialog extends InputDialog {
 	}
 
 	protected void saveUser() throws Exception {
-		User user = Spring.user();
+		User user = SpringUtil.user();
 		user.setPassword(encodedPassword());
 		service.save(user);
 	}
@@ -109,7 +109,7 @@ public abstract class PasswordDialog extends InputDialog {
 
 	private void save() throws Exception {
 		saveUser();
-		Spring.setPassword(password2());
+		SpringUtil.setPassword(password2());
 		close();
 	}
 

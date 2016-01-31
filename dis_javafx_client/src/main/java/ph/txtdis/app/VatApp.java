@@ -1,7 +1,8 @@
 package ph.txtdis.app;
 
+import static java.util.Arrays.asList;
+
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -104,7 +105,7 @@ public class VatApp extends AbstractExcelApp<VatTable, VatService, Vat> {
 	@Override
 	protected List<AppButton> addButtons() {
 		List<AppButton> superList = super.addButtons();
-		List<AppButton> list = new ArrayList<>(Arrays.asList(backButton, openButton, nextButton));
+		List<AppButton> list = new ArrayList<>(asList(backButton, openButton, nextButton));
 		list.addAll(superList);
 		return list;
 	}
@@ -119,7 +120,7 @@ public class VatApp extends AbstractExcelApp<VatTable, VatService, Vat> {
 
 	@Override
 	protected List<Node> mainVerticalPaneNodes() {
-		return Arrays.asList(totaledTableApp.addTablePane(table));
+		return asList(totaledTableApp.addTablePane(table));
 	}
 
 	@Override

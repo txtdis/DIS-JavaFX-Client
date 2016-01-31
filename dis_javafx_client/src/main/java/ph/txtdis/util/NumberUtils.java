@@ -36,17 +36,21 @@ public class NumberUtils {
 		return dividend.divide(divisor, 4, HALF_EVEN);
 	}
 
+	public static String format2Place(BigDecimal number) {
+		return isZero(number) ? "" : TWO_PLACE_DECIMAL.format(number);
+	}
+
 	public static String format4Place(BigDecimal number) {
 		return isZero(number) ? "" : FOUR_PLACE_DECIMAL.format(number);
 	}
 
 	public static String formatCurrency(BigDecimal number) {
-		return isZero(number) ? "" : "₱" + TWO_PLACE_DECIMAL.format(number);
+		return isZero(number) ? "" : "₱" + format2Place(number);
 	}
 
 	public static String formatDecimal(BigDecimal number) {
 		return isZero(number) ? ""
-				: isZero(number.remainder(BigDecimal.ONE)) ? INTEGER.format(number) : TWO_PLACE_DECIMAL.format(number);
+				: isZero(number.remainder(BigDecimal.ONE)) ? INTEGER.format(number) : format2Place(number);
 	}
 
 	public static String formatId(Long number) {
@@ -58,7 +62,7 @@ public class NumberUtils {
 	}
 
 	public static String formatPercent(BigDecimal number) {
-		return isZero(number) ? "" : TWO_PLACE_DECIMAL.format(number) + "%";
+		return isZero(number) ? "" : format2Place(number) + "%";
 	}
 
 	public static String formatPhone(PhoneNumber number) {
@@ -109,25 +113,8 @@ public class NumberUtils {
 		return number == null ? true : number == 0;
 	}
 
-	public static BigDecimal toBigDecimal(String text) {
-		if (text == null)
-			return ZERO;
-		text = text.trim().replace(",", "").replace("(", "-").replace(")", "").replace("₱", "");
-		if (text.equals("-") || text.isEmpty())
-			return ZERO;
-		return new BigDecimal(text);
-	}
-
 	public static double parseDouble(String text) {
 		return toBigDecimal(text).doubleValue();
-	}
-
-	public static Integer toInteger(String text) {
-		return toBigDecimal(text).intValue();
-	}
-
-	public static Long toLong(String text) {
-		return toBigDecimal(text).longValue();
 	}
 
 	public static PhoneNumber parsePhone(String text) {
@@ -142,6 +129,23 @@ public class NumberUtils {
 	public static String persistPhone(String number) {
 		PhoneNumber phone = parsePhone(number);
 		return phone == null ? "" : phoneUtil().format(phone, E164);
+	}
+
+	public static BigDecimal toBigDecimal(String text) {
+		if (text == null)
+			return ZERO;
+		text = text.trim().replace(",", "").replace("(", "-").replace(")", "").replace("₱", "");
+		if (text.equals("-") || text.isEmpty())
+			return ZERO;
+		return new BigDecimal(text);
+	}
+
+	public static Integer toInteger(String text) {
+		return toBigDecimal(text).intValue();
+	}
+
+	public static Long toLong(String text) {
+		return toBigDecimal(text).longValue();
 	}
 
 	public static BigDecimal toPercentRate(BigDecimal percent) {

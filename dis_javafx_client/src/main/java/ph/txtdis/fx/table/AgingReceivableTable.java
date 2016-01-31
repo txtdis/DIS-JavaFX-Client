@@ -13,6 +13,7 @@ import ph.txtdis.app.AccountApp;
 import ph.txtdis.app.CustomerApp;
 import ph.txtdis.app.CustomerReceivableApp;
 import ph.txtdis.dto.AgingReceivable;
+import ph.txtdis.service.AgingReceivableService;
 
 @Lazy
 @Component("agingReceivableTable")
@@ -22,10 +23,7 @@ public class AgingReceivableTable extends AppTable<AgingReceivable> {
 	private AccountApp accountApp;
 
 	@Autowired
-	private CustomerApp customerApp;
-
-	@Autowired
-	private CustomerReceivableApp customerReceivableApp;
+	private AgingReceivableService service;
 
 	@Autowired
 	private Column<AgingReceivable, String> seller;
@@ -54,6 +52,15 @@ public class AgingReceivableTable extends AppTable<AgingReceivable> {
 	@Autowired
 	private Column<AgingReceivable, BigDecimal> total;
 
+	@Autowired
+	private CustomerApp customerApp;
+
+	@Autowired
+	private CustomerReceivableApp customerReceivableApp;
+
+	@Autowired
+	private SellerFilterContextMenu<AgingReceivable> menu;
+
 	@Override
 	@SuppressWarnings("unchecked")
 	protected void addColumns() {
@@ -64,11 +71,12 @@ public class AgingReceivableTable extends AppTable<AgingReceivable> {
 				eightToFifteen.launches(customerReceivableApp).ofType(CURRENCY).build("8-15", "eightToFifteenValue"),
 				sixteenToThirty.launches(customerReceivableApp).ofType(CURRENCY).build("16-30", "sixteenToThirtyValue"),
 				moreThanThirty.launches(customerReceivableApp).ofType(CURRENCY).build(">30", "greaterThanThirtyValue"),
-				total.launches(customerReceivableApp).ofType(CURRENCY).build("All Aging", "agingValue"),
-				aging.launches(customerReceivableApp).ofType(CURRENCY).build("All A/R", "totalValue"));
+				total.launches(customerReceivableApp).ofType(CURRENCY).build("All Overdue", "agingValue"),
+				aging.launches(customerReceivableApp).ofType(CURRENCY).build("All Aging", "totalValue"));
 	}
 
 	@Override
 	protected void addProperties() {
+		menu.setMenu(service, this);
 	}
 }

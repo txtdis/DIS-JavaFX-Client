@@ -1,12 +1,14 @@
 package ph.txtdis.fx.table;
 
+import static javafx.collections.FXCollections.emptyObservableList;
+import static javafx.collections.FXCollections.observableArrayList;
+
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
 import javafx.beans.InvalidationListener;
 import javafx.beans.binding.BooleanBinding;
-import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
@@ -57,28 +59,29 @@ public abstract class AppTable<S> extends TableView<S> implements Tabular {
 	}
 
 	public BooleanBinding isEmpty() {
-		return itemsProperty().isNull();
+		return itemsProperty().isEqualTo(emptyObservableList());
 	}
 
 	@SuppressWarnings("unchecked")
 	public void items(List<?> list) {
-		setItems(list == null ? FXCollections.emptyObservableList()
-				: (ObservableList<S>) FXCollections.observableArrayList(list));
+		setItems(list == null ? emptyObservableList() : (ObservableList<S>) observableArrayList(list));
 	}
 
 	public void setOnItemChange(InvalidationListener listener) {
 		itemsProperty().addListener(listener);
 	}
 
-	private double width() {
-		double width = 20;
-		for (TableColumn<S, ?> column : getColumns())
-			width = width + column.getMinWidth();
-		return width;
-	}
-
 	protected abstract void addColumns();
 
 	protected void addProperties() {
+	}
+
+	protected double width() {
+		double width = 20;
+		for (TableColumn<S, ?> column : getColumns()) {
+			if (column.isVisible())
+				width = width + column.getMinWidth();
+		}
+		return width;
 	}
 }

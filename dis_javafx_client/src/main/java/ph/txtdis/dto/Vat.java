@@ -3,24 +3,23 @@ package ph.txtdis.dto;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+import static ph.txtdis.type.ModuleType.INVOICE;
+
 import lombok.Data;
 
 @Data
-public class Vat implements Keyed<Long> {
+public class Vat implements Keyed<Long>, Typed {
 
-	private Long id;
+	private Long id, nbrId;
 
-	private String prefix;
-
-	private Long nbrId;
-
-	private String suffix;
-
-	private String customer;
+	private String prefix, suffix, customer;
 
 	private LocalDate orderDate;
 
-	private BigDecimal value;
+	private BigDecimal value, vatValue;
 
-	private BigDecimal vatValue;
+	@Override
+	public String type() {
+		return INVOICE.toString();
+	}
 }

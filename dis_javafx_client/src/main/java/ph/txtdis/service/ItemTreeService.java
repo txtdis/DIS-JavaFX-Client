@@ -12,7 +12,7 @@ import ph.txtdis.dto.ItemTree;
 import ph.txtdis.exception.DuplicateException;
 
 @Service
-public class ItemTreeService implements Listed<ItemTree>, SavedByEntity<ItemTree> {
+public class ItemTreeService implements Iconed, Listed<ItemTree>, SavedByEntity<ItemTree> {
 
 	@Autowired
 	private ItemFamilyService familyService;
@@ -36,8 +36,13 @@ public class ItemTreeService implements Listed<ItemTree>, SavedByEntity<ItemTree
 	}
 
 	@Override
-	public List<ItemTree> list() throws Exception {
-		return readOnlyService.module(getModule()).getList();
+	public ReadOnlyService<ItemTree> getReadOnlyService() {
+		return readOnlyService;
+	}
+
+	@Override
+	public SavingService<ItemTree> getSavingService() {
+		return savingService;
 	}
 
 	public List<ItemFamily> listFamilies() throws Exception {
@@ -55,10 +60,5 @@ public class ItemTreeService implements Listed<ItemTree>, SavedByEntity<ItemTree
 		it.setFamily(family);
 		it.setParent(parent);
 		return save(it);
-	}
-
-	@Override
-	public ItemTree save(ItemTree entity) throws Exception {
-		return savingService.module(getModule()).save(entity);
 	}
 }

@@ -2,7 +2,21 @@ package ph.txtdis.util;
 
 import static javafx.geometry.Pos.CENTER_LEFT;
 import static javafx.geometry.Pos.CENTER_RIGHT;
-import static ph.txtdis.util.NumberUtils.persistPhone;
+import static ph.txtdis.fx.Styled.for2Place;
+import static ph.txtdis.fx.Styled.for4Place;
+import static ph.txtdis.fx.Styled.forBoolean;
+import static ph.txtdis.fx.Styled.forCode;
+import static ph.txtdis.fx.Styled.forCurrency;
+import static ph.txtdis.fx.Styled.forDate;
+import static ph.txtdis.fx.Styled.forEnum;
+import static ph.txtdis.fx.Styled.forIdNo;
+import static ph.txtdis.fx.Styled.forInteger;
+import static ph.txtdis.fx.Styled.forPercent;
+import static ph.txtdis.fx.Styled.forPhone;
+import static ph.txtdis.fx.Styled.forQuantity;
+import static ph.txtdis.fx.Styled.forText;
+import static ph.txtdis.fx.Styled.forTime;
+import static ph.txtdis.fx.Styled.forTimestamp;
 import static ph.txtdis.util.NumberUtils.toBigDecimal;
 import static ph.txtdis.util.NumberUtils.toInteger;
 import static ph.txtdis.util.NumberUtils.toLong;
@@ -20,7 +34,6 @@ import ph.txtdis.fx.AlphabetOnlyValidator;
 import ph.txtdis.fx.DecimalInputValidator;
 import ph.txtdis.fx.IntegerInputValidator;
 import ph.txtdis.fx.PhoneInputValidator;
-import ph.txtdis.fx.Styled;
 import ph.txtdis.fx.TextValidator;
 import ph.txtdis.fx.control.AppField;
 import ph.txtdis.fx.control.StylableTextField;
@@ -32,12 +45,13 @@ public class TypeStyle {
 		switch (type) {
 			case CODE:
 			case CURRENCY:
-			case DECIMAL:
 			case FOURPLACE:
 			case ID:
 			case INTEGER:
 			case PERCENT:
 			case PHONE:
+			case QUANTITY:
+			case TWOPLACE:
 				field.setAlignment(CENTER_RIGHT);
 				break;
 			default:
@@ -48,23 +62,23 @@ public class TypeStyle {
 	@SuppressWarnings("unchecked")
 	public static <T> T parse(Type type, String text) {
 		switch (type) {
+			case ALPHA:
+			case CODE:
+			case TEXT:
+			case PHONE:
+				return text == null ? null : (T) trim(text);
 			case CURRENCY:
-			case DECIMAL:
 			case FOURPLACE:
 			case PERCENT:
+			case QUANTITY:
+			case TWOPLACE:
 				return (T) toBigDecimal(text);
 			case ID:
 				return (T) toLong(text);
 			case INTEGER:
 				return (T) toInteger(text);
-			case PHONE:
-				return (T) persistPhone(text);
 			case TIME:
 				return (T) toTime(text);
-			case ALPHA:
-			case CODE:
-			case TEXT:
-				return text == null ? null : (T) trim(text);
 			default:
 				return null;
 		}
@@ -74,55 +88,69 @@ public class TypeStyle {
 		if (type == null)
 			return;
 		switch (type) {
+			case BOOLEAN:
+				forBoolean(field, (Boolean) value);
+				break;
 			case CODE:
-				Styled.forCode(field, value);
+				forCode(field, (String) value);
 				break;
 			case CURRENCY:
-				Styled.forCurrency(field, (BigDecimal) value);
+				forCurrency(field, (BigDecimal) value);
 				break;
 			case DATE:
-				Styled.forDate(field, (LocalDate) value);
-				break;
-			case DECIMAL:
-				Styled.forDecimal(field, (BigDecimal) value);
+				forDate(field, (LocalDate) value);
 				break;
 			case ENUM:
-				Styled.forEnum(field, value);
+				forEnum(field, value);
 				break;
 			case FOURPLACE:
-				Styled.for4Place(field, (BigDecimal) value);
+				for4Place(field, (BigDecimal) value);
 				break;
 			case ID:
-				Styled.forIdNo(field, (Long) value);
+				forIdNo(field, (Long) value);
 				break;
 			case INTEGER:
-				Styled.forInteger(field, (Integer) value);
+				forInteger(field, (Integer) value);
 				break;
 			case PERCENT:
-				Styled.forPercent(field, (BigDecimal) value);
+				forPercent(field, (BigDecimal) value);
+				break;
+			case QUANTITY:
+				forQuantity(field, (BigDecimal) value);
 				break;
 			case PHONE:
-				Styled.forPhone(field, (String) value);
+				forPhone(field, (String) value);
 				break;
 			case TIME:
-				Styled.forTime(field, (LocalTime) value);
+				forTime(field, (LocalTime) value);
 				break;
 			case TIMESTAMP:
-				Styled.forTimestamp(field, (ZonedDateTime) value);
+				forTimestamp(field, (ZonedDateTime) value);
+				break;
+			case TWOPLACE:
+				for2Place(field, (BigDecimal) value);
 				break;
 			case ALPHA:
 			case TEXT:
 			default:
-				Styled.forText(field, value);
+				forText(field, value);
 		}
 	}
 
 	public static <T> void validate(Type type, AppField<T> field) {
 		switch (type) {
+			case ALPHA:
+				field.textProperty().addListener(new AlphabetOnlyValidator(field));
+				break;
+			case CODE:
+			case TEXT:
+				field.textProperty().addListener(new TextValidator(field));
+				break;
 			case CURRENCY:
-			case DECIMAL:
 			case FOURPLACE:
 			case PERCENT:
+			case QUANTITY:
+			case TWOPLACE:
 				field.textProperty().addListener(new DecimalInputValidator(field));
 				break;
 			case ID:
@@ -133,15 +161,8 @@ public class TypeStyle {
 				field.setPromptText("0888 888 8888");
 				field.textProperty().addListener(new PhoneInputValidator(field));
 				break;
-			case CODE:
-			case TEXT:
-				field.textProperty().addListener(new TextValidator(field));
-				break;
 			case TIME:
 				field.setPromptText("hh:mm");
-				break;
-			case ALPHA:
-				field.textProperty().addListener(new AlphabetOnlyValidator(field));
 				break;
 			default:
 		}
@@ -150,19 +171,22 @@ public class TypeStyle {
 	public static int width(Type type) {
 		switch (type) {
 			case ALPHA:
+			case BOOLEAN:
+			case CHECKBOX:
 				return 60;
-			case INTEGER:
 			case ENUM:
 			case FOURPLACE:
+			case INTEGER:
 			case TIME:
-				return 80;
 			case ID:
-			case DATE:
+			case PERCENT:
+			case TWOPLACE:
 				return 90;
-			case DECIMAL:
+			case DATE:
+			case QUANTITY:
 				return 110;
-			case TIMESTAMP:
 			case PHONE:
+			case TIMESTAMP:
 				return 160;
 			case TEXT:
 				return 240;

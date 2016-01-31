@@ -5,7 +5,7 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class PricingType extends AbstractTrackedId<Long> {
+public class PricingType extends EntityCreationTracked<Long> {
 
 	private String name;
 

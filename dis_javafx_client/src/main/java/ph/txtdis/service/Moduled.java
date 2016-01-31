@@ -1,14 +1,12 @@
 package ph.txtdis.service;
 
-import org.apache.commons.lang3.StringUtils;
+import static org.apache.commons.lang3.StringUtils.capitalize;
 
-public interface Moduled {
+public interface Moduled extends Iconed {
 
 	default String getHeaderText() {
-		return StringUtils.capitalize(getModule());
+		return capitalize(getModule());
 	}
-
-	String getModule();
 
 	default String getOpenDialogHeading() {
 		return "Open a(n) " + getHeaderText();

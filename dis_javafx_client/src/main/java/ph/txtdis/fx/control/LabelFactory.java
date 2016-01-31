@@ -1,5 +1,7 @@
 package ph.txtdis.fx.control;
 
+import static javafx.geometry.HPos.RIGHT;
+
 import org.springframework.stereotype.Component;
 
 import javafx.geometry.HPos;
@@ -20,7 +22,8 @@ public class LabelFactory {
 
 	public Label field(String name) {
 		Label label = new Label(name);
-		GridPane.setHalignment(label, HPos.RIGHT);
+		label.setMinSize(Label.USE_PREF_SIZE, Label.USE_PREF_SIZE);
+		GridPane.setHalignment(label, RIGHT);
 		return label;
 	}
 

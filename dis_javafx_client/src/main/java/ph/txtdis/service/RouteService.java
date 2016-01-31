@@ -11,10 +11,17 @@ import org.springframework.stereotype.Service;
 import ph.txtdis.dto.Account;
 import ph.txtdis.dto.Customer;
 import ph.txtdis.dto.Route;
-import ph.txtdis.exception.DuplicateException;
+import ph.txtdis.exception.DeactivatedException;
+import ph.txtdis.exception.FailedAuthenticationException;
+import ph.txtdis.exception.InvalidException;
+import ph.txtdis.exception.NoServerConnectionException;
+import ph.txtdis.exception.NotFoundException;
+import ph.txtdis.exception.RestException;
+import ph.txtdis.exception.StoppedServerException;
+import ph.txtdis.type.DeliveryType;
 
 @Service
-public class RouteService implements Listed<Route>, UniquelyNamed, SavedByName<Route> {
+public class RouteService implements Iconed, Listed<Route>, UniquelyNamed<Route> {
 
 	private static final String AGING_RECEIVABLE = "agingReceivable";
 
@@ -32,17 +39,13 @@ public class RouteService implements Listed<Route>, UniquelyNamed, SavedByName<R
 
 	private Route route;
 
-	@Override
-	public void confirmUniqueness(String name) throws Exception {
-		if (readOnlyService.module(getModule()).getOne("/" + name) != null)
-			throw new DuplicateException(name);
-	}
-
-	public Route find(String id) throws Exception {
+	public Route find(String id) throws NoServerConnectionException, StoppedServerException,
+			FailedAuthenticationException, InvalidException, RestException {
 		return route = readOnlyService.module(getModule()).getOne("/find?id=" + id);
 	}
 
-	public Route find(String[] ids) throws Exception {
+	public Route find(String[] ids) throws NoServerConnectionException, StoppedServerException,
+			FailedAuthenticationException, InvalidException, NotFoundException, Exception {
 		return launcedFromAgingReceivable(ids) ? viaCustomer(ids) : find(routeId(ids));
 	}
 
@@ -51,27 +54,30 @@ public class RouteService implements Listed<Route>, UniquelyNamed, SavedByName<R
 		return "route";
 	}
 
+	@Override
+	public ReadOnlyService<Route> getReadOnlyService() {
+		return readOnlyService;
+	}
+
 	public List<Account> getSellerHistory() {
 		return route == null || route.getSellerHistory() == null ? new ArrayList<>() : route.getSellerHistory();
 	}
 
-	@Override
-	public List<Route> list() throws Exception {
-		return readOnlyService.module(getModule()).getList();
-	}
-
-	public List<String> listUsers() throws Exception {
+	public List<String> listUsers() throws NoServerConnectionException, StoppedServerException,
+			FailedAuthenticationException, InvalidException, RestException {
 		return userService.list().stream().map(u -> u.getUsername()).collect(Collectors.toList());
 	}
 
-	@Override
-	public Route save(String name) throws Exception {
-		Route entity = new Route();
-		entity.setName(name);
-		return savingService.module(getModule()).save(entity);
+	public Route save(String name, DeliveryType type) throws NoServerConnectionException, StoppedServerException,
+			FailedAuthenticationException, InvalidException {
+		Route r = new Route();
+		r.setName(name);
+		r.setType(type);
+		return savingService.module(getModule()).save(r);
 	}
 
-	public Account save(String seller, LocalDate date) throws Exception {
+	public Account save(String seller, LocalDate date) throws NoServerConnectionException, StoppedServerException,
+			FailedAuthenticationException, InvalidException {
 		List<Account> list = updatedSellerHistory(seller, date);
 		route.setSellerHistory(list);
 		route = savingService.module(getModule()).save(route);
@@ -100,7 +106,8 @@ public class RouteService implements Listed<Route>, UniquelyNamed, SavedByName<R
 		return list;
 	}
 
-	private Route viaCustomer(String[] ids) throws Exception {
+	private Route viaCustomer(String[] ids) throws NoServerConnectionException, StoppedServerException,
+			FailedAuthenticationException, InvalidException, NotFoundException, DeactivatedException, RestException {
 		Customer c = customerService.find(ids[0]);
 		return route = c.getRoute(LocalDate.now());
 	}

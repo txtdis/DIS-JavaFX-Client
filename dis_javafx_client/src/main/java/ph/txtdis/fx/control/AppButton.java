@@ -3,7 +3,7 @@ package ph.txtdis.fx.control;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
-import javafx.beans.binding.BooleanBinding;
+import javafx.beans.value.ObservableValue;
 import javafx.geometry.Insets;
 import javafx.scene.control.Button;
 import javafx.scene.input.KeyCode;
@@ -29,9 +29,26 @@ public class AppButton extends Button {
 		});
 	}
 
+	public AppButton app(Startable app) {
+		isUnicode = true;
+		return text(new TypeMap().icon(app));
+	}
+
+	public AppButton build() {
+		if (tooltip != null)
+			setTooltip(new ToolTip(tooltip));
+		setText(text);
+		setStyle(text == null || isUnicode ? iconButtonStyle() : textButtonStyle());
+		return this;
+	}
+
 	public AppButton color(String color) {
 		this.color = color;
 		return this;
+	}
+
+	public void disableIf(ObservableValue<Boolean> b) {
+		disableProperty().bind(b);
 	}
 
 	public AppButton fontSize(int size) {
@@ -39,24 +56,9 @@ public class AppButton extends Button {
 		return this;
 	}
 
-	public AppButton tooltip(String tooltip) {
-		this.tooltip = tooltip;
-		return this;
-	}
-
 	public AppButton icon(String unicode) {
 		isUnicode = true;
 		return text(new TypeMap().icon(unicode));
-	}
-
-	public AppButton app(Startable app) {
-		isUnicode = true;
-		return text(new TypeMap().icon(app));
-	}
-
-	public AppButton text(String text) {
-		this.text = text;
-		return this;
 	}
 
 	public AppButton large(String text) {
@@ -66,32 +68,14 @@ public class AppButton extends Button {
 		return this;
 	}
 
-	public AppButton build() {
-		if (tooltip != null)
-			setTooltip(new ToolTip(tooltip));
-		setText(text != null ? text : new TypeMap().icon(this));
-		setStyle(text == null || isUnicode ? iconButtonStyle() : textButtonStyle());
+	public AppButton text(String text) {
+		this.text = text;
 		return this;
 	}
 
-	public void disableIf(BooleanBinding b) {
-		disableProperty().bind(b);
-	}
-
-	protected String textButtonStyle() {
-		return " -fx-font-size: " + textSize() + "pt;";
-	}
-
-	private int textSize() {
-		return size == 0 ? 11 : size;
-	}
-
-	private String iconButtonStyle() {
-		return " -fx-font: " + iconSize() + " 'txtdis'; " + color() + "-fx-padding: 0; " + buttonSize();
-	}
-
-	private int iconSize() {
-		return size == 0 ? 24 : size;
+	public AppButton tooltip(String tooltip) {
+		this.tooltip = tooltip;
+		return this;
 	}
 
 	private String buttonSize() {
@@ -102,5 +86,21 @@ public class AppButton extends Button {
 
 	private String color() {
 		return color == null ? "" : "-fx-text-fill: " + color + "; ";
+	}
+
+	private String iconButtonStyle() {
+		return " -fx-font: " + iconSize() + " 'txtdis'; " + color() + "-fx-padding: 0; " + buttonSize();
+	}
+
+	private int iconSize() {
+		return size == 0 ? 24 : size;
+	}
+
+	private int textSize() {
+		return size == 0 ? 11 : size;
+	}
+
+	protected String textButtonStyle() {
+		return " -fx-font-size: " + textSize() + "pt;";
 	}
 }

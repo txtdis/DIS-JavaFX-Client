@@ -12,7 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
-import ph.txtdis.app.InvoiceApp;
+import ph.txtdis.app.SalesApp;
 import ph.txtdis.dto.CustomerReceivable;
 
 @Lazy
@@ -20,10 +20,10 @@ import ph.txtdis.dto.CustomerReceivable;
 public class CustomerReceivableTable extends AppTable<CustomerReceivable> {
 
 	@Autowired
-	private InvoiceApp invoiceApp;
+	private SalesApp salesApp;
 
 	@Autowired
-	private Column<CustomerReceivable, Long> id;
+	private Column<CustomerReceivable, String> id;
 
 	@Autowired
 	private Column<CustomerReceivable, LocalDate> orderDate;
@@ -43,11 +43,12 @@ public class CustomerReceivableTable extends AppTable<CustomerReceivable> {
 	@Override
 	@SuppressWarnings("unchecked")
 	protected void addColumns() {
-		getColumns().setAll(id.launches(invoiceApp).ofType(CODE).width(120).build("S/I(D/R) No.", "orderNo"),
-				orderDate.launches(invoiceApp).ofType(DATE).build("Date", "orderDate"),
-				dueDate.launches(invoiceApp).ofType(DATE).build("Due", "dueDate"),
-				daysOver.launches(invoiceApp).ofType(INTEGER).build("Days Over", "daysOverCount"),
-				totalValue.launches(invoiceApp).ofType(CURRENCY).build("Total Amount", "totalValue"),
-				unpaidValue.launches(invoiceApp).ofType(CURRENCY).build("Unpaid Balance", "unpaidValue"));
+		getColumns().setAll(//
+				id.launches(salesApp).ofType(CODE).width(120).build("S/I(D/R) No.", "orderNo"),
+				orderDate.launches(salesApp).ofType(DATE).build("Date", "orderDate"),
+				dueDate.launches(salesApp).ofType(DATE).build("Due", "dueDate"),
+				daysOver.launches(salesApp).ofType(INTEGER).build("Days Over", "daysOverCount"),
+				totalValue.launches(salesApp).ofType(CURRENCY).build("Total Amount", "totalValue"),
+				unpaidValue.launches(salesApp).ofType(CURRENCY).build("Unpaid Balance", "unpaidValue"));
 	}
 }

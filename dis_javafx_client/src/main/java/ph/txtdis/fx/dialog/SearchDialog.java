@@ -1,8 +1,8 @@
 package ph.txtdis.fx.dialog;
 
+import static java.util.Arrays.asList;
 import static ph.txtdis.type.Type.TEXT;
 
-import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -80,6 +80,12 @@ public class SearchDialog extends InputDialog {
 
 	@Override
 	protected List<Node> nodes() {
-		return Arrays.asList(header(), grid(), buttonBox());
+		return asList(header(), grid(), buttonBox());
+	}
+
+	@Override
+	protected void setOnFiredCloseButton() {
+		searchText = null;
+		super.setOnFiredCloseButton();
 	}
 }

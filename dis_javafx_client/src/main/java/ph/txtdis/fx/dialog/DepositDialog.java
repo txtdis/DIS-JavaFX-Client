@@ -4,6 +4,8 @@ import static ph.txtdis.type.Type.TIME;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import java.util.List;
@@ -36,24 +38,14 @@ public class DepositDialog extends FieldDialog<Customer> {
 	@Autowired
 	private RemittanceService service;
 
-	private LocalDate date;
+	private ZonedDateTime timestamp;
 
-	private LocalTime time;
-
-	public Long getBankId() {
-		return getAddedItem().getId();
+	public Customer getBank() {
+		return getAddedItem();
 	}
 
-	public String getBankName() {
-		return getAddedItem().getName();
-	}
-
-	public LocalDate getDate() {
-		return date;
-	}
-
-	public LocalTime getTime() {
-		return time;
+	public ZonedDateTime getTimestamp() {
+		return timestamp;
 	}
 
 	@Override
@@ -66,8 +58,9 @@ public class DepositDialog extends FieldDialog<Customer> {
 	@Override
 	protected void addItem() {
 		try {
-			time = timeInput.getValue();
-			date = datePicker.getValue();
+			LocalTime t = timeInput.getValue();
+			LocalDate d = datePicker.getValue();
+			timestamp = ZonedDateTime.of(d, t, ZoneId.systemDefault());
 			super.addItem();
 		} catch (DateTimeParseException e) {
 			String s = "Incorrect time format;\nmust be 0808 for 8:08AM,\nand 2008 for 8:08PM.";

@@ -1,11 +1,14 @@
 package ph.txtdis.fx.dialog;
 
-import java.util.Arrays;
+import static java.util.Arrays.asList;
+
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
+
+import static ph.txtdis.type.ItemTier.values;
 
 import ph.txtdis.dto.ItemFamily;
 import ph.txtdis.fx.control.InputNode;
@@ -13,7 +16,7 @@ import ph.txtdis.fx.control.LabeledCombo;
 import ph.txtdis.service.ItemFamilyService;
 import ph.txtdis.type.ItemTier;
 
-@Lazy
+@Scope("prototype")
 @Component("itemFamilyDialog")
 public class ItemFamilyDialog extends NameListDialog<ItemFamily, ItemFamilyService> {
 
@@ -23,8 +26,8 @@ public class ItemFamilyDialog extends NameListDialog<ItemFamily, ItemFamilyServi
 	@Override
 	protected List<InputNode<?>> addNodes() {
 		super.addNodes();
-		tierCombo.name("Tier").items(ItemTier.values()).build();
-		return Arrays.asList(nameField, tierCombo);
+		tierCombo.name("Tier").items(values()).build();
+		return asList(nameField, tierCombo);
 	}
 
 	@Override
@@ -32,9 +35,13 @@ public class ItemFamilyDialog extends NameListDialog<ItemFamily, ItemFamilyServi
 		try {
 			return service.save(nameField.getValue(), tierCombo.getValue());
 		} catch (Exception e) {
-			e.printStackTrace();
 			resetNodesOnError(e);
 			return null;
 		}
+	}
+
+	@Override
+	protected String headerText() {
+		return "Add New Item Family";
 	}
 }

@@ -1,23 +1,24 @@
 package ph.txtdis.fx.tab;
 
+import static java.util.Arrays.asList;
 import static ph.txtdis.type.Type.PHONE;
 import static ph.txtdis.type.Type.TEXT;
 
-import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import javafx.scene.Node;
 import javafx.scene.layout.VBox;
+import ph.txtdis.dto.Customer;
 import ph.txtdis.fx.control.AppField;
 import ph.txtdis.fx.control.LabelFactory;
 import ph.txtdis.fx.table.CreditTable;
 import ph.txtdis.service.CustomerService;
 
-@Lazy
+@Scope("prototype")
 @Component("creditTab")
 public class CreditTab extends AbstractTab {
 
@@ -28,16 +29,7 @@ public class CreditTab extends AbstractTab {
 	private LabelFactory label;
 
 	@Autowired
-	private AppField<String> contactNameField;
-
-	@Autowired
-	private AppField<String> contactSurnameField;
-
-	@Autowired
-	private AppField<String> titleField;
-
-	@Autowired
-	private AppField<String> mobileField;
+	private AppField<String> contactNameField, contactSurnameField, titleField, mobileField;
 
 	@Autowired
 	private CreditTable creditTable;
@@ -47,39 +39,39 @@ public class CreditTab extends AbstractTab {
 	}
 
 	@Override
-	public CreditTab build() {
-		super.build();
-		setBindings();
-		return this;
-	}
-
-	@Override
 	public void refresh() {
-		contactNameField.setText(service.getCreditContactName());
-		contactSurnameField.setText(service.getCreditContactName());
-		titleField.setText(service.getContactTitle());
-		mobileField.setValue(service.getMobile());
-		creditTable.items(service.getCreditDetails());
+		contactNameField.setText(customer().getContactName());
+		contactSurnameField.setText(customer().getContactSurname());
+		titleField.setText(customer().getContactTitle());
+		mobileField.setValue(customer().getMobile());
+		creditTable.items(customer().getCreditDetails());
 	}
 
 	@Override
 	public void save() {
-		service.setCreditContactName(contactNameField.getText());
-		service.setCreditContactSurname(contactSurnameField.getText());
-		service.setContactTitle(titleField.getText());
-		service.setMobile(mobileField.getValue());
-		service.setCreditDetails(creditTable.getItems());
+		customer().setContactName(contactNameField.getText());
+		customer().setContactSurname(contactSurnameField.getText());
+		customer().setContactTitle(titleField.getText());
+		customer().setCreditDetails(creditTable.getItems());
 	}
 
-	private void setBindings() {
-		contactSurnameField.disableIf(contactNameField.isEmpty());
-		titleField.disableIf(contactSurnameField.isEmpty());
-		mobileField.disableIf(titleField.isEmpty());
-		creditTable.disableIf(mobileField.isEmpty());
+	private Customer customer() {
+		return service.get();
 	}
 
 	private VBox tablePane() {
 		return box.forVerticals(label.group("Approved Credit History"), creditTable.build());
+	}
+
+	private void validateMobileNo() {
+		String ph = mobileField.getValue();
+		if (!ph.isEmpty())
+			try {
+				service.validatePhoneNo(ph);
+			} catch (Exception e) {
+				mobileField.clear();
+				handleError(mobileField, e);
+			}
 	}
 
 	@Override
@@ -94,6 +86,20 @@ public class CreditTab extends AbstractTab {
 		gridPane.add(titleField.build(TEXT), 1, 2);
 		gridPane.add(label.field("Mobile No."), 2, 2);
 		gridPane.add(mobileField.build(PHONE), 3, 2);
-		return Arrays.asList(gridPane, box.forHorizontalPane(tablePane()));
+		return asList(gridPane, box.forHorizontalPane(tablePane()));
+	}
+
+	@Override
+	protected void setBindings() {
+		contactSurnameField.disableIf(contactNameField.isEmpty());
+		titleField.disableIf(contactSurnameField.isEmpty());
+		mobileField.disableIf(titleField.isEmpty());
+		creditTable.disableIf(mobileField.isEmpty());
+	}
+
+	@Override
+	protected void setListeners() {
+		super.setListeners();
+		mobileField.setOnAction(e -> validateMobileNo());
 	}
 }

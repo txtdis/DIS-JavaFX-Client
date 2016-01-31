@@ -74,4 +74,10 @@ public class OpenByIdDialog<PK> extends InputDialog {
 		grid.add(idField.build(getType()), 1, 0);
 		return Arrays.asList(header(), grid, buttonBox());
 	}
+
+	@Override
+	protected void setOnFiredCloseButton() {
+		id = null;
+		super.setOnFiredCloseButton();
+	}
 }

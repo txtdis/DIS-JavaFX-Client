@@ -1,15 +1,16 @@
 package ph.txtdis.fx.dialog;
 
+import static javafx.geometry.Pos.CENTER;
+import static javafx.stage.Modality.WINDOW_MODAL;
+
 import java.util.List;
 
 import javafx.geometry.Insets;
-import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Tab;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
-import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import ph.txtdis.app.Startable;
@@ -51,7 +52,7 @@ public abstract class AbstractDialog extends Stage implements Startable {
 
 	private void initialize(Stage stage) {
 		initOwner(stage);
-		initModality(Modality.WINDOW_MODAL);
+		initModality(WINDOW_MODAL);
 		initStyle(StageStyle.TRANSPARENT);
 	}
 
@@ -65,7 +66,7 @@ public abstract class AbstractDialog extends Stage implements Startable {
 	private VBox vbox() {
 		VBox vb = new VBox();
 		vb.getChildren().setAll(nodes());
-		vb.setAlignment(Pos.CENTER);
+		vb.setAlignment(CENTER);
 		vb.setPadding(new Insets(0, 20, 0, 20));
 		vb.setStyle(style);
 		return vb;

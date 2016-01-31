@@ -1,5 +1,10 @@
 package ph.txtdis.app;
 
+import static javafx.geometry.Pos.TOP_RIGHT;
+import static javafx.scene.layout.HBox.setHgrow;
+import static javafx.scene.layout.Priority.ALWAYS;
+import static javafx.stage.Modality.WINDOW_MODAL;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -7,17 +12,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
-import javafx.geometry.Pos;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
 import javafx.scene.layout.TilePane;
 import javafx.scene.layout.VBox;
-import javafx.stage.Modality;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import ph.txtdis.fx.FontIcon;
@@ -61,29 +63,33 @@ public abstract class AbstractApp extends Stage implements Startable {
 	@Override
 	public void start() {
 		setStage(mainVerticalPane());
+		setListeners();
+		setBindings();
 		refresh();
 		show();
 	}
 
 	private Label header() {
-		return header = label.header(getHeaderText());
+		header = label.header(getHeaderText());
+		header.setPadding(new Insets(0, 30, 0, 0));
+		return header;
 	}
 
 	private HBox headerPane() {
 		setButtonPane();
 		HBox hBox = box.forHorizontals(header(), buttons);
-		HBox.setHgrow(buttons, Priority.ALWAYS);
+		setHgrow(buttons, ALWAYS);
 		hBox.setPadding(new Insets(10, 10, 0, 10));
 		return hBox;
 	}
 
 	private Image icon() {
-		return new FontIcon(unicode());
+		return new FontIcon(getFontIcon());
 	}
 
 	private void initialize(Stage stage) {
 		initOwner(stage);
-		initModality(Modality.WINDOW_MODAL);
+		initModality(WINDOW_MODAL);
 	}
 
 	private Scene scene(VBox box) {
@@ -102,7 +108,7 @@ public abstract class AbstractApp extends Stage implements Startable {
 		buttons = new TilePane();
 		buttons.getChildren().addAll(addButtons());
 		buttons.setHgap(5);
-		buttons.setAlignment(Pos.TOP_RIGHT);
+		buttons.setAlignment(TOP_RIGHT);
 	}
 
 	protected List<AppButton> addButtons() {
@@ -113,9 +119,13 @@ public abstract class AbstractApp extends Stage implements Startable {
 		return buttons.getChildren();
 	}
 
+	protected abstract String getFontIcon();
+
 	protected abstract String getHeaderText();
 
-	protected VBox mainVerticalPane() {
+	protected abstract String getTitleText();
+
+	protected final VBox mainVerticalPane() {
 		VBox vbox = box.forVerticals(headerPane());
 		vbox.getChildren().addAll(mainVerticalPaneNodes());
 		return vbox;
@@ -123,17 +133,17 @@ public abstract class AbstractApp extends Stage implements Startable {
 
 	protected abstract List<Node> mainVerticalPaneNodes();
 
+	protected void setBindings() {
+	}
+
+	protected void setListeners() {
+	};
+
 	protected void setStage(VBox box) {
 		getIcons().add(icon());
 		updateTitleAndHeader();
 		setScene(scene(box));
 		setBounds();
-	}
-
-	protected abstract String getTitleText();
-
-	protected String unicode() {
-		return typeMap.icon(this);
 	}
 
 	protected void updateTitleAndHeader() {

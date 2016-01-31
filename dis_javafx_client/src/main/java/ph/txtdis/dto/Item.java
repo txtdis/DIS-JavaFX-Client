@@ -1,7 +1,6 @@
 package ph.txtdis.dto;
 
 import java.time.LocalDate;
-import java.time.ZonedDateTime;
 import java.util.List;
 
 import lombok.Data;
@@ -10,31 +9,25 @@ import ph.txtdis.type.ItemType;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class Item extends AbstractTrackedId<Long> {
-
-	private String name;
-
-	private String deactivatedBy;
-
-	private ZonedDateTime deactivatedOn;
-
-	private String description;
-
-	private ItemType type;
-
-	private ItemFamily family;
-
-	private String vendorId;
+public class Item extends EntityModificationTracked<Long> {
 
 	private boolean notDiscounted;
 
-	private List<QtyPerUom> qtyPerUomList;
+	private String description, name, vendorId;
+
+	private ItemFamily family;
+
+	private ItemType type;
+
+	private List<Bom> boms;
 
 	private List<Price> priceList;
 
+	private List<QtyPerUom> qtyPerUomList;
+
 	private List<VolumeDiscount> volumeDiscounts;
 
-	private List<Bom> boms;
+	private LocalDate endOfLife;
 
 	public VolumeDiscount getLatestVolumeDiscount(LocalDate date) {
 		try {

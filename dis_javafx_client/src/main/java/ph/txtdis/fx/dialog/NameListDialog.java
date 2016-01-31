@@ -1,8 +1,8 @@
 package ph.txtdis.fx.dialog;
 
+import static java.util.Arrays.asList;
 import static ph.txtdis.type.Type.TEXT;
 
-import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,7 +13,7 @@ import ph.txtdis.fx.control.LabeledField;
 import ph.txtdis.service.SavedByName;
 import ph.txtdis.service.UniquelyNamed;
 
-public abstract class NameListDialog<T extends Keyed<Long>, S extends UniquelyNamed> extends FieldDialog<T> {
+public abstract class NameListDialog<T extends Keyed<Long>, S extends UniquelyNamed<T>> extends FieldDialog<T> {
 
 	@Autowired
 	protected LabeledField<String> nameField;
@@ -36,16 +36,10 @@ public abstract class NameListDialog<T extends Keyed<Long>, S extends UniquelyNa
 	}
 
 	@Override
-	protected void addItem() {
-		verifyNameIsUnique();
-		super.addItem();
-	}
-
-	@Override
 	protected List<InputNode<?>> addNodes() {
 		nameField.name("Name").build(TEXT);
-		nameField.setOnAction(event -> verifyNameIsUnique());
-		return Arrays.asList(nameField);
+		nameField.setOnAction(e -> verifyNameIsUnique());
+		return asList(nameField);
 	}
 
 	@Override
@@ -54,14 +48,8 @@ public abstract class NameListDialog<T extends Keyed<Long>, S extends UniquelyNa
 		try {
 			return ((SavedByName<T>) service).save(nameField.getValue());
 		} catch (Exception e) {
-			e.printStackTrace();
 			resetNodesOnError(e);
 			return null;
 		}
-	}
-
-	@Override
-	protected String headerText() {
-		return "Add New " + super.headerText();
 	}
 }

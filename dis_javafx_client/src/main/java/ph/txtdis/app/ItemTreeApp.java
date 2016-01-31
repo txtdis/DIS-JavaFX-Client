@@ -10,4 +10,14 @@ import ph.txtdis.service.ItemTreeService;
 @Lazy
 @Component("itemTreeApp")
 public class ItemTreeApp extends AbstractTableApp<ItemTreeTable, ItemTreeService, ItemTree> {
+
+	@Override
+	protected String getHeaderText() {
+		return "Item Tree List";
+	}
+
+	@Override
+	protected String getTitleText() {
+		return "Item Trees";
+	}
 }

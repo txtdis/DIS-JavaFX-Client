@@ -5,13 +5,19 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import static ph.txtdis.type.ItemTier.PRODUCT;
+
 import ph.txtdis.dto.Item;
 import ph.txtdis.dto.ItemFamily;
-import ph.txtdis.exception.DuplicateException;
+import ph.txtdis.exception.FailedAuthenticationException;
+import ph.txtdis.exception.InvalidException;
+import ph.txtdis.exception.NoServerConnectionException;
+import ph.txtdis.exception.RestException;
+import ph.txtdis.exception.StoppedServerException;
 import ph.txtdis.type.ItemTier;
 
 @Service("itemFamilyService")
-public class ItemFamilyService implements Listed<ItemFamily>, SavedByName<ItemFamily>, UniquelyNamed {
+public class ItemFamilyService implements Listed<ItemFamily>, SavedByName<ItemFamily>, UniquelyNamed<ItemFamily> {
 
 	@Autowired
 	private ReadOnlyService<ItemFamily> readOnlyService;
@@ -19,13 +25,8 @@ public class ItemFamilyService implements Listed<ItemFamily>, SavedByName<ItemFa
 	@Autowired
 	private SavingService<ItemFamily> savingService;
 
-	@Override
-	public void confirmUniqueness(String name) throws Exception {
-		if (readOnlyService.module(getModule()).getOne("/" + name) != null)
-			throw new DuplicateException(name);
-	}
-
-	public List<ItemFamily> getItemAncestry(Item item) throws Exception {
+	public List<ItemFamily> getItemAncestry(Item item) throws NoServerConnectionException, StoppedServerException,
+			FailedAuthenticationException, InvalidException, RestException {
 		return readOnlyService.module(getModule()).getList("/ancestry?family=" + item.getFamily().getId());
 	}
 
@@ -35,16 +36,28 @@ public class ItemFamilyService implements Listed<ItemFamily>, SavedByName<ItemFa
 	}
 
 	@Override
-	public List<ItemFamily> list() throws Exception {
-		return readOnlyService.module(getModule()).getList();
+	public ReadOnlyService<ItemFamily> getReadOnlyService() {
+		return readOnlyService;
+	}
+
+	public List<ItemFamily> listItemFamily(ItemTier t) throws NoServerConnectionException, StoppedServerException,
+			FailedAuthenticationException, InvalidException, RestException {
+		return readOnlyService.module(getModule()).getList("/perTier?tier=" + t);
+	}
+
+	public List<ItemFamily> listItemParents() throws NoServerConnectionException, StoppedServerException,
+			FailedAuthenticationException, InvalidException, RestException {
+		return readOnlyService.module(getModule()).getList("/parents");
 	}
 
 	@Override
-	public ItemFamily save(String name) throws Exception {
-		return save(name, ItemTier.PRODUCT);
+	public ItemFamily save(String name) throws NoServerConnectionException, StoppedServerException,
+			FailedAuthenticationException, InvalidException {
+		return save(name, PRODUCT);
 	}
 
-	public ItemFamily save(String name, ItemTier tier) throws Exception {
+	public ItemFamily save(String name, ItemTier tier) throws NoServerConnectionException, StoppedServerException,
+			FailedAuthenticationException, InvalidException {
 		ItemFamily entity = new ItemFamily();
 		entity.setName(name);
 		entity.setTier(tier);

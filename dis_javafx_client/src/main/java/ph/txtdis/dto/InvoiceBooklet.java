@@ -5,13 +5,11 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class InvoiceBooklet extends AbstractTrackedId<Long> {
+public class InvoiceBooklet extends EntityCreationTracked<Long> {
 
-	private String prefix, suffix;
+	private String prefix, suffix, issuedTo;
 
 	private Long startId, endId;
-
-	private User issuedTo;
 
 	public String getPrefix() {
 		return prefix == null ? "" : prefix;

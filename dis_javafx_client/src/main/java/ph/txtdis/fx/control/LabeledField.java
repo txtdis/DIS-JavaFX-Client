@@ -1,6 +1,7 @@
 package ph.txtdis.fx.control;
 
-import java.util.Arrays;
+import static java.util.Arrays.asList;
+
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,11 +12,15 @@ import javafx.beans.binding.BooleanBinding;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.Node;
+import javafx.scene.layout.HBox;
 import ph.txtdis.type.Type;
 
 @Component
 @Scope("prototype")
-public class LabeledField<T> implements InputNode<T> {
+public class LabeledField<T> implements InputControl<T>, InputNode<T> {
+
+	@Autowired
+	private AppButton searchButton;
 
 	@Autowired
 	private AppField<T> textField;
@@ -23,13 +28,24 @@ public class LabeledField<T> implements InputNode<T> {
 	@Autowired
 	private LabelFactory label;
 
+	private boolean isSearchable;
+
 	private List<Node> nodes;
 
 	private String name;
 
 	public LabeledField<T> build(Type type) {
-		nodes = Arrays.asList(label.field(name), textField.build(type));
+		nodes = asList(label.field(name), (isSearchable ? searchableField(type) : textField(type)));
 		return this;
+	}
+
+	@Override
+	public void clear() {
+		textField.clear();
+	}
+
+	public void disableIf(BooleanBinding b) {
+		textField.disableIf(b);
 	}
 
 	@Override
@@ -45,6 +61,11 @@ public class LabeledField<T> implements InputNode<T> {
 	@Override
 	public BooleanBinding isEmpty() {
 		return textField.textProperty().isEmpty();
+	}
+
+	public LabeledField<T> isSearchable() {
+		isSearchable = true;
+		return this;
 	}
 
 	public LabeledField<T> name(String name) {
@@ -64,13 +85,18 @@ public class LabeledField<T> implements InputNode<T> {
 
 	@Override
 	public void reset() {
-		textField.clear();
+		clear();
 	}
 
 	public void setOnAction(EventHandler<ActionEvent> action) {
 		textField.setOnAction(action);
 	}
 
+	public void setOnSearch(EventHandler<ActionEvent> action) {
+		searchButton.setOnAction(action);
+	}
+
+	@Override
 	public void setValue(T value) {
 		textField.setValue(value);
 	}
@@ -78,5 +104,19 @@ public class LabeledField<T> implements InputNode<T> {
 	public LabeledField<T> width(int width) {
 		textField.width(width);
 		return this;
+	}
+
+	private Node searchableField(Type type) {
+		return new HBox(textField(type), searchButton());
+	}
+
+	private AppButton searchButton() {
+		searchButton.fontSize(16).icon("search").build();
+		searchButton.focusTraversableProperty().set(false);
+		return searchButton;
+	}
+
+	private AppField<T> textField(Type type) {
+		return textField.build(type);
 	}
 }

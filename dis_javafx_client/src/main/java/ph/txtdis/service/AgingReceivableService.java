@@ -1,23 +1,28 @@
 package ph.txtdis.service;
 
-import static ph.txtdis.util.DateTimeUtils.toTimestampText;
-import static ph.txtdis.util.DateTimeUtils.toTimestampFilename;
-
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
+
+import static ph.txtdis.util.DateTimeUtils.toTimestampFilename;
+import static ph.txtdis.util.DateTimeUtils.toTimestampText;
 
 import ph.txtdis.dto.AgingReceivable;
 import ph.txtdis.dto.AgingReceivableReport;
 import ph.txtdis.excel.ExcelWriter;
 import ph.txtdis.excel.Tabular;
 
+@Scope("prototype")
 @Service("agingReceivableService")
-public class AgingReceivableService implements Spreadsheet<AgingReceivable>, TotaledTable {
+public class AgingReceivableService
+		implements SellerFiltered<AgingReceivable>, Spreadsheet<AgingReceivable>, TotaledTable
+{
 
 	@Autowired
 	private ExcelWriter excel;
@@ -27,6 +32,10 @@ public class AgingReceivableService implements Spreadsheet<AgingReceivable>, Tot
 
 	private AgingReceivableReport report;
 
+	public AgingReceivableService() {
+		report = null;
+	}
+
 	@Override
 	public String getHeaderText() {
 		return "Aging Receivable List";
@@ -35,6 +44,11 @@ public class AgingReceivableService implements Spreadsheet<AgingReceivable>, Tot
 	@Override
 	public String getModule() {
 		return "agingReceivable";
+	}
+
+	@Override
+	public ReadOnlyService<AgingReceivable> getReadOnlyService() {
+		return null;
 	}
 
 	@Override
@@ -57,15 +71,25 @@ public class AgingReceivableService implements Spreadsheet<AgingReceivable>, Tot
 	}
 
 	@Override
-	public List<AgingReceivable> list() throws Exception {
-		report = readOnlyService.module(getModule()).getOne("");
+	public List<AgingReceivable> list() {
+		if (report == null)
+			report = generateReport();
 		List<AgingReceivable> list = report.getReceivables();
-		return list == null ? new ArrayList<>() : list;
+		return list != null ? list : new ArrayList<>();
 	}
 
 	@Override
-	public void saveAsExcel(Tabular... tables) throws Exception {
+	public void saveAsExcel(Tabular... tables) throws IOException {
 		excel.filename(getExcelFileName()).sheetname(getExcelSheetName()).table(tables).write();
+	}
+
+	private AgingReceivableReport generateReport() {
+		try {
+			return readOnlyService.module(getModule()).getOne("");
+		} catch (Exception e) {
+			e.printStackTrace();
+			return new AgingReceivableReport();
+		}
 	}
 
 	private String getExcelFileName() {

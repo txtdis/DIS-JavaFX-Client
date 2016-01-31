@@ -13,8 +13,19 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
+import java.util.List;
+
+import ph.txtdis.dto.StartDated;
+import ph.txtdis.exception.DateInThePastException;
+import ph.txtdis.exception.DuplicateException;
 
 public class DateTimeUtils {
+
+	public static int compareStartDates(StartDated d1, StartDated d2) {
+		if (isStartDateNull(d2))
+			return isStartDateNull(d1) ? 0 : 1;
+		return isStartDateNull(d1) ? -1 : d1.getStartDate().compareTo(d2.getStartDate());
+	}
 
 	public static ZonedDateTime endOfDay(LocalDate d) {
 		return d == null ? null : d.plusDays(1L).atStartOfDay(zoneHere());
@@ -80,8 +91,33 @@ public class DateTimeUtils {
 		return zdt == null ? null : parse(zdt, timestampFormat());
 	}
 
+	public static void validateDateIsNotInThePast(LocalDate startDate) throws DateInThePastException {
+		if (startDate.isBefore(now()))
+			throw new DateInThePastException();
+	}
+
+	public static void validateDateIsUnique(List<? extends StartDated> list, LocalDate startDate)
+			throws DuplicateException {
+		if (startDateExists(list, startDate))
+			throw new DuplicateException(toDateDisplay(startDate));
+	}
+
+	public static void validateStartDate(List<? extends StartDated> list, LocalDate startDate)
+			throws DateInThePastException, DuplicateException {
+		validateDateIsNotInThePast(startDate);
+		validateDateIsUnique(list, startDate);
+	}
+
 	private static DateTimeFormatter dateFormat() {
 		return ofPattern("M/d/yyyy");
+	}
+
+	private static boolean isStartDateNull(StartDated cd) {
+		return cd == null || cd.getStartDate() == null;
+	}
+
+	private static boolean startDateExists(List<? extends StartDated> list, LocalDate startDate) {
+		return list.stream().filter(r -> r.getStartDate().equals(startDate)).findAny().isPresent();
 	}
 
 	private static DateTimeFormatter timestampFormat() {

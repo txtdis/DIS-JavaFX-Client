@@ -5,7 +5,7 @@ import java.math.BigDecimal;
 import lombok.Data;
 
 @Data
-public class AgingReceivable implements Keyed<Long> {
+public class AgingReceivable implements Keyed<Long>, SellerSold {
 
 	private Long id;
 

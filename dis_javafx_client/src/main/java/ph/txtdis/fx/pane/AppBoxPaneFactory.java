@@ -35,9 +35,7 @@ public class AppBoxPaneFactory {
 	}
 
 	public HBox forHorizontals(List<? extends Node> n) {
-		HBox b = new HBox();
-		b.getChildren().addAll(n);
-		return b;
+		return new HBox(n.toArray(new Node[n.size()]));
 	}
 
 	public HBox forHorizontals(Node... n) {
@@ -63,6 +61,10 @@ public class AppBoxPaneFactory {
 		b.setPadding(new Insets(0, 20, 0, 0));
 		b.setAlignment(Pos.CENTER_RIGHT);
 		return b;
+	}
+
+	public VBox forVerticals(List<Node> n) {
+		return new VBox(n.toArray(new Node[n.size()]));
 	}
 
 	public VBox forVerticals(Node... n) {

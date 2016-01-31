@@ -9,7 +9,6 @@ import lombok.NoArgsConstructor;
 import ph.txtdis.fx.control.AppButton;
 import ph.txtdis.fx.control.LabelFactory;
 import ph.txtdis.fx.pane.DialogButtonBox;
-import ph.txtdis.util.TextUtils;
 
 @NoArgsConstructor
 public abstract class InputDialog extends AbstractDialog {
@@ -26,12 +25,24 @@ public abstract class InputDialog extends AbstractDialog {
 	@Autowired
 	protected DialogButtonBox box;
 
+	protected String heading, prompt;
+
+	public InputDialog header(String heading) {
+		this.heading = heading;
+		return this;
+	}
+
+	public InputDialog prompt(String prompt) {
+		this.prompt = prompt;
+		return this;
+	}
+
 	@Override
 	public void refresh() {
 		setFocus();
 	}
 
-	protected Button button(String name) {
+	protected Button closeButton(String name) {
 		closeButton.large(name).build();
 		closeButton.setOnAction(event -> setOnFiredCloseButton());
 		return closeButton;
@@ -46,7 +57,7 @@ public abstract class InputDialog extends AbstractDialog {
 	}
 
 	protected Button closeButton() {
-		return button("Close");
+		return closeButton("Close");
 	}
 
 	protected Label header() {
@@ -54,7 +65,7 @@ public abstract class InputDialog extends AbstractDialog {
 	}
 
 	protected String headerText() {
-		return TextUtils.toHeader(this);
+		return heading;
 	}
 
 	protected void setOnFiredCloseButton() {

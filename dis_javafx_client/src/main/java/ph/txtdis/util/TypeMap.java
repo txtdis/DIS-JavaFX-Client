@@ -13,32 +13,34 @@ import ph.txtdis.dto.Authority;
 import ph.txtdis.dto.Backup;
 import ph.txtdis.dto.Billable;
 import ph.txtdis.dto.Channel;
+import ph.txtdis.dto.CreditNote;
 import ph.txtdis.dto.Customer;
 import ph.txtdis.dto.CustomerReceivableReport;
+import ph.txtdis.dto.Holiday;
+import ph.txtdis.dto.Inventory;
 import ph.txtdis.dto.InvoiceBooklet;
 import ph.txtdis.dto.Item;
 import ph.txtdis.dto.ItemFamily;
 import ph.txtdis.dto.ItemTree;
-import ph.txtdis.dto.LoadSettlement;
-import ph.txtdis.dto.LoadSettlementAdjustment;
 import ph.txtdis.dto.Location;
 import ph.txtdis.dto.Payment;
 import ph.txtdis.dto.PickList;
-import ph.txtdis.dto.Purchase;
+import ph.txtdis.dto.PricingType;
 import ph.txtdis.dto.Route;
+import ph.txtdis.dto.SalesRevenue;
+import ph.txtdis.dto.SalesVolume;
 import ph.txtdis.dto.StockTake;
 import ph.txtdis.dto.Style;
 import ph.txtdis.dto.Truck;
 import ph.txtdis.dto.User;
 import ph.txtdis.dto.Vat;
 import ph.txtdis.dto.Warehouse;
-import ph.txtdis.fx.control.AppButton;
 import ph.txtdis.util.TypeMap.Type;
 
 @Component
 public class TypeMap extends LinkedHashMap<String, Type> {
 
-	protected static class Type {
+	static final class Type {
 
 		private String icon;
 
@@ -62,7 +64,6 @@ public class TypeMap extends LinkedHashMap<String, Type> {
 
 	public TypeMap() {
 		put("accept", new Type("\ue845", null));
-		put("audit", new Type("\ue900", null));
 		put("accounts", new Type(null, new ParameterizedTypeReference<List<Account>>() {
 		}));
 		put("account", new Type("\ue834", new ParameterizedTypeReference<Account>() {
@@ -72,15 +73,22 @@ public class TypeMap extends LinkedHashMap<String, Type> {
 		put("back", new Type("\ue803", null));
 		put("backup", new Type("\ue821", new ParameterizedTypeReference<Backup>() {
 		}));
-		put("booking", new Type("\ue829", new ParameterizedTypeReference<Billable>() {
+		put("badOrder", new Type("\ue80a", new ParameterizedTypeReference<Billable>() {
 		}));
-		put("bookings", new Type(null, new ParameterizedTypeReference<List<Billable>>() {
+		put("billable", new Type(null, new ParameterizedTypeReference<Billable>() {
+		}));
+		put("billables", new Type(null, new ParameterizedTypeReference<List<Billable>>() {
 		}));
 		put("channel", new Type("\ue808", new ParameterizedTypeReference<Channel>() {
 		}));
 		put("channels", new Type(null, new ParameterizedTypeReference<List<Channel>>() {
 		}));
 		put("checkSearch", new Type("\ue904", null));
+		put("cheque", new Type("\ue90f", null));
+		put("creditNote", new Type("\ue806", new ParameterizedTypeReference<CreditNote>() {
+		}));
+		put("creditNotes", new Type(null, new ParameterizedTypeReference<List<CreditNote>>() {
+		}));
 		put("customer", new Type("\ue809", new ParameterizedTypeReference<Customer>() {
 		}));
 		put("customers", new Type(null, new ParameterizedTypeReference<List<Customer>>() {
@@ -88,22 +96,26 @@ public class TypeMap extends LinkedHashMap<String, Type> {
 		put("customerList", new Type("\ue809", null));
 		put("customerReceivable", new Type("\ue802", new ParameterizedTypeReference<CustomerReceivableReport>() {
 		}));
+		put("dataDump", new Type("\ue821", null));
 		put("dateRange", new Type("\ue807", null));
-		// TODO
-		put("dayEndReport", new Type("\ue807", new ParameterizedTypeReference<Billable>() {
-		}));
-		// TODO
 		put("deactivate", new Type("\ue903", null));
-		put("deliveryReport", new Type("\ue80b", new ParameterizedTypeReference<Billable>() {
+		put("decision", new Type("\ue900", null));
+		put("deliveryReport", new Type("\ue906", new ParameterizedTypeReference<Billable>() {
 		}));
 		put("deposit", new Type("\ue84b", null));
+		put("disposal", new Type("\ue90d", null));
+		put("download", new Type("\uf0ed", null));
 		put("edit", new Type("\ue80d", null));
 		put("excel", new Type("\ue810", null));
-		// TODO
-		put("inventory", new Type("\ue815", new ParameterizedTypeReference<Billable>() {
+		put("holiday", new Type("\ue910", new ParameterizedTypeReference<Holiday>() {
 		}));
-		put("invoice", new Type("\ue817", new ParameterizedTypeReference<Billable>() {
+		put("holidays", new Type(null, new ParameterizedTypeReference<List<Holiday>>() {
 		}));
+		put("inventory", new Type("\ue814", new ParameterizedTypeReference<Inventory>() {
+		}));
+		put("inventories", new Type(null, new ParameterizedTypeReference<List<Inventory>>() {
+		}));
+		put("invoice", new Type("\ue817", null));
 		put("invoiceBooklet", new Type("\ue816", new ParameterizedTypeReference<InvoiceBooklet>() {
 		}));
 		put("invoiceBooklets", new Type(null, new ParameterizedTypeReference<List<InvoiceBooklet>>() {
@@ -120,60 +132,75 @@ public class TypeMap extends LinkedHashMap<String, Type> {
 		}));
 		put("itemTrees", new Type(null, new ParameterizedTypeReference<List<ItemTree>>() {
 		}));
-		put("loadSettlement", new Type(null, new ParameterizedTypeReference<LoadSettlement>() {
-		}));
-		put("loadSettlementAdjustment", new Type(null, new ParameterizedTypeReference<LoadSettlementAdjustment>() {
-		}));
+		put("list", new Type("\ue906", null));
 		put("locations", new Type(null, new ParameterizedTypeReference<List<Location>>() {
 		}));
-		put("lock", new Type("\ue902", null));
 		put("mail", new Type("\ue842", null));
 		put("next", new Type("\ue81a", null));
 		put("new", new Type("\ue800", null));
 		put("openByDate", new Type("\ue807", null));
 		put("openByNo", new Type("\ue81b", null));
-		put("pickList", new Type("\ue83b", new ParameterizedTypeReference<PickList>() {
+		put("pickList", new Type("\ue805", new ParameterizedTypeReference<PickList>() {
 		}));
 		put("pickLists", new Type(null, new ParameterizedTypeReference<List<PickList>>() {
 		}));
-		put("print", new Type("\ue81c", null));
-		put("purchasing", new Type("\ue81d", new ParameterizedTypeReference<Purchase>() {
+		put("pricingType", new Type("\ue911", new ParameterizedTypeReference<PricingType>() {
 		}));
-		put("receiving", new Type("\ue81e", new ParameterizedTypeReference<Billable>() {
+		put("pricingTypes", new Type(null, new ParameterizedTypeReference<List<PricingType>>() {
+		}));
+		put("print", new Type("\ue81c", null));
+		put("purchaseOrder", new Type("\ue81d", new ParameterizedTypeReference<Billable>() {
+		}));
+		put("purchaseReceipt", new Type("\ue90a", new ParameterizedTypeReference<Billable>() {
 		}));
 		put("remittance", new Type("\ue837", new ParameterizedTypeReference<Payment>() {
 		}));
+		put("remittances", new Type(null, new ParameterizedTypeReference<List<Payment>>() {
+		}));
 		put("reject", new Type("\ue846", null));
-		// TODO
-		put("rma", new Type("\ue83c", new ParameterizedTypeReference<List<Authority>>() {
+		put("returnOrder", new Type("\ue83c", new ParameterizedTypeReference<Billable>() {
+		}));
+		put("returnReceipt", new Type("\ue90c", null));
+		put("revenueReport", new Type("\ue81f", null));
+		put("role", new Type("\ue912", new ParameterizedTypeReference<Authority>() {
 		}));
 		put("roles", new Type(null, new ParameterizedTypeReference<List<Authority>>() {
-		}));
-		put("role", new Type("\ue82c", new ParameterizedTypeReference<Authority>() {
 		}));
 		put("route", new Type("\ue822", new ParameterizedTypeReference<Route>() {
 		}));
 		put("routes", new Type(null, new ParameterizedTypeReference<List<Route>>() {
 		}));
-		// TODO
-		put("salesReport", new Type("\ue820", new ParameterizedTypeReference<List<Authority>>() {
+		put("salesOrder", new Type("\ue829", new ParameterizedTypeReference<Billable>() {
+		}));
+		put("salesOrders", new Type(null, new ParameterizedTypeReference<List<Billable>>() {
+		}));
+		put("salesReturn", new Type("\ue81e", new ParameterizedTypeReference<Billable>() {
+		}));
+		put("salesRevenue", new Type("\ue820", null));
+		put("salesRevenues", new Type(null, new ParameterizedTypeReference<List<SalesRevenue>>() {
+		}));
+		put("salesVolume", new Type("\ue80b", null));
+		put("salesVolumes", new Type(null, new ParameterizedTypeReference<List<SalesVolume>>() {
 		}));
 		put("save", new Type("\ue823", null));
 		put("search", new Type("\ue824", null));
+		put("settingsMenu", new Type("\ue801", null));
 		put("stockTake", new Type("\ue84e", new ParameterizedTypeReference<StockTake>() {
 		}));
 		// TODO
-		put("stockTakeReconciliation", new Type("\ue82a", new ParameterizedTypeReference<StockTake>() {
+		put("stockTakeReconciliation", new Type("\ue907", new ParameterizedTypeReference<StockTake>() {
 		}));
 		put("style", new Type("\ue825", new ParameterizedTypeReference<Style>() {
 		}));
 		put("styles", new Type(null, new ParameterizedTypeReference<List<Style>>() {
 		}));
+		// TODO
 		put("transfer", new Type("\ue833", null));
 		put("truck", new Type("\ue838", new ParameterizedTypeReference<Truck>() {
 		}));
 		put("trucks", new Type(null, new ParameterizedTypeReference<List<Truck>>() {
 		}));
+		put("upload", new Type("\uf0ee", null));
 		put("user", new Type("\ue82d", new ParameterizedTypeReference<User>() {
 		}));
 		put("users", new Type(null, new ParameterizedTypeReference<List<User>>() {
@@ -186,10 +213,6 @@ public class TypeMap extends LinkedHashMap<String, Type> {
 		}));
 		put("warehouses", new Type(null, new ParameterizedTypeReference<List<Warehouse>>() {
 		}));
-	}
-
-	public String icon(AppButton b) {
-		return icon(TextUtils.toName(b));
 	}
 
 	public String icon(Startable a) {

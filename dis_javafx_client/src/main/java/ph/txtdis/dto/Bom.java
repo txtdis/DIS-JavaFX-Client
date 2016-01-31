@@ -4,15 +4,12 @@ import java.math.BigDecimal;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import ph.txtdis.type.UomType;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class Bom extends AbstractTrackedId<Long> {
+public class Bom extends EntityCreationTracked<Long> {
 
 	private Item part;
-
-	private UomType uom;
 
 	private BigDecimal qty;
 }

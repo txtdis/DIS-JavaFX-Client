@@ -1,11 +1,14 @@
 package ph.txtdis.fx.table;
 
+import static ph.txtdis.type.Type.CHECKBOX;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
+import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.StackPane;
@@ -14,7 +17,6 @@ import ph.txtdis.app.Launchable;
 import ph.txtdis.dto.Keyed;
 import ph.txtdis.excel.TabularColumn;
 import ph.txtdis.type.Type;
-import ph.txtdis.util.TextUtils;
 import ph.txtdis.util.TypeStyle;
 
 @Scope("prototype")
@@ -28,34 +30,42 @@ public class Column<S extends Keyed<?>, T> extends TableColumn<S, T> implements 
 
 	private Type type;
 
+	private boolean isEditable;
+
 	private int width;
 
 	public Column<S, T> build(String name, String field) {
 		setStyle(" -fx-opacity: 1; ");
 		setText(name);
-		setEditable(false);
+		setEditable(isEditable);
 		makeHeaderWrappable(name);
 		setId(field);
 		setCellValueFactory(new PropertyValueFactory<>(field));
 		setColumnWidth(width());
-		setCellFactory(c -> cell.get(app, type));
+		setCellFactory(c -> cell(field));
 		return this;
 	}
 
 	public Column<S, T> launches(Launchable app) {
 		this.app = app;
-		setUserData(TextUtils.toName(app));
 		return this;
 	}
 
 	public Column<S, T> ofType(Type type) {
 		this.type = type;
+		this.isEditable = type == CHECKBOX;
 		return this;
 	}
 
 	public Column<S, T> width(int width) {
 		this.width = width;
 		return this;
+	}
+
+	private TableCell<S, T> cell(String field) {
+		if (type == CHECKBOX)
+			return cell.get(field);
+		return cell.get(app, type);
 	}
 
 	private void makeHeaderWrappable(String name) {

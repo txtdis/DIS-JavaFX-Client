@@ -11,11 +11,14 @@ import lombok.Getter;
 @Component("server")
 public class Server {
 
-	@Value("#{'${server.location}'.split(',')}")
-	private List<String> locations;
-
 	@Value("#{'${server.address}'.split(',')}")
 	private List<String> addresses;
+
+	@Value("#{'${server.keystore}'.split(',')}")
+	private List<String> keystores;
+
+	@Value("#{'${server.location}'.split(',')}")
+	private List<String> locations;
 
 	@Value("${server.default}")
 	private String server;
@@ -26,8 +29,11 @@ public class Server {
 	private String location;
 
 	public String address() {
-		int index = locations.indexOf(location());
-		return addresses.get(index);
+		return addresses.get(index());
+	}
+
+	public String keystore() {
+		return keystores.get(index()) + ".p12";
 	}
 
 	public String location() {
@@ -38,5 +44,9 @@ public class Server {
 
 	public void location(String location) {
 		this.location = location;
+	}
+
+	private int index() {
+		return locations.indexOf(location());
 	}
 }

@@ -1,5 +1,9 @@
 package ph.txtdis.fx.control;
 
+import static java.util.Arrays.asList;
+import static javafx.collections.FXCollections.emptyObservableList;
+import static javafx.collections.FXCollections.observableArrayList;
+
 import java.util.Arrays;
 import java.util.List;
 
@@ -26,29 +30,9 @@ public class LabeledCombo<T> implements InputNode<T> {
 
 	private String name;
 
-	private List<T> items;
-
-	public LabeledCombo<T> name(String name) {
-		this.name = name;
-		return this;
-	}
-
-	public LabeledCombo<T> items(T[] types) {
-		return items(Arrays.asList(types));
-	}
-
-	public LabeledCombo<T> items(List<T> items) {
-		this.items = items;
-		return this;
-	}
-
 	public LabeledCombo<T> build() {
-		nodes = Arrays.asList(label.field(name), comboBox.items(items));
+		nodes = asList(label.field(name), comboBox);
 		return this;
-	}
-
-	public void setOnAction(EventHandler<ActionEvent> event) {
-		comboBox.setOnAction(event);
 	}
 
 	@Override
@@ -61,9 +45,28 @@ public class LabeledCombo<T> implements InputNode<T> {
 		return comboBox.getValue();
 	}
 
+	public BooleanBinding is(T t) {
+		return comboBox.is(t);
+	}
+
 	@Override
-	public void reset() {
-		comboBox.setValue(null);
+	public BooleanBinding isEmpty() {
+		return comboBox.isEmpty();
+	}
+
+	public LabeledCombo<T> items(List<T> items) {
+		comboBox.setItems(items == null ? emptyObservableList() : observableArrayList(items));
+		comboBox.select(0);
+		return this;
+	}
+
+	public LabeledCombo<T> items(T[] types) {
+		return items(Arrays.asList(types));
+	}
+
+	public LabeledCombo<T> name(String name) {
+		this.name = name;
+		return this;
 	}
 
 	@Override
@@ -72,15 +75,19 @@ public class LabeledCombo<T> implements InputNode<T> {
 	}
 
 	@Override
-	public BooleanBinding isEmpty() {
-		return comboBox.isEmpty();
+	public void reset() {
+		comboBox.setValue(null);
+	}
+
+	public void select(int index) {
+		comboBox.select(index);
 	}
 
 	public void select(T item) {
 		comboBox.select(item);
 	}
 
-	public void select(int index) {
-		comboBox.select(index);
+	public void setOnAction(EventHandler<ActionEvent> event) {
+		comboBox.setOnAction(event);
 	}
 }

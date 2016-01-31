@@ -2,8 +2,11 @@ package ph.txtdis.service;
 
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
+import java.util.List;
+
 import org.atteo.evo.inflector.English;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Scope;
 import org.springframework.http.HttpEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
@@ -16,6 +19,7 @@ import ph.txtdis.exception.StoppedServerException;
 import ph.txtdis.util.HttpHeader;
 import ph.txtdis.util.Server;
 
+@Scope("prototype")
 @Service("savingService")
 public class SavingService<T> {
 
@@ -31,9 +35,11 @@ public class SavingService<T> {
 	private String module;
 
 	@SuppressWarnings("unchecked")
-	public T save(T entity) throws Exception {
+	public T save(T entity) throws NoServerConnectionException, StoppedServerException, FailedAuthenticationException,
+			InvalidException {
 		try {
-			return entity == null ? null : (T) restService.postForObject(url(), httpEntity(entity), entity.getClass());
+			return entity == null ? null
+					: (T) restService.init().postForObject(url(entity), httpEntity(entity), entity.getClass());
 		} catch (ResourceAccessException e) {
 			e.printStackTrace();
 			throw new NoServerConnectionException(server.location());
@@ -56,8 +62,11 @@ public class SavingService<T> {
 		return English.plural(module);
 	}
 
-	private String url() {
-		return "https://" + server.address() + ":" + server.getPort() + "/" + plural();
+	private String url(T t) {
+		String url = "https://" + server.address() + ":" + server.getPort() + "/" + plural();
+		if (t instanceof List<?>)
+			url += "/all";
+		return url;
 	}
 
 	protected SavingService<T> module(String module) {

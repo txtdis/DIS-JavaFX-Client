@@ -11,7 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import ph.txtdis.dto.Keyed;
 import ph.txtdis.fx.dialog.Inputted;
 
-public abstract class NameListTable<S extends Keyed<Long>, D extends Inputted<S>> extends AppTable<S> {
+public abstract class NameListTable<S extends Keyed<?>, D extends Inputted<S>> extends AppTable<S> {
 
 	@Autowired
 	private AppendContextMenu<S> append;
@@ -34,13 +34,11 @@ public abstract class NameListTable<S extends Keyed<Long>, D extends Inputted<S>
 	@Override
 	@SuppressWarnings("unchecked")
 	protected void addColumns() {
-		// @formatter:off
-		getColumns().setAll(
-			id.ofType(ID).build("ID No.", "id"),
-			name.ofType(TEXT).width(180).build("Name", "name"),
-			createdBy.ofType(TEXT).width(100).build("Created by", "createdBy"),
-			createdOn.ofType(TIMESTAMP).build("Created on", "createdOn"));
-		// @formatter:on
+		getColumns().setAll(//
+				id.ofType(ID).build("ID No.", "id"), //
+				name.ofType(TEXT).width(180).build("Name", "name"), //
+				createdBy.ofType(TEXT).width(100).build("Created by", "createdBy"), //
+				createdOn.ofType(TIMESTAMP).build("Created on", "createdOn"));
 	}
 
 	@Override
