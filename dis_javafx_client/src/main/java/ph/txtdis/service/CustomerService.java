@@ -1,11 +1,14 @@
 package ph.txtdis.service;
 
 import static java.time.LocalDate.now;
+import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
-import static java.util.stream.Collectors.toList;
 import static org.springframework.util.StringUtils.capitalize;
+import static ph.txtdis.type.ScriptType.CREDIT_APPROVAL;
+import static ph.txtdis.type.ScriptType.CUSTOMER_DISCOUNT_APPROVAL;
 import static ph.txtdis.type.UserType.MANAGER;
 import static ph.txtdis.util.SpringUtil.isUser;
+import static ph.txtdis.util.SpringUtil.username;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -17,6 +20,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import static ph.txtdis.util.DateTimeUtils.toDateDisplay;
 import static ph.txtdis.util.DateTimeUtils.toHypenatedYearMonthDay;
 import static ph.txtdis.util.DateTimeUtils.validateDateIsNotInThePast;
 import static ph.txtdis.util.DateTimeUtils.validateDateIsUnique;
@@ -42,14 +46,16 @@ import ph.txtdis.exception.DuplicateException;
 import ph.txtdis.exception.FailedAuthenticationException;
 import ph.txtdis.exception.InvalidException;
 import ph.txtdis.exception.NoServerConnectionException;
+import ph.txtdis.exception.NotAllowedOffSiteTransactionException;
 import ph.txtdis.exception.NotFoundException;
 import ph.txtdis.exception.RestException;
 import ph.txtdis.exception.StoppedServerException;
 import ph.txtdis.info.SuccessfulSaveInfo;
 import ph.txtdis.type.PartnerType;
+import ph.txtdis.type.ScriptType;
 import ph.txtdis.type.VisitFrequency;
 import ph.txtdis.util.NumberUtils;
-import ph.txtdis.util.SpringUtil;
+import ph.txtdis.util.ServerUtil;
 
 @Service("customerService")
 public class CustomerService
@@ -85,7 +91,13 @@ public class CustomerService
 	private SavingService<Customer> savingService;
 
 	@Autowired
+	private ScriptService scriptService;
+
+	@Autowired
 	private SpunService<Customer, Long> spunService;
+
+	@Autowired
+	private ServerUtil server;
 
 	private Customer customer;
 
@@ -110,7 +122,7 @@ public class CustomerService
 
 	public CustomerDiscount createDiscountUponValidation(int level, BigDecimal percent, ItemFamily family,
 			LocalDate startDate) throws Exception {
-		validateStartDate(customerDiscounts(), startDate);
+		validateStartDate(customerDiscounts(), startDate, level);
 		return createCustomerDiscount(level, percent, nullIfAll(family), startDate);
 	}
 
@@ -206,6 +218,10 @@ public class CustomerService
 		return readOnlyService.module(getModule()).getList("/banks");
 	}
 
+	public List<Channel> getChannels() {
+		return isNew() ? listChannels() : asList(get().getChannel());
+	}
+
 	@Override
 	public String getCreatedBy() {
 		return get().getCreatedBy();
@@ -227,8 +243,23 @@ public class CustomerService
 	}
 
 	@Override
+	public String getDecidedBy() {
+		return username();
+	}
+
+	@Override
+	public ZonedDateTime getDecidedOn() {
+		return ZonedDateTime.now();
+	}
+
+	@Override
 	public Long getId() {
 		return get().getId();
+	}
+
+	@Override
+	public Boolean getIsValid() {
+		return get().getDeactivatedOn() != null;
 	}
 
 	@Override
@@ -256,14 +287,33 @@ public class CustomerService
 	}
 
 	@Override
+	public String getRemarks() {
+		return "";
+	}
+
+	@Override
 	@SuppressWarnings("unchecked")
 	public SavingService<Customer> getSavingService() {
 		return savingService;
 	}
 
 	@Override
+	public ScriptService getScriptService() {
+		return scriptService;
+	}
+
+	@Override
+	public <T extends EntityDecisionNeeded<Long>> ScriptType getScriptType(T d) {
+		return (d instanceof CreditDetail) ? CREDIT_APPROVAL : CUSTOMER_DISCOUNT_APPROVAL;
+	}
+
+	@Override
 	public SpunService<Customer, Long> getSpunService() {
 		return spunService;
+	}
+
+	public List<PartnerType> getTypes() {
+		return isNew() ? asList(PartnerType.values()) : asList(get().getType());
 	}
 
 	public Customer getVendor() throws NoServerConnectionException, StoppedServerException,
@@ -283,15 +333,6 @@ public class CustomerService
 	public List<Location> listBarangays(Location city) {
 		try {
 			return locationService.listBarangays(city);
-		} catch (Exception e) {
-			e.printStackTrace();
-			return null;
-		}
-	}
-
-	public List<Channel> listChannels() {
-		try {
-			return channelService.list();
 		} catch (Exception e) {
 			e.printStackTrace();
 			return null;
@@ -342,8 +383,9 @@ public class CustomerService
 	}
 
 	@Override
-	public <T extends Keyed<Long>> void save() throws SuccessfulSaveInfo, NoServerConnectionException,
-			StoppedServerException, FailedAuthenticationException, InvalidException, RestException {
+	public void save() throws SuccessfulSaveInfo, NoServerConnectionException, StoppedServerException,
+			FailedAuthenticationException, InvalidException, RestException {
+		scriptService.saveScripts();
 		PricingType type = pricingTypeService.findByName("DEALER");
 		get().setPrimaryPricingType(type);
 		Serviced.super.save();
@@ -352,12 +394,6 @@ public class CustomerService
 	@Override
 	public void saveAsExcel(Tabular... tables) throws IOException {
 		excel.filename(getExcelFileName()).sheetname(getExcelSheetName()).table(tables).write();
-	}
-
-	@Override
-	public void saveDecision() throws SuccessfulSaveInfo, NoServerConnectionException, StoppedServerException,
-			FailedAuthenticationException, InvalidException, RestException {
-		save();
 	}
 
 	public List<Customer> search(String text) throws NoServerConnectionException, StoppedServerException,
@@ -371,8 +407,11 @@ public class CustomerService
 		customer = (Customer) t;
 	}
 
-	public void setNameIfUnique(String text) throws NoServerConnectionException, StoppedServerException,
-			FailedAuthenticationException, InvalidException, DuplicateException, RestException {
+	public void setNameIfUnique(String text)
+			throws NoServerConnectionException, StoppedServerException, FailedAuthenticationException, InvalidException,
+			DuplicateException, RestException, NotAllowedOffSiteTransactionException {
+		if (server.isOffSite())
+			throw new NotAllowedOffSiteTransactionException();
 		if (readOnlyService.module(getModule()).getOne("/find?name=" + text) != null)
 			throw new DuplicateException(text);
 		get().setName(text);
@@ -419,10 +458,6 @@ public class CustomerService
 		if (!NumberUtils.isPhone(ph))
 			throw new InvalidException(ph + " is an invalid phone number");
 		get().setMobile(NumberUtils.persistPhone(ph));
-	}
-
-	private <T extends EntityDecisionNeeded<Long>> List<T> approve(List<T> list, Boolean isValid, String remarks) {
-		return list.stream().map(d -> updateApprovalStatus(d, isValid, remarks)).collect(toList());
 	}
 
 	private void approveCreditDetail(Boolean isValid, String remarks) {
@@ -500,24 +535,23 @@ public class CustomerService
 		return !listVisitedChannels().contains(n);
 	}
 
+	private List<Channel> listChannels() {
+		try {
+			return channelService.list();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+
 	private <T extends EntityDecisionNeeded<Long>> boolean noChanges(List<T> l) {
-		return l == null ? true : !l.stream().anyMatch(d -> d.getApproved() == null);
+		return l == null ? true : !l.stream().anyMatch(d -> d.getIsValid() == null);
 	}
 
 	private List<Routing> routeHistory() {
 		if (get().getRouteHistory() == null)
 			setRouteHistory(emptyList());
 		return get().getRouteHistory();
-	}
-
-	private <T extends EntityDecisionNeeded<Long>> T updateApprovalStatus(T d, Boolean isValid, String remarks) {
-		if (d.getApproved() == null && isValid != null) {
-			d.setApproved(isValid);
-			d.setRemarks(remarks);
-			d.setDecidedBy(SpringUtil.username());
-			d.setDecidedOn(ZonedDateTime.now());
-		}
-		return d;
 	}
 
 	private void updateCreditDetails(CreditDetail credit) {
@@ -538,10 +572,23 @@ public class CustomerService
 		setRouteHistory(list);
 	}
 
+	private void validateDateAndDiscountLevelAreUnique(List<CustomerDiscount> list, LocalDate startDate, int level)
+			throws DuplicateException {
+		boolean exists = list.stream().anyMatch(r -> r.getStartDate().equals(startDate) && level == r.getLevel());
+		if (exists)
+			throw new DuplicateException("Discount level " + level + " of start date " + toDateDisplay(startDate));
+	}
+
 	private void validateStartDate(List<? extends StartDated> list, LocalDate startDate)
 			throws DateInThePastException, DuplicateException {
 		validateDateIsNotInThePast(startDate);
 		validateDateIsUnique(list, startDate);
+	}
+
+	private void validateStartDate(List<CustomerDiscount> list, LocalDate startDate, int level)
+			throws DateInThePastException, DuplicateException {
+		validateDateIsNotInThePast(startDate);
+		validateDateAndDiscountLevelAreUnique(list, startDate, level);
 	}
 
 	private List<WeeklyVisit> visitSchedule() {

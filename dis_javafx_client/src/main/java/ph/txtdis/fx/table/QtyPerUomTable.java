@@ -53,5 +53,8 @@ public class QtyPerUomTable extends AppTable<QtyPerUom> {
 	@Override
 	protected void addProperties() {
 		append.addMenu(this, dialog);
+		setOnEmpty("'PC' is the UOM referenced by the unit price,\n"//
+				+ "all requires one report UOM, and\n"//
+				+ "one purchased UOM is needed if bought");
 	}
 }

@@ -36,6 +36,16 @@ public class HolidayService implements Iconed, Listed<Holiday> {
 		return readOnlyService;
 	}
 
+	public boolean isAHoliday(LocalDate d) {
+		if (d != null)
+			try {
+				return holiday(d) != null;
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		return true;
+	}
+
 	public Holiday save(LocalDate date, String name) throws NoServerConnectionException, StoppedServerException,
 			FailedAuthenticationException, InvalidException {
 		Holiday h = new Holiday();
@@ -48,8 +58,12 @@ public class HolidayService implements Iconed, Listed<Holiday> {
 			FailedAuthenticationException, InvalidException, RestException, DuplicateException {
 		if (d == null)
 			return;
-		Holiday h = readOnlyService.module(getModule()).getOne("/find?date=" + d);
-		if (h != null)
+		if (holiday(d) != null)
 			throw new DuplicateException(toDateDisplay(d));
+	}
+
+	private Holiday holiday(LocalDate d) throws NoServerConnectionException, StoppedServerException,
+			FailedAuthenticationException, InvalidException, RestException {
+		return readOnlyService.module(getModule()).getOne("/find?date=" + d);
 	}
 }

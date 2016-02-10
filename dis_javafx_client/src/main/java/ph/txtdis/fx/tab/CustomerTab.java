@@ -87,8 +87,8 @@ public class CustomerTab extends AbstractTab {
 		provinceCombo.select(customer().getProvince());
 		cityCombo.select(customer().getCity());
 		barangayCombo.select(customer().getBarangay());
-		typeCombo.select(customer().getType());
-		channelCombo.select(customer().getChannel());
+		typeCombo.items(service.getTypes());
+		channelCombo.items(service.getChannels());
 		visitCombo.select(customer().getVisitFrequency());
 		routingTable.items(customer().getRouteHistory());
 		setScheduleTableItem();
@@ -190,8 +190,6 @@ public class CustomerTab extends AbstractTab {
 	}
 
 	private void setScheduleTableItem() {
-		if (!service.isNew())
-			return;
 		Channel c = channelCombo.getValue();
 		List<WeeklyVisit> vs = service.getVisitSchedule(c);
 		scheduleTable.items(vs);
@@ -239,9 +237,9 @@ public class CustomerTab extends AbstractTab {
 		gridPane.add(barangayCombo.width(280), 7, 2);
 
 		gridPane.add(label.field("Type"), 0, 3);
-		gridPane.add(typeCombo.items(PartnerType.values()), 1, 3, 2, 1);
+		gridPane.add(typeCombo, 1, 3, 2, 1);
 		gridPane.add(label.field("Channel"), 3, 3);
-		gridPane.add(channelCombo.items(service.listChannels()), 4, 3);
+		gridPane.add(channelCombo, 4, 3);
 		gridPane.add(label.field("Visit per Month"), 5, 3, 2, 1);
 		gridPane.add(visitCombo.items(VisitFrequency.values()), 7, 3);
 

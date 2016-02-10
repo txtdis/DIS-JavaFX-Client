@@ -24,13 +24,13 @@ import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import ph.txtdis.util.Server;
+import ph.txtdis.util.ServerUtil;
 
 @Service
 public class RestService extends RestTemplate {
 
 	@Autowired
-	private Server server;
+	private ServerUtil serverUtil;
 
 	private boolean init;
 
@@ -58,7 +58,7 @@ public class RestService extends RestTemplate {
 	}
 
 	private FileInputStream keyStoreStream() throws FileNotFoundException {
-		File file = new File(server.keystore());
+		File file = new File(serverUtil.keystore());
 		return new FileInputStream(file);
 	}
 

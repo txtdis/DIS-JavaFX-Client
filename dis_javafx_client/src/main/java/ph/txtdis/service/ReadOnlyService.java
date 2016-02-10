@@ -21,7 +21,7 @@ import ph.txtdis.exception.NoServerConnectionException;
 import ph.txtdis.exception.RestException;
 import ph.txtdis.exception.StoppedServerException;
 import ph.txtdis.util.HttpHeader;
-import ph.txtdis.util.Server;
+import ph.txtdis.util.ServerUtil;
 import ph.txtdis.util.TypeMap;
 
 @Scope("prototype")
@@ -35,7 +35,7 @@ public class ReadOnlyService<T> {
 	private RestService restService;
 
 	@Autowired
-	private Server server;
+	private ServerUtil serverUtil;
 
 	@Autowired
 	private TypeMap response;
@@ -45,6 +45,17 @@ public class ReadOnlyService<T> {
 	public List<T> getList() throws NoServerConnectionException, StoppedServerException, FailedAuthenticationException,
 			InvalidException, RestException {
 		return getList("");
+	}
+
+	@SuppressWarnings("unchecked")
+	public T getOne(String endpoint) throws NoServerConnectionException, StoppedServerException,
+			FailedAuthenticationException, InvalidException, RestException {
+		return (T) responseEntity(endpoint, single()).getBody();
+	}
+
+	public ReadOnlyService<T> module(String module) {
+		this.module = module;
+		return this;
 	}
 
 	private HttpEntity<T> httpEntity(T entity) {
@@ -60,7 +71,7 @@ public class ReadOnlyService<T> {
 		try {
 			return restService.init().exchange(url() + endpoint, GET, httpEntity(null), response.type(path));
 		} catch (ResourceAccessException e) {
-			throw new NoServerConnectionException(server.location());
+			throw new NoServerConnectionException(serverUtil.location());
 		} catch (HttpClientErrorException | HttpServerErrorException e) {
 			if (e.getStatusCode() == UNAUTHORIZED) {
 				if (e.getResponseBodyAsString().contains("This connection has been closed"))
@@ -76,7 +87,7 @@ public class ReadOnlyService<T> {
 	}
 
 	private String url() {
-		return "https://" + server.address() + ":" + server.getPort() + "/" + plural();
+		return "https://" + serverUtil.address() + ":" + serverUtil.getPort() + "/" + plural();
 	}
 
 	@SuppressWarnings("unchecked")
@@ -85,18 +96,7 @@ public class ReadOnlyService<T> {
 		return (List<T>) responseEntity(endpoint, plural()).getBody();
 	}
 
-	@SuppressWarnings("unchecked")
-	protected T getOne(String endpoint) throws NoServerConnectionException, StoppedServerException,
-			FailedAuthenticationException, InvalidException, RestException {
-		return (T) responseEntity(endpoint, single()).getBody();
-	}
-
 	protected String single() {
 		return module;
-	}
-
-	ReadOnlyService<T> module(String module) {
-		this.module = module;
-		return this;
 	}
 }

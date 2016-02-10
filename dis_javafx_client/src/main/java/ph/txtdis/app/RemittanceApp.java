@@ -1,6 +1,5 @@
 package ph.txtdis.app;
 
-import static java.time.ZonedDateTime.now;
 import static ph.txtdis.type.PaymentType.CASH;
 import static ph.txtdis.type.PaymentType.CHECK;
 import static ph.txtdis.type.PaymentType.values;
@@ -9,7 +8,6 @@ import static ph.txtdis.type.Type.ID;
 import static ph.txtdis.type.Type.OTHERS;
 import static ph.txtdis.type.Type.TEXT;
 import static ph.txtdis.type.Type.TIMESTAMP;
-import static ph.txtdis.util.SpringUtil.username;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -39,7 +37,6 @@ import ph.txtdis.fx.pane.AppGridPane;
 import ph.txtdis.fx.table.PaymentTable;
 import ph.txtdis.service.RemittanceService;
 import ph.txtdis.type.PaymentType;
-import ph.txtdis.util.SpringUtil;
 
 @Scope("prototype")
 @Component("remittanceApp")
@@ -191,13 +188,7 @@ public class RemittanceApp extends AbstractIdApp<RemittanceService, Long, Long> 
 	private void inputDepositData() {
 		depositDialog.addParent(this).start();
 		if (depositDialog.getTimestamp() != null)
-			saveDeposit();
-	}
-
-	private void logTransfer() {
-		payment().setReceivedBy(SpringUtil.username());
-		payment().setReceivedOn(now());
-		save();
+			setDepositData();
 	}
 
 	private BooleanBinding noDate() {
@@ -236,11 +227,13 @@ public class RemittanceApp extends AbstractIdApp<RemittanceService, Long, Long> 
 		refreshInputsAfterPaymentCombo();
 	}
 
-	private void saveDeposit() {
-		payment().setDepositorBank(depositDialog.getBank());
-		payment().setDepositedOn(depositDialog.getTimestamp());
-		payment().setDepositor(username());
-		payment().setDepositorOn(now());
+	private void setDepositData() {
+		service.setDepositData(depositDialog.getBank(), depositDialog.getTimestamp());
+		save();
+	}
+
+	private void setFundTransferData() {
+		service.setFundTransferData();
 		save();
 	}
 
@@ -366,7 +359,7 @@ public class RemittanceApp extends AbstractIdApp<RemittanceService, Long, Long> 
 		super.setListeners();
 		checkSearchButton.setOnAction(e -> showCheckSearchDialog());
 		historyButton.setOnAction(e -> openHistoryApp());
-		transferButton.setOnAction(e -> logTransfer());
+		transferButton.setOnAction(e -> setFundTransferData());
 		openByDateButton.setOnAction(e -> showOpenByDateDialog());
 		decisionNeededApp.setDecisionButtonOnAction(e -> showAuditDialogToValidateOrder());
 		amountInput.setOnAction(e -> setPayment());

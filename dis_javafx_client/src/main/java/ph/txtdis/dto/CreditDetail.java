@@ -10,7 +10,7 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class CreditDetail extends EntityDecisionNeeded<Long> implements Comparable<CreditDetail> {
+public class CreditDetail extends EntityDecisionNeeded<Long> implements Comparable<CreditDetail>, StartDated {
 
 	private int termInDays, gracePeriodInDays;
 

@@ -1,13 +1,16 @@
 package ph.txtdis.service;
 
 import static java.time.DayOfWeek.SUNDAY;
-import static java.time.ZonedDateTime.now;
+import static java.time.LocalDate.now;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 import static ph.txtdis.type.PaymentType.CASH;
 import static ph.txtdis.type.PaymentType.CHECK;
 import static ph.txtdis.type.PaymentType.values;
+import static ph.txtdis.type.ScriptType.DEPOSIT;
+import static ph.txtdis.type.ScriptType.FUND_TRANSFER;
+import static ph.txtdis.type.ScriptType.PAYMENT_VALIDATION;
 import static ph.txtdis.type.UserType.CASHIER;
 import static ph.txtdis.type.UserType.COLLECTOR;
 import static ph.txtdis.type.UserType.MAIN_CASHIER;
@@ -15,7 +18,6 @@ import static ph.txtdis.type.UserType.MANAGER;
 import static ph.txtdis.util.NumberUtils.isPositive;
 import static ph.txtdis.util.SpringUtil.isUser;
 import static ph.txtdis.util.SpringUtil.username;
-import static ph.txtdis.util.TextUtils.blankIfNull;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -27,11 +29,13 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import static ph.txtdis.util.DateTimeUtils.toDateDisplay;
 import static ph.txtdis.util.DateTimeUtils.toHypenatedYearMonthDay;
 
 import ph.txtdis.dto.Billable;
 import ph.txtdis.dto.CreationTracked;
 import ph.txtdis.dto.Customer;
+import ph.txtdis.dto.EntityDecisionNeeded;
 import ph.txtdis.dto.Keyed;
 import ph.txtdis.dto.Payment;
 import ph.txtdis.dto.PaymentDetail;
@@ -41,16 +45,19 @@ import ph.txtdis.excel.Tabular;
 import ph.txtdis.exception.FailedAuthenticationException;
 import ph.txtdis.exception.InvalidException;
 import ph.txtdis.exception.NoServerConnectionException;
+import ph.txtdis.exception.NotAllowedOffSiteTransactionException;
 import ph.txtdis.exception.NotFoundException;
 import ph.txtdis.exception.RestException;
 import ph.txtdis.exception.StoppedServerException;
 import ph.txtdis.info.SuccessfulSaveInfo;
 import ph.txtdis.type.PaymentType;
+import ph.txtdis.type.ScriptType;
 import ph.txtdis.util.DateTimeUtils;
+import ph.txtdis.util.ServerUtil;
 
 @Service("remittanceService")
-public class RemittanceService implements Detailed, NeededDecisionDisplayed, Reset, Serviced<Long>,
-		Spreadsheet<PaymentHistory>, SpunById<Long>, CreationTracked
+public class RemittanceService implements Detailed, DecisionNeeded, Reset, Serviced<Long>, Spreadsheet<PaymentHistory>,
+		SpunById<Long>, CreationTracked
 {
 
 	private class CashCollectionHasBeenReceivedFromCollectorException extends Exception {
@@ -83,6 +90,9 @@ public class RemittanceService implements Detailed, NeededDecisionDisplayed, Res
 	private static final String COLLECTION = "Record of collection\n";
 
 	@Autowired
+	private ScriptService scriptService;
+
+	@Autowired
 	private CustomerService customerService;
 
 	@Autowired
@@ -105,6 +115,9 @@ public class RemittanceService implements Detailed, NeededDecisionDisplayed, Res
 
 	@Autowired
 	private ExcelWriter excel;
+
+	@Autowired
+	private ServerUtil server;
 
 	private BigDecimal remaining;
 
@@ -137,11 +150,6 @@ public class RemittanceService implements Detailed, NeededDecisionDisplayed, Res
 		d.setTotalDueValue(b.getTotalValue());
 		d.setPaymentValue(payment);
 		return addDetail(d);
-	}
-
-	public List<Payment> findByBilling(Billable b) throws NoServerConnectionException, StoppedServerException,
-			FailedAuthenticationException, InvalidException, RestException {
-		return readOnlyService.module(getModule()).getList("/find?billing=" + b.getId());
 	}
 
 	public boolean foundThisBillableOnThisPaymentList(Billable i) {
@@ -195,12 +203,12 @@ public class RemittanceService implements Detailed, NeededDecisionDisplayed, Res
 
 	@Override
 	public String getDecidedBy() {
-		return get().getAuditedBy();
+		return get().getDecidedBy();
 	}
 
 	@Override
 	public ZonedDateTime getDecidedOn() {
-		return get().getAuditedOn();
+		return get().getDecidedOn();
 	}
 
 	public List<Customer> getDraweeBank() {
@@ -267,6 +275,16 @@ public class RemittanceService implements Detailed, NeededDecisionDisplayed, Res
 	}
 
 	@Override
+	public ScriptService getScriptService() {
+		return scriptService;
+	}
+
+	@Override
+	public <T extends EntityDecisionNeeded<Long>> ScriptType getScriptType(T d) {
+		return PAYMENT_VALIDATION;
+	}
+
+	@Override
 	public Long getSpunId() {
 		return isNew() ? null : getId();
 	}
@@ -312,6 +330,13 @@ public class RemittanceService implements Detailed, NeededDecisionDisplayed, Res
 		return listPayments().stream().map(p -> toHistory(p)).collect(toList());
 	}
 
+	public void nullifyPaymentData(Billable b) throws SuccessfulSaveInfo, NoServerConnectionException,
+			StoppedServerException, FailedAuthenticationException, InvalidException, RestException {
+		List<Payment> payments = findByBilling(b);
+		if (payments != null)
+			save(payments.stream().map(p -> nullifyPaymentData(b, p)).collect(toList()));
+	}
+
 	public void open(Customer bank, Long checkId) throws NoServerConnectionException, StoppedServerException,
 			FailedAuthenticationException, InvalidException, NotFoundException, RestException {
 		Payment p = find(bank, checkId);
@@ -340,24 +365,19 @@ public class RemittanceService implements Detailed, NeededDecisionDisplayed, Res
 	public void save() throws SuccessfulSaveInfo, NoServerConnectionException, StoppedServerException,
 			FailedAuthenticationException, InvalidException {
 		set(savingService.module(getModule()).save(get()));
-		if (get() != null)
-			throw new SuccessfulSaveInfo(get());
+		scriptService.saveScripts();
+		throw new SuccessfulSaveInfo(get());
 	}
 
 	public void save(List<Payment> l) throws SuccessfulSaveInfo, NoServerConnectionException, StoppedServerException,
 			FailedAuthenticationException, InvalidException {
 		listSavingService.module(getModule()).save(l);
+		scriptService.saveScripts();
 	}
 
 	@Override
 	public void saveAsExcel(Tabular... tables) throws IOException {
 		excel.filename(getExcelFileName()).sheetname(getExcelSheetName()).table(tables).write();
-	}
-
-	@Override
-	public void saveDecision() throws SuccessfulSaveInfo, NoServerConnectionException, StoppedServerException,
-			FailedAuthenticationException, InvalidException {
-		save();
 	}
 
 	@Override
@@ -375,22 +395,28 @@ public class RemittanceService implements Detailed, NeededDecisionDisplayed, Res
 			get().setCollector(s);
 	}
 
+	public void setDepositData(Customer bank, ZonedDateTime depositedOn) {
+		get().setDepositorBank(bank);
+		get().setDepositedOn(depositedOn);
+		get().setDepositor(username());
+		get().setDepositorOn(ZonedDateTime.now());
+		scriptService.set(DEPOSIT, getId() + "|" + bank.getId() + "|" + depositedOn + "|" + username() + "|" + now());
+	}
+
 	public void setDraweeBank(Customer c) {
 		if (isNew())
 			get().setDraweeBank(c);
 	}
 
+	public void setFundTransferData() {
+		get().setReceivedBy(username());
+		get().setReceivedOn(ZonedDateTime.now());
+		scriptService.set(FUND_TRANSFER, getId() + "|" + username() + "|" + now());
+	}
+
 	public void setPayment(BigDecimal p) {
 		get().setValue(p);
 		remaining = p;
-	}
-
-	@Override
-	public void updatePerValidity(Boolean isValid, String remarks) {
-		get().setIsValid(isValid);
-		get().setRemarks(blankIfNull(get().getRemarks()) + blankIfNull(remarks));
-		get().setAuditedBy(isValid == null ? null : username());
-		get().setAuditedOn(isValid == null ? null : now());
 	}
 
 	public boolean userAllowedToMakeCashDeposits() {
@@ -425,13 +451,15 @@ public class RemittanceService implements Detailed, NeededDecisionDisplayed, Res
 			FailedAuthenticationException, InvalidException, CashCollectionHasBeenReceivedFromCollectorException,
 			RestException, NotTodayOrYesterdayCashPaymentException {
 		LocalDate d = get().getPaymentDate();
-		if (!isNew() || d == null)
+		if (!isNew() || d == null || isUser(MANAGER))
 			return;
 		validateCashPaymentDateIsYesterdayOrToday(d);
 		validateNoCashPaymentsReceivedFromCollector(d);
 	}
 
-	public void validateOrderDateBeforeSetting(LocalDate d) {
+	public void validateOrderDateBeforeSetting(LocalDate d) throws NotAllowedOffSiteTransactionException {
+		if (server.isOffSite())
+			throw new NotAllowedOffSiteTransactionException();
 		if (d == null)
 			return;
 		get().setPaymentDate(d);
@@ -453,6 +481,11 @@ public class RemittanceService implements Detailed, NeededDecisionDisplayed, Res
 		return readOnlyService.module(getModule()).getOne("/check?bank=" + bank.getId() + "&id=" + checkId);
 	}
 
+	private List<Payment> findByBilling(Billable b) throws NoServerConnectionException, StoppedServerException,
+			FailedAuthenticationException, InvalidException, RestException {
+		return readOnlyService.module(getModule()).getList("/find?billing=" + b.getId());
+	}
+
 	private List<PaymentDetail> getDetails() {
 		List<PaymentDetail> l = get().getDetails();
 		return l == null ? new ArrayList<>() : new ArrayList<>(l);
@@ -466,6 +499,11 @@ public class RemittanceService implements Detailed, NeededDecisionDisplayed, Res
 		return toHypenatedYearMonthDay(LocalDate.now().minusDays(15L)) + ".toDate";
 	}
 
+	private String invalidatedPaymentDueToInvalidInvoicedRemarks(Billable b) {
+		return "[INVALID: " + username() + " - " + toDateDisplay(LocalDate.now()) + "] INVALID S/I(D/R) #"
+				+ b.getOrderNo();
+	}
+
 	private List<Payment> listPayments() {
 		try {
 			return readOnlyService.module(getModule()).getList();
@@ -473,6 +511,12 @@ public class RemittanceService implements Detailed, NeededDecisionDisplayed, Res
 			e.printStackTrace();
 			return emptyList();
 		}
+	}
+
+	private Payment nullifyPaymentData(Billable b, Payment p) {
+		set(p);
+		updatePerValidity(false, invalidatedPaymentDueToInvalidInvoicedRemarks(b));
+		return get();
 	}
 
 	private boolean paidCash() {
@@ -498,6 +542,8 @@ public class RemittanceService implements Detailed, NeededDecisionDisplayed, Res
 	}
 
 	private void validateCashPaymentDateIsYesterdayOrToday(LocalDate d) throws NotTodayOrYesterdayCashPaymentException {
+		if (isUser(MANAGER))
+			return;
 		LocalDate today = LocalDate.now();
 		LocalDate yesterday = today.minusDays(1L);
 		if (yesterday.getDayOfWeek() == SUNDAY)
@@ -509,6 +555,8 @@ public class RemittanceService implements Detailed, NeededDecisionDisplayed, Res
 	private void validateNoCashPaymentsReceivedFromCollector(LocalDate d)
 			throws NoServerConnectionException, StoppedServerException, FailedAuthenticationException, InvalidException,
 			RestException, CashCollectionHasBeenReceivedFromCollectorException {
+		if (isUser(MANAGER))
+			return;
 		String c = get().getCollector();
 		Payment p = readOnlyService.module(getModule()).getOne("/collector?name=" + c + "&date=" + d);
 		if (p != null)

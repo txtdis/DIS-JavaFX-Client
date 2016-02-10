@@ -4,12 +4,16 @@ import static java.time.LocalDate.now;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
+import static org.apache.log4j.Logger.getLogger;
 import static org.springframework.util.StringUtils.capitalize;
 import static ph.txtdis.type.ItemType.PURCHASED;
+import static ph.txtdis.type.ScriptType.PRICE_APPROVAL;
+import static ph.txtdis.type.ScriptType.VOLUME_DISCOUNT_APPROVAL;
 import static ph.txtdis.type.UomType.PC;
 import static ph.txtdis.type.UomType.values;
 import static ph.txtdis.type.UserType.MANAGER;
 import static ph.txtdis.util.SpringUtil.isUser;
+import static ph.txtdis.util.SpringUtil.username;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -19,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
 
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -48,6 +53,7 @@ import ph.txtdis.exception.FailedAuthenticationException;
 import ph.txtdis.exception.InvalidException;
 import ph.txtdis.exception.NoServerConnectionException;
 import ph.txtdis.exception.NoVendorIdPurchasedItemException;
+import ph.txtdis.exception.NotAllowedOffSiteTransactionException;
 import ph.txtdis.exception.NotAnItemToBeSoldToCustomerException;
 import ph.txtdis.exception.NotFoundException;
 import ph.txtdis.exception.RestException;
@@ -55,8 +61,10 @@ import ph.txtdis.exception.StoppedServerException;
 import ph.txtdis.exception.ToBeReturnedItemNotPurchasedWithinTheLastSixMonths;
 import ph.txtdis.info.SuccessfulSaveInfo;
 import ph.txtdis.type.ItemType;
+import ph.txtdis.type.ScriptType;
 import ph.txtdis.type.UomType;
 import ph.txtdis.type.VolumeDiscountType;
+import ph.txtdis.util.ServerUtil;
 
 @Service("itemService")
 public class ItemService implements ByNameSearchable<Item>, ChannelLimited, DecisionNeeded, Excel<Item>, Reset,
@@ -80,6 +88,8 @@ public class ItemService implements ByNameSearchable<Item>, ChannelLimited, Deci
 			super(item + "\nis NOT to be sold.");
 		}
 	}
+
+	private static Logger logger = getLogger(ItemService.class);
 
 	private static final String DISCOUNT_TAB = "Volume Discount";
 
@@ -106,7 +116,13 @@ public class ItemService implements ByNameSearchable<Item>, ChannelLimited, Deci
 	private SavingService<Item> savingService;
 
 	@Autowired
+	private ScriptService scriptService;
+
+	@Autowired
 	private SpunService<Item, Long> spunService;
+
+	@Autowired
+	private ServerUtil server;
 
 	private List<Item> items;
 
@@ -197,13 +213,29 @@ public class ItemService implements ByNameSearchable<Item>, ChannelLimited, Deci
 	}
 
 	@Override
+	public String getDecidedBy() {
+		return username();
+	}
+
+	@Override
+	public ZonedDateTime getDecidedOn() {
+		return ZonedDateTime.now();
+	}
+
+	@Override
 	public List<Bom> getDetails() {
+		logger.info("listBOMs @ getDetails = " + listBoms());
 		return listBoms() == null ? emptyList() : listBoms();
 	}
 
 	@Override
 	public Long getId() {
 		return get().getId();
+	}
+
+	@Override
+	public Boolean getIsValid() {
+		return getDeactivatedOn() != null;
 	}
 
 	@Override
@@ -228,9 +260,24 @@ public class ItemService implements ByNameSearchable<Item>, ChannelLimited, Deci
 	}
 
 	@Override
+	public String getRemarks() {
+		return "";
+	}
+
+	@Override
 	@SuppressWarnings("unchecked")
 	public SavingService<Item> getSavingService() {
 		return savingService;
+	}
+
+	@Override
+	public ScriptService getScriptService() {
+		return scriptService;
+	}
+
+	@Override
+	public <T extends EntityDecisionNeeded<Long>> ScriptType getScriptType(T d) {
+		return (d instanceof Price) ? PRICE_APPROVAL : VOLUME_DISCOUNT_APPROVAL;
 	}
 
 	@Override
@@ -256,6 +303,7 @@ public class ItemService implements ByNameSearchable<Item>, ChannelLimited, Deci
 	}
 
 	public List<Bom> listBoms() {
+		logger.info("get().getBoms @ listBoms() = " + get().getBoms());
 		return get().getBoms();
 	}
 
@@ -304,9 +352,7 @@ public class ItemService implements ByNameSearchable<Item>, ChannelLimited, Deci
 	}
 
 	public List<ItemType> listTypes() {
-		if (isNew())
-			return asList(ItemType.values());
-		return asList(get().getType());
+		return asList(ItemType.values());
 	}
 
 	public List<UomType> listUoms() {
@@ -330,14 +376,15 @@ public class ItemService implements ByNameSearchable<Item>, ChannelLimited, Deci
 	}
 
 	@Override
-	public void saveAsExcel(Tabular... tables) throws IOException {
-		excel.filename(getExcelFileName()).sheetname(getExcelSheetName()).table(tables).write();
+	public void save() throws SuccessfulSaveInfo, NoServerConnectionException, StoppedServerException,
+			FailedAuthenticationException, InvalidException, RestException {
+		scriptService.saveScripts();
+		Serviced.super.save();
 	}
 
 	@Override
-	public void saveDecision() throws SuccessfulSaveInfo, NoServerConnectionException, StoppedServerException,
-			FailedAuthenticationException, InvalidException, RestException {
-		save();
+	public void saveAsExcel(Tabular... tables) throws IOException {
+		excel.filename(getExcelFileName()).sheetname(getExcelSheetName()).table(tables).write();
 	}
 
 	@Override
@@ -352,8 +399,11 @@ public class ItemService implements ByNameSearchable<Item>, ChannelLimited, Deci
 		item = (Item) t;
 	}
 
-	public void setNameIfUnique(String text) throws NoServerConnectionException, StoppedServerException,
-			FailedAuthenticationException, InvalidException, DuplicateException, RestException {
+	public void setNameIfUnique(String text)
+			throws NoServerConnectionException, StoppedServerException, FailedAuthenticationException, InvalidException,
+			DuplicateException, RestException, NotAllowedOffSiteTransactionException {
+		if (server.isOffSite())
+			throw new NotAllowedOffSiteTransactionException();
 		if (readOnlyService.module(getModule()).getOne("/find?name=" + text) != null)
 			throw new DuplicateException(text);
 		get().setName(text);
@@ -390,10 +440,6 @@ public class ItemService implements ByNameSearchable<Item>, ChannelLimited, Deci
 			return;
 		if (hasReportUom())
 			throw new DuplicateException("A report UOM");
-	}
-
-	private <T extends EntityDecisionNeeded<Long>> List<T> approve(List<T> l, Boolean isValid, String remarks) {
-		return l.stream().map(d -> updateApprovalStatus(d, isValid, remarks)).collect(toList());
 	}
 
 	private void approveDiscount(Boolean isValid, String remarks) {
@@ -438,7 +484,7 @@ public class ItemService implements ByNameSearchable<Item>, ChannelLimited, Deci
 	}
 
 	private <T extends EntityDecisionNeeded<Long>> boolean noChanges(List<T> l) {
-		return l == null ? true : !l.stream().anyMatch(d -> d.getApproved() == null);
+		return l == null ? true : !l.stream().anyMatch(d -> d.getIsValid() == null);
 	}
 
 	private List<Price> prices() {
@@ -459,14 +505,6 @@ public class ItemService implements ByNameSearchable<Item>, ChannelLimited, Deci
 
 	private boolean uomExists(Predicate<QtyPerUom> p) {
 		return listQtyPerUom().stream().anyMatch(p);
-	}
-
-	private <T extends EntityDecisionNeeded<Long>> T updateApprovalStatus(T d, Boolean isValid, String remarks) {
-		if (d.getApproved() == null) {
-			d.setApproved(isValid);
-			d.setRemarks(remarks);
-		}
-		return d;
 	}
 
 	private void validateStartDateOfPricingType(List<Price> prices, PricingType type, LocalDate startDate)

@@ -96,7 +96,7 @@ public class ItemTab extends AbstractTab {
 		idDisplay.setValue(service.getId());
 		nameField.setValue(item().getName());
 		descriptionField.setValue(item().getDescription());
-		typeCombo.items(service.listTypes());
+		typeCombo.select(item().getType());
 		familyCombo.items(service.listParents());
 		vendorIdField.setValue(vendorId());
 		hasVendorId.set(vendorId() != null);
@@ -110,6 +110,8 @@ public class ItemTab extends AbstractTab {
 	public void save() {
 		item().setVendorId(vendorIdField.getValue());
 		item().setEndOfLife(endOfLifePicker.getValue());
+		item().setType(typeCombo.getValue());
+		updateBom();
 		if (!isNew())
 			return;
 		item().setName(nameField.getText());
@@ -118,7 +120,6 @@ public class ItemTab extends AbstractTab {
 		item().setFamily(familyCombo.getValue());
 		item().setNotDiscounted(notDiscountedCheckbox.getValue());
 		updateQtyPerUom();
-		updateBom();
 	}
 
 	@Override
@@ -189,13 +190,11 @@ public class ItemTab extends AbstractTab {
 	}
 
 	private void updateBom() {
-		if (isNew())
-			item().setBoms(bomTable.getItems());
+		item().setBoms(bomTable.getItems());
 	}
 
 	private void updateQtyPerUom() {
-		if (isNew())
-			item().setQtyPerUomList(qtyPerUomTable.getItems());
+		item().setQtyPerUomList(qtyPerUomTable.getItems());
 		hasNeededPurchaseUom.set(service.hasPurchaseUom());
 		hasNeededReportUom.set(service.hasReportUom());
 	}
@@ -225,7 +224,7 @@ public class ItemTab extends AbstractTab {
 			gridPane.add(descriptionField.width(320).build(TEXT), 6, 0, 4, 1);
 
 			gridPane.add(label.field("Type"), 0, 1);
-			gridPane.add(typeCombo.width(150), 1, 1, 2, 1);
+			gridPane.add(typeCombo.items(service.listTypes()), 1, 1, 2, 1);
 			gridPane.add(label.field("Family"), 3, 1);
 			gridPane.add(familyCombo, 4, 1);
 			gridPane.add(label.field("Vendor ID"), 5, 1);
@@ -233,7 +232,6 @@ public class ItemTab extends AbstractTab {
 			gridPane.add(label.field("End of Life"), 7, 1);
 			gridPane.add(endOfLifePicker, 8, 1);
 			gridPane.add(notDiscountedCheckbox.label("Customer Discount NOT Applied"), 9, 1);
-
 			return asList(gridPane, tableBox());
 		} catch (Exception e) {
 			e.printStackTrace();

@@ -7,9 +7,9 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public abstract class EntityDecisionNeeded<PK> extends EntityCreationTracked<PK> implements ApprovalNeeded {
+public abstract class EntityDecisionNeeded<PK> extends EntityCreationTracked<PK> {
 
-	private Boolean approved;
+	private Boolean isValid;
 
 	private String remarks, decidedBy;
 

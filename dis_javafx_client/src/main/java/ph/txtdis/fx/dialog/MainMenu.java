@@ -12,12 +12,13 @@ import static ph.txtdis.type.ModuleType.DOWNLOAD;
 import static ph.txtdis.type.ModuleType.INVOICE;
 import static ph.txtdis.type.ModuleType.PURCHASE_ORDER;
 import static ph.txtdis.type.ModuleType.PURCHASE_RECEIPT;
-import static ph.txtdis.type.ModuleType.SALES_RETURN;
 import static ph.txtdis.type.ModuleType.RETURN_ORDER;
 import static ph.txtdis.type.ModuleType.SALES_ORDER;
+import static ph.txtdis.type.ModuleType.SALES_RETURN;
 import static ph.txtdis.type.ModuleType.STOCK_TAKE_RECONCILIATION;
 import static ph.txtdis.type.ModuleType.UPLOAD;
 
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
@@ -25,6 +26,7 @@ import javafx.scene.Scene;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
 import ph.txtdis.app.AgingReceivableApp;
 import ph.txtdis.app.CreditNoteApp;
 import ph.txtdis.app.InventoryApp;
@@ -36,19 +38,18 @@ import ph.txtdis.app.SalesRevenueApp;
 import ph.txtdis.app.SalesVolumeApp;
 import ph.txtdis.app.Startable;
 import ph.txtdis.app.StockTakeApp;
-import ph.txtdis.app.UploadApp;
+import ph.txtdis.app.SyncApp;
 import ph.txtdis.app.VatApp;
 import ph.txtdis.fx.FontIcon;
 import ph.txtdis.fx.StyleSheet;
 import ph.txtdis.fx.control.AppButton;
 import ph.txtdis.fx.control.LabelFactory;
+import ph.txtdis.service.ScriptService;
+import ph.txtdis.util.ServerUtil;
 
 @Lazy
 @Component("mainMenu")
 public class MainMenu extends Stage {
-
-	@Autowired
-	private LabelFactory label;
 
 	@Autowired
 	private AgingReceivableApp agingApp;
@@ -85,10 +86,22 @@ public class MainMenu extends Stage {
 	private SalesApp stockTakeReconciliationApp;
 
 	@Autowired
-	private UploadApp upApp, downApp;
+	private SyncApp upApp, downApp;
 
 	@Autowired
 	private VatApp vatApp;
+
+	@Autowired
+	private LabelFactory label;
+
+	@Autowired
+	private MessageDialog dialog;
+
+	@Autowired
+	private ScriptService scriptService;
+
+	@Autowired
+	private ServerUtil serverUtil;
 
 	@Autowired
 	private StyleSheet styleSheet;
@@ -98,6 +111,7 @@ public class MainMenu extends Stage {
 		setTitle("txtDIS Menu");
 		setScene(createScene());
 		styleSheet.update(user().getStyle());
+		setOnCloseRequest(e -> checkUnpostedTransactions(e));
 		show();
 	}
 
@@ -122,6 +136,11 @@ public class MainMenu extends Stage {
 		return button.app(app);
 	}
 
+	private void checkUnpostedTransactions(WindowEvent e) {
+		if (serverUtil.isOffSite() && scriptService.unpostedTransactionsExist())
+			showPostOrExitDialog(e);
+	}
+
 	private Scene createScene() {
 		Scene s = new Scene(dialogBox());
 		s.getStylesheets().add("/css/base.css");
@@ -133,6 +152,10 @@ public class MainMenu extends Stage {
 		b.setPadding(new Insets(10));
 		b.setAlignment(Pos.CENTER);
 		return b;
+	}
+
+	private String download() {
+		return serverUtil.isOffSite() ? "Replicate" : "Download";
 	}
 
 	private GridPane gridPane() {
@@ -184,10 +207,27 @@ public class MainMenu extends Stage {
 		gp.add(label.menu("Inventories"), 0, 5);
 		gp.add(label.menu("Stock Take"), 1, 5);
 		gp.add(label.menu("Stock Recon"), 2, 5);
-		gp.add(label.menu("Upload"), 3, 5);
-		gp.add(label.menu("Download"), 4, 5);
+		gp.add(label.menu(upload()), 3, 5);
+		gp.add(label.menu(download()), 4, 5);
 		gp.add(label.menu("Credit Note"), 5, 5);
 		gp.add(label.menu("Settings"), 6, 5);
 		return gp;
+	}
+
+	private void postUnpostedTransaction(WindowEvent e) {
+		e.consume();
+		dialog.close();
+		upApp.start();
+	}
+
+	private void showPostOrExitDialog(WindowEvent we) {
+		dialog.showOption("Unposted transactions exist;\nproceed, how?", "Post", "Exit");
+		dialog.setOnOptionSelection(e -> postUnpostedTransaction(we));
+		dialog.setOnDefaultSelection(e -> Platform.exit());
+		dialog.addParent(this).start();
+	}
+
+	private String upload() {
+		return serverUtil.isOffSite() ? "Post" : "Upload";
 	}
 }

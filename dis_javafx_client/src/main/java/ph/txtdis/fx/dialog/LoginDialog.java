@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
+import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.geometry.Insets;
@@ -24,7 +25,7 @@ import ph.txtdis.fx.control.LabelFactory;
 import ph.txtdis.fx.control.PasswordInput;
 import ph.txtdis.fx.pane.AppGridPane;
 import ph.txtdis.util.LoginService;
-import ph.txtdis.util.Server;
+import ph.txtdis.util.ServerUtil;
 
 @Lazy
 @Component("loginDialog")
@@ -33,13 +34,11 @@ public class LoginDialog extends Stage {
 	private static final String STYLE = "-fx-font-size: 11pt; -fx-base: #6a5acd; -fx-accent: -fx-base;"
 			+ " -fx-focus-color: white; -fx-faint-focus-color: #ffffff22; ";
 
-	private static int tries;
-
 	@Value("${server.default}")
 	private String location;
 
 	@Autowired
-	private Server server;
+	private ServerUtil serverUtil;
 
 	@Autowired
 	private LoginService login;
@@ -116,9 +115,10 @@ public class LoginDialog extends Stage {
 		userField.requestFocus();
 	}
 
-	private void closeAfterThreeAttempts() {
-		if (++tries > 2)
-			close();
+	private void closeOnError(Exception e) {
+		e.printStackTrace();
+		dialog.show(e).updateStyle(STYLE).addParent(this).start();
+		Platform.exit();
 	}
 
 	private Node gridPane() {
@@ -155,13 +155,6 @@ public class LoginDialog extends Stage {
 		return passwordField;
 	}
 
-	private void retryThrice(Exception e) {
-		e.printStackTrace();
-		dialog.show(e).updateStyle(STYLE).addParent(this).start();
-		clearFields();
-		closeAfterThreeAttempts();
-	}
-
 	private Scene scene() {
 		VBox vb = new VBox(gridPane(), buttons());
 		vb.setAlignment(Pos.CENTER);
@@ -171,7 +164,7 @@ public class LoginDialog extends Stage {
 	}
 
 	private String server() {
-		return server.getLocation() == null ? location : server.getLocation();
+		return serverUtil.getLocation() == null ? location : serverUtil.getLocation();
 	}
 
 	private Node serverButton() {
@@ -195,7 +188,7 @@ public class LoginDialog extends Stage {
 		try {
 			changePasswordIfAuthenticated();
 		} catch (Exception e) {
-			retryThrice(e);
+			closeOnError(e);
 		}
 	}
 
@@ -203,7 +196,7 @@ public class LoginDialog extends Stage {
 		try {
 			logInIfAuthenticated();
 		} catch (Exception e) {
-			retryThrice(e);
+			closeOnError(e);
 		}
 	}
 

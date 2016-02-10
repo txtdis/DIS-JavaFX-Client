@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.http.HttpEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.ResourceAccessException;
 
 import ph.txtdis.exception.FailedAuthenticationException;
@@ -17,7 +18,7 @@ import ph.txtdis.exception.InvalidException;
 import ph.txtdis.exception.NoServerConnectionException;
 import ph.txtdis.exception.StoppedServerException;
 import ph.txtdis.util.HttpHeader;
-import ph.txtdis.util.Server;
+import ph.txtdis.util.ServerUtil;
 
 @Scope("prototype")
 @Service("savingService")
@@ -30,7 +31,7 @@ public class SavingService<T> {
 	private RestService restService;
 
 	@Autowired
-	private Server server;
+	private ServerUtil serverUtil;
 
 	private String module;
 
@@ -42,8 +43,8 @@ public class SavingService<T> {
 					: (T) restService.init().postForObject(url(entity), httpEntity(entity), entity.getClass());
 		} catch (ResourceAccessException e) {
 			e.printStackTrace();
-			throw new NoServerConnectionException(server.location());
-		} catch (HttpClientErrorException e) {
+			throw new NoServerConnectionException(serverUtil.location());
+		} catch (HttpClientErrorException | HttpServerErrorException e) {
 			e.printStackTrace();
 			if (e.getStatusCode() == UNAUTHORIZED)
 				if (e.getResponseBodyAsString().contains("This connection has been closed"))
@@ -63,7 +64,7 @@ public class SavingService<T> {
 	}
 
 	private String url(T t) {
-		String url = "https://" + server.address() + ":" + server.getPort() + "/" + plural();
+		String url = "https://" + serverUtil.address() + ":" + serverUtil.getPort() + "/" + plural();
 		if (t instanceof List<?>)
 			url += "/all";
 		return url;

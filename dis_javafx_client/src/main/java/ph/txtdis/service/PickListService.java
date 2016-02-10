@@ -26,8 +26,10 @@ import ph.txtdis.exception.DateInThePastException;
 import ph.txtdis.exception.FailedAuthenticationException;
 import ph.txtdis.exception.InvalidException;
 import ph.txtdis.exception.NoServerConnectionException;
+import ph.txtdis.exception.NotAllowedOffSiteTransactionException;
 import ph.txtdis.exception.RestException;
 import ph.txtdis.exception.StoppedServerException;
+import ph.txtdis.util.ServerUtil;
 
 @Service("pickListService")
 public class PickListService implements Reset, Serviced<Long>, SpunById<Long> {
@@ -78,6 +80,9 @@ public class PickListService implements Reset, Serviced<Long>, SpunById<Long> {
 
 	@Autowired
 	private UserService userService;
+
+	@Autowired
+	private ServerUtil server;
 
 	private List<Booking> unpickedBookings;
 
@@ -233,7 +238,10 @@ public class PickListService implements Reset, Serviced<Long>, SpunById<Long> {
 
 	public void setPickDateUponValidation(LocalDate d)
 			throws DateInThePastException, DateAfterTomorrowWhichIsNotAMondayException, NothingToPickException,
-			NoServerConnectionException, StoppedServerException, FailedAuthenticationException, InvalidException {
+			NoServerConnectionException, StoppedServerException, FailedAuthenticationException, InvalidException,
+			NotAllowedOffSiteTransactionException {
+		if (server.isOffSite())
+			throw new NotAllowedOffSiteTransactionException();
 		verifyDateIsTodayOrTheNextWorkDay(d);
 		get().setPickDate(d);
 	}

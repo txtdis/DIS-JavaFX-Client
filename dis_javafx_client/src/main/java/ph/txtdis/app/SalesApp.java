@@ -1,5 +1,6 @@
 package ph.txtdis.app;
 
+import static java.time.LocalDate.now;
 import static java.util.Arrays.asList;
 import static javafx.beans.binding.Bindings.equal;
 import static javafx.beans.binding.Bindings.when;
@@ -12,6 +13,7 @@ import static ph.txtdis.type.Type.DATE;
 import static ph.txtdis.type.Type.ID;
 import static ph.txtdis.type.Type.TEXT;
 import static ph.txtdis.type.Type.TIMESTAMP;
+import static ph.txtdis.util.SpringUtil.username;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -33,6 +35,8 @@ import static ph.txtdis.type.ModuleType.RETURN_ORDER;
 import static ph.txtdis.type.ModuleType.SALES_ORDER;
 import static ph.txtdis.type.ModuleType.SALES_RETURN;
 
+import static ph.txtdis.util.DateTimeUtils.toDateDisplay;
+
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.binding.BooleanExpression;
 import javafx.beans.property.BooleanProperty;
@@ -48,6 +52,9 @@ import javafx.scene.layout.HBox;
 import ph.txtdis.dto.Billable;
 import ph.txtdis.dto.BillableDetail;
 import ph.txtdis.dto.Customer;
+import ph.txtdis.exception.BadCreditException;
+import ph.txtdis.exception.ExceededCreditLimitException;
+import ph.txtdis.exception.NotAllowedOffSiteTransactionException;
 import ph.txtdis.fx.control.AppButton;
 import ph.txtdis.fx.control.AppCombo;
 import ph.txtdis.fx.control.AppField;
@@ -71,8 +78,8 @@ public class SalesApp extends AbstractIdApp<BillableService, Long, String> imple
 	private static final String PROMPT = "Select date whose first entry will opened";
 
 	@Autowired
-	private AppButton customerSearchButton, invoiceBookletButton, openByDateButton, receiptButton, disposalButton,
-			invalidateButton, paymentButton;
+	private AppButton customerSearchButton, invoiceBookletButton, openByDateButton, overrideButton, receiptButton,
+			disposalButton, invalidateButton, paymentButton;
 
 	@Autowired
 	private AppCombo<String> discountCombo, paymentCombo;
@@ -81,10 +88,10 @@ public class SalesApp extends AbstractIdApp<BillableService, Long, String> imple
 	private AppField<LocalDate> dueDateDisplay, orderDateDisplay;
 
 	@Autowired
-	private AppField<Long> bookingIdField, idNoField, customerIdInput;
+	private AppField<Long> bookingIdInput, idNoInput, customerIdInput, receivingIdDisplay;
 
 	@Autowired
-	private AppField<String> customerNameDisplay, customerAddressDisplay, idPrefixField, idSuffixField, billedByDisplay,
+	private AppField<String> customerNameDisplay, customerAddressDisplay, idPrefixInput, idSuffixInput, billedByDisplay,
 			modifiedReceivingByDisplay, printedByDisplay, receivedByDisplay;
 
 	@Autowired
@@ -129,7 +136,7 @@ public class SalesApp extends AbstractIdApp<BillableService, Long, String> imple
 		gridPane.add(label.field("Due"), 0, 1);
 		gridPane.add(dueDateDisplay, 1, 1);
 		gridPane.add(customerLabel(), 2, 1, 2, 1);
-		gridPane.add(customerBox(), 4, 1, 6, 1);
+		gridPane.add(customerBox(), 4, 1, 8, 1);
 	}
 
 	public void customerWithoutDueDateGridLine() {
@@ -156,12 +163,13 @@ public class SalesApp extends AbstractIdApp<BillableService, Long, String> imple
 		super.refresh();
 		salesReturnCanBeModified.set(service.salesReturnCanBeModified());
 		returnIsValid.set(service.returnIsValid());
-		idPrefixField.setValue(billable().getPrefix());
-		idNoField.setValue(service.getIdNo());
-		idSuffixField.setValue(billable().getSuffix());
-		bookingIdField.setValue(billable().getBookingId());
+		idPrefixInput.setValue(billable().getPrefix());
+		idNoInput.setValue(service.getIdNo());
+		idSuffixInput.setValue(billable().getSuffix());
+		bookingIdInput.setValue(billable().getBookingId());
 		orderDatePicker.setValue(getOrderDate());
 		orderDateDisplay.setValue(getOrderDate());
+		receivingIdDisplay.setValue(billable().getReceivingId());
 		refreshDateRelatedInputs();
 		remarksDisplay.setValue(service.getRemarks());
 		decisionNeededApp.refresh(service);
@@ -186,11 +194,11 @@ public class SalesApp extends AbstractIdApp<BillableService, Long, String> imple
 		if (isASalesOrPurchaseOrder())
 			orderDatePicker.requestFocus();
 		else if (isAnInvoice())
-			idPrefixField.requestFocus();
+			idPrefixInput.requestFocus();
 		else if (isABadOrder() || isAReturnOrder())
 			customerIdInput.requestFocus();
 		else
-			bookingIdField.requestFocus();
+			bookingIdInput.requestFocus();
 	}
 
 	@Override
@@ -214,9 +222,9 @@ public class SalesApp extends AbstractIdApp<BillableService, Long, String> imple
 
 	private void addAddressAndRemarks() {
 		gridPane.add(label.field("Address"), 0, 2);
-		gridPane.add(customerAddressDisplay, 1, 2, 6, 1);
+		gridPane.add(customerAddressDisplay, 1, 2, 8, 1);
 		gridPane.add(label.field("Remarks"), 0, 3);
-		gridPane.add(remarksDisplay, 1, 3, 6, 1);
+		gridPane.add(remarksDisplay, 1, 3, 8, 1);
 	}
 
 	private void addAddressAndRemarksIfNotReceiving() {
@@ -263,14 +271,17 @@ public class SalesApp extends AbstractIdApp<BillableService, Long, String> imple
 	}
 
 	private void buildButttons() {
+		openByDateButton.icon("openByDate").tooltip("Open a date's\nfirst entry").build();
 		invoiceBookletButton.icon("invoiceBooklet").tooltip("Issue booklet...").build();
 		receiptButton.icon("returnReceipt").tooltip("Receive...").build();
 		invalidateButton.icon("deactivate").tooltip("Invalidate...").build();
 		paymentButton.icon("cheque").tooltip("Pay...").build();
 		disposalButton.icon("disposal").tooltip("Dispose...").build();
+		overrideButton.icon("crown").tooltip("Override\ninvalidated S/O").build();
 	}
 
 	private void buildDisplays() {
+		receivingIdDisplay.readOnly().build(ID);
 		dueDateDisplay.readOnly().build(DATE);
 		totalDisplay.readOnly().build(CURRENCY);
 		paymentCombo.readOnlyOfWidth(420);
@@ -283,7 +294,7 @@ public class SalesApp extends AbstractIdApp<BillableService, Long, String> imple
 	private HBox customerBox() {
 		return new HBox(//
 				customerIdInput.build(ID), //
-				customerNameDisplay.readOnly().width(260).build(TEXT), //
+				customerNameDisplay.readOnly().width(420).build(TEXT), //
 				customerSearchButton.fontSize(16).icon("search").build() //
 		);
 	}
@@ -337,7 +348,9 @@ public class SalesApp extends AbstractIdApp<BillableService, Long, String> imple
 		gridPane.add(idLabel(), 3, 0);
 		gridPane.add(idBox(), 4, 0);
 		gridPane.add(label.field(service.getReferenceName() + " No."), 5, 0);
-		gridPane.add(bookingIdField.build(ID), 6, 0);
+		gridPane.add(bookingIdInput.build(ID), 6, 0);
+		gridPane.add(label.field("R/R No."), 7, 0);
+		gridPane.add(receivingIdDisplay, 8, 0);
 		customerGridLine();
 		addAddressAndRemarksIfNotReceiving();
 		return gridPane;
@@ -351,25 +364,29 @@ public class SalesApp extends AbstractIdApp<BillableService, Long, String> imple
 	}
 
 	private Node idBox() {
-		return isAnInvoice() ? threePartIdField() : idNoField();
+		return isAnInvoice() ? threePartIdField() : idNoOnlyField();
 	}
 
 	private Label idLabel() {
 		Label l = label.field(service.getIdPrompt() + " No.");
-		l.visibleProperty().bind(idNoField.visibleProperty());
+		l.visibleProperty().bind(idNoInput.visibleProperty());
 		return l;
 	}
 
 	private Node idNoField() {
-		return idNoField.width(180).build(ID);
+		return idNoInput.build(ID);
+	}
+
+	private Node idNoOnlyField() {
+		return idNoInput.width(180).build(ID);
 	}
 
 	private Node idPrefixField() {
-		return idPrefixField.width(70).build(CODE);
+		return idPrefixInput.width(70).build(CODE);
 	}
 
 	private Node idSuffixField() {
-		return idSuffixField.width(40).build(CODE);
+		return idSuffixInput.width(40).build(CODE);
 	}
 
 	private void invalidateThis() {
@@ -452,7 +469,7 @@ public class SalesApp extends AbstractIdApp<BillableService, Long, String> imple
 	}
 
 	private BooleanBinding noIdNo() {
-		return idNoField.isEmpty();
+		return idNoInput.isEmpty();
 	}
 
 	private boolean notBillable() {
@@ -465,10 +482,6 @@ public class SalesApp extends AbstractIdApp<BillableService, Long, String> imple
 
 	private BooleanBinding notReceived() {
 		return receivedOnDisplay.isEmpty();
-	}
-
-	private BooleanBinding notSalesOrder() {
-		return isSalesOrder().not();
 	}
 
 	private BooleanBinding notSalesReturn() {
@@ -605,27 +618,35 @@ public class SalesApp extends AbstractIdApp<BillableService, Long, String> imple
 	}
 
 	private void saveDisposalData() {
-		service.saveDisposalData();
-		save();
+		try {
+			service.saveDisposalData();
+			save();
+		} catch (NotAllowedOffSiteTransactionException e) {
+			showErrorDialog(e);
+		}
 	}
 
-	private void savePaymentData() {
+	private void saveInputtedItemReturnPaymentData() {
 		paymentDialog.addParent(this).start();
 		LocalDate d = paymentDialog.getAddedItem();
-		if (d != null)
-			savePaymentData(d);
-		else
-			service.clearPaymentData();
+		saveItemReturnPaymentData(d);
 	}
 
-	private void savePaymentData(LocalDate d) {
-		service.savePaymentData(d);
-		save();
+	private void saveItemReturnReceiptData() {
+		try {
+			service.saveItemReturnReceiptData();
+			save();
+		} catch (NotAllowedOffSiteTransactionException e) {
+			showErrorDialog(e);
+		}
 	}
 
-	private void saveReceiptData() {
-		service.saveReceiptData();
-		save();
+	private void saveItemReturnPaymentData(LocalDate d) {
+		if (d != null) {
+			service.setItemReturnPaymentData(d);
+			save();
+		} else
+			service.clearItemReturnPaymentDataSetByItsInputDialogDuringDataEntry();
 	}
 
 	private void search(String name) {
@@ -635,6 +656,13 @@ public class SalesApp extends AbstractIdApp<BillableService, Long, String> imple
 		} catch (Exception e) {
 			showErrorDialog(e);
 		}
+	}
+
+	private void setCustomerDataAndTemporarilyInvalidateAwaitingApproval(String msg) {
+		service.setCustomerRelatedData();
+		service.updatePerValidity(false,
+				"[INVALID: " + username() + " - " + toDateDisplay(now()) + "] " + msg.replace("\n", " "));
+		decisionNeededApp.refresh(service);
 	}
 
 	private void setFocusAfterBookingIdValidation() {
@@ -669,6 +697,13 @@ public class SalesApp extends AbstractIdApp<BillableService, Long, String> imple
 		LocalDate d = openByDateDialog.getDate();
 		if (d != null)
 			open(d);
+	}
+
+	private void showProceedAndGetApprovalLaterOrExitDialog(String msg) {
+		dialog.showOption(msg + "; proceed how?", "Book, get approval later", "Exit");
+		dialog.setOnOptionSelection(e -> setCustomerDataAndTemporarilyInvalidateAwaitingApproval(msg));
+		dialog.setOnDefaultSelection(e -> dialog.close());
+		dialog.addParent(this).start();
 	}
 
 	private HBox tablePane() {
@@ -711,15 +746,16 @@ public class SalesApp extends AbstractIdApp<BillableService, Long, String> imple
 		refreshSummaryPane();
 	}
 
-	private void updateUponBookingIdValidation() {
-		try {
-			service.updateUponBookingIdValidation(bookingIdField.getValue());
-		} catch (Exception e) {
-			handleError(e, bookingIdField);
-		} finally {
-			refresh();
-			setFocusAfterBookingIdValidation();
-		}
+	private void updateUponBookingIdValidation(long id) {
+		if (isNew() && id != 0)
+			try {
+				service.updateUponBookingIdValidation(id);
+			} catch (Exception e) {
+				handleError(e, bookingIdInput);
+			} finally {
+				refresh();
+				setFocusAfterBookingIdValidation();
+			}
 	}
 
 	private void updateUponCustomerValidation() {
@@ -727,6 +763,8 @@ public class SalesApp extends AbstractIdApp<BillableService, Long, String> imple
 		if (isNew() && id != 0)
 			try {
 				service.updateUponCustomerIdValidation(id);
+			} catch (BadCreditException | ExceededCreditLimitException e) {
+				showProceedAndGetApprovalLaterOrExitDialog(e.getMessage());
 			} catch (Exception e) {
 				handleError(e, customerIdInput);
 			} finally {
@@ -735,10 +773,10 @@ public class SalesApp extends AbstractIdApp<BillableService, Long, String> imple
 			}
 	}
 
-	private void updateUponDateValidation() {
-		if (isNew() && isASalesOrPurchaseOrder())
+	private void updateUponDateValidation(LocalDate d) {
+		if (isNew() && d != null && isASalesOrPurchaseOrder())
 			try {
-				service.setOrderDateUponValidation(orderDatePicker.getValue());
+				service.setOrderDateUponValidation(d);
 			} catch (Exception e) {
 				handleError(e, orderDatePicker);
 			} finally {
@@ -747,14 +785,15 @@ public class SalesApp extends AbstractIdApp<BillableService, Long, String> imple
 	}
 
 	private void updateUponOrderNoValidation() {
-		try {
-			service.updateUponOrderNoValidation(idPrefixField.getValue(), idNoField.getValue(),
-					idSuffixField.getValue());
-		} catch (Exception e) {
-			idSuffixField.setValue(null);
-			idNoField.setValue(null);
-			handleError(e, idPrefixField);
-		}
+		if (isNew())
+			try {
+				service.updateUponOrderNoValidation(idPrefixInput.getValue(), idNoInput.getValue(),
+						idSuffixInput.getValue());
+			} catch (Exception e) {
+				idSuffixInput.setValue(null);
+				idNoInput.setValue(null);
+				handleError(e, idPrefixInput);
+			}
 	}
 
 	private void validateSelectedCustomerFromSearchList() {
@@ -781,12 +820,14 @@ public class SalesApp extends AbstractIdApp<BillableService, Long, String> imple
 	protected List<AppButton> addButtons() {
 		buildButttons();
 		List<AppButton> b = new ArrayList<>(super.addButtons());
-		b.add(2, openByDateButton.icon("openByDate").tooltip("Open a date's\nfirst entry").build());
+		b.add(2, openByDateButton);
 		b.add(decisionButton = decisionNeededApp.addDecisionButton());
 		if (isABadOrder() || isAReturnOrder())
 			b.addAll(returnItemButtons());
 		else if (isAnInvoice())
 			b.add(invoiceBookletButton);
+		else if (isASalesOrder())
+			b.add(overrideButton);
 		return b;
 	}
 
@@ -840,19 +881,21 @@ public class SalesApp extends AbstractIdApp<BillableService, Long, String> imple
 		saveButton.disableIf(when(isSalesReturn())//
 				.then(salesReturnCanBeModified.not())//
 				.otherwise(when(isSalesOrder())//
-						.then(totalDisplay.isEmpty().or(salesOrderCanBeModified))//
+						.then(totalDisplay.isEmpty().or(salesOrderCanBeModified.not()))//
 						.otherwise(isPosted())));
 		decisionButton.disableIf(notPosted());
-		bookingIdField.disableIf((isSalesOrder().or(isBadOrder()).or(isPurchaseOrder()).or(isReturnOrder()))//
+		bookingIdInput.disableIf((isSalesOrder().or(isBadOrder()).or(isPurchaseOrder()).or(isReturnOrder()))//
 				.or(isPosted())//
 				.or(isInvoice().and(noIdNo())));
-		idPrefixField.disableIf(notInvoice()//
+		idPrefixInput.disableIf(notInvoice()//
 				.or(isPosted()));
-		idSuffixField.disableIf(notInvoice()//
+		idSuffixInput.disableIf(notInvoice()//
 				.or(isPosted())//
 				.or(noIdNo()));
-		idNoField.visibleProperty().bind(isPurchaseOrder().not());
-		idNoField.disableIf(isPosted()//
+		idNoInput.visibleProperty().bind(//
+				isPurchaseOrder().not()//
+						.and(isPurchaseReceipt().not()));
+		idNoInput.disableIf(isPosted()//
 				.or(isSalesOrder())//
 				.or(isBadOrder()));
 		customerIdInput.disableIf(isPosted()//
@@ -860,10 +903,9 @@ public class SalesApp extends AbstractIdApp<BillableService, Long, String> imple
 		customerSearchButton.disableIf(customerIdInputIsDisabled());
 		customerSearchButton.visibleProperty().bind(customerIdInputIsDisabled().not());
 		table.disableIf(when(isSalesReturn().or(isPurchaseReceipt()))//
-				.then(bookingIdField.isEmpty())//
+				.then(bookingIdInput.isEmpty())//
 				.otherwise(customerNameDisplay.isEmpty()));
-		decisionNeededApp.hideDecisionNodesIf(notSalesOrder()//
-				.and(notSalesReturn()));
+		decisionNeededApp.showDecisionNodesIf(notSalesReturn());
 		receiptButton.disableIf(notValidReturn().or(printedOnDisplay.isEmpty())//
 				.or(receivedOnDisplay.isNotEmpty()));
 		invalidateButton.disableIf(notValidReturn()//
@@ -882,13 +924,13 @@ public class SalesApp extends AbstractIdApp<BillableService, Long, String> imple
 		super.setListeners();
 		openByDateButton.setOnAction(e -> showOpenByDateDialog());
 		invoiceBookletButton.setOnAction(e -> invoiceBookletApp.addParent(this).start());
-		receiptButton.setOnAction(e -> saveReceiptData());
+		receiptButton.setOnAction(e -> saveItemReturnReceiptData());
 		invalidateButton.setOnAction(e -> invalidateThis());
 		disposalButton.setOnAction(e -> saveDisposalData());
-		paymentButton.setOnAction(e -> savePaymentData());
-		orderDatePicker.setOnAction(e -> updateUponDateValidation());
-		idSuffixField.setOnAction(e -> updateUponOrderNoValidation());
-		bookingIdField.setOnAction(e -> updateUponBookingIdValidation());
+		paymentButton.setOnAction(e -> saveInputtedItemReturnPaymentData());
+		orderDatePicker.setOnAction(e -> updateUponDateValidation(orderDatePicker.getValue()));
+		idSuffixInput.setOnAction(e -> updateUponOrderNoValidation());
+		bookingIdInput.setOnAction(e -> updateUponBookingIdValidation(bookingIdInput.getValue()));
 		table.setOnItemChange(i -> updateSummaryPane());
 		decisionNeededApp.setDecisionButtonOnAction(e -> showAuditDialogToValidateOrder());
 		if (isASalesOrder() || isABadOrder() || isAReturnOrder()) {

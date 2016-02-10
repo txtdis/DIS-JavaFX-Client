@@ -16,7 +16,7 @@ import ph.txtdis.type.VolumeDiscountType;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-public class VolumeDiscount extends EntityDecisionNeeded<Long> implements Comparable<VolumeDiscount> {
+public class VolumeDiscount extends EntityDecisionNeeded<Long> implements Comparable<VolumeDiscount>, StartDated {
 
 	private VolumeDiscountType type;
 

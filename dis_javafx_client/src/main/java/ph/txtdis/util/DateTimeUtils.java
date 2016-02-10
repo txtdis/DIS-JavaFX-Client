@@ -44,7 +44,7 @@ public class DateTimeUtils {
 	}
 
 	public static LocalDate toDate(String date) {
-		return date == null ? null : LocalDate.parse(date, dateFormat());
+		return date == null ? null : parseDate(date);
 	}
 
 	public static String toDateDisplay(LocalDate d) {
@@ -99,7 +99,7 @@ public class DateTimeUtils {
 	public static void validateDateIsUnique(List<? extends StartDated> list, LocalDate startDate)
 			throws DuplicateException {
 		if (startDateExists(list, startDate))
-			throw new DuplicateException(toDateDisplay(startDate));
+			throw new DuplicateException("Start Date of " + toDateDisplay(startDate));
 	}
 
 	public static void validateStartDate(List<? extends StartDated> list, LocalDate startDate)
@@ -116,8 +116,16 @@ public class DateTimeUtils {
 		return cd == null || cd.getStartDate() == null;
 	}
 
+	private static LocalDate parseDate(String date) {
+		try {
+			return LocalDate.parse(date, dateFormat());
+		} catch (Exception e) {
+			return LocalDate.parse(date);
+		}
+	}
+
 	private static boolean startDateExists(List<? extends StartDated> list, LocalDate startDate) {
-		return list.stream().filter(r -> r.getStartDate().equals(startDate)).findAny().isPresent();
+		return list.stream().anyMatch(r -> r.getStartDate().equals(startDate));
 	}
 
 	private static DateTimeFormatter timestampFormat() {

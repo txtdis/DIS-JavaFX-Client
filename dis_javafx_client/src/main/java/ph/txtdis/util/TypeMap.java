@@ -10,7 +10,6 @@ import ph.txtdis.app.Startable;
 import ph.txtdis.dto.Account;
 import ph.txtdis.dto.AgingReceivableReport;
 import ph.txtdis.dto.Authority;
-import ph.txtdis.dto.Backup;
 import ph.txtdis.dto.Billable;
 import ph.txtdis.dto.Channel;
 import ph.txtdis.dto.CreditNote;
@@ -29,6 +28,7 @@ import ph.txtdis.dto.PricingType;
 import ph.txtdis.dto.Route;
 import ph.txtdis.dto.SalesRevenue;
 import ph.txtdis.dto.SalesVolume;
+import ph.txtdis.dto.Script;
 import ph.txtdis.dto.StockTake;
 import ph.txtdis.dto.Style;
 import ph.txtdis.dto.Truck;
@@ -40,7 +40,7 @@ import ph.txtdis.util.TypeMap.Type;
 @Component
 public class TypeMap extends LinkedHashMap<String, Type> {
 
-	static final class Type {
+	protected static final class Type {
 
 		private String icon;
 
@@ -71,8 +71,6 @@ public class TypeMap extends LinkedHashMap<String, Type> {
 		put("agingReceivable", new Type("\ue802", new ParameterizedTypeReference<AgingReceivableReport>() {
 		}));
 		put("back", new Type("\ue803", null));
-		put("backup", new Type("\ue821", new ParameterizedTypeReference<Backup>() {
-		}));
 		put("badOrder", new Type("\ue80a", new ParameterizedTypeReference<Billable>() {
 		}));
 		put("billable", new Type(null, new ParameterizedTypeReference<Billable>() {
@@ -96,18 +94,18 @@ public class TypeMap extends LinkedHashMap<String, Type> {
 		put("customerList", new Type("\ue809", null));
 		put("customerReceivable", new Type("\ue802", new ParameterizedTypeReference<CustomerReceivableReport>() {
 		}));
-		put("dataDump", new Type("\ue821", null));
+		put("dataDump", new Type("\ue917", null));
 		put("dateRange", new Type("\ue807", null));
 		put("deactivate", new Type("\ue903", null));
 		put("decision", new Type("\ue900", null));
 		put("deliveryReport", new Type("\ue906", new ParameterizedTypeReference<Billable>() {
 		}));
-		put("deposit", new Type("\ue84b", null));
+		put("deposit", new Type("\ue913", null));
 		put("disposal", new Type("\ue90d", null));
 		put("download", new Type("\uf0ed", null));
 		put("edit", new Type("\ue80d", null));
 		put("excel", new Type("\ue810", null));
-		put("holiday", new Type("\ue910", new ParameterizedTypeReference<Holiday>() {
+		put("holiday", new Type("\ue914", new ParameterizedTypeReference<Holiday>() {
 		}));
 		put("holidays", new Type(null, new ParameterizedTypeReference<List<Holiday>>() {
 		}));
@@ -183,6 +181,10 @@ public class TypeMap extends LinkedHashMap<String, Type> {
 		put("salesVolumes", new Type(null, new ParameterizedTypeReference<List<SalesVolume>>() {
 		}));
 		put("save", new Type("\ue823", null));
+		put("script", new Type(null, new ParameterizedTypeReference<Script>() {
+		}));
+		put("scripts", new Type(null, new ParameterizedTypeReference<List<Script>>() {
+		}));
 		put("search", new Type("\ue824", null));
 		put("settingsMenu", new Type("\ue801", null));
 		put("stockTake", new Type("\ue84e", new ParameterizedTypeReference<StockTake>() {
@@ -193,6 +195,8 @@ public class TypeMap extends LinkedHashMap<String, Type> {
 		put("style", new Type("\ue825", new ParameterizedTypeReference<Style>() {
 		}));
 		put("styles", new Type(null, new ParameterizedTypeReference<List<Style>>() {
+		}));
+		put("sync", new Type(null, new ParameterizedTypeReference<String>() {
 		}));
 		// TODO
 		put("transfer", new Type("\ue833", null));

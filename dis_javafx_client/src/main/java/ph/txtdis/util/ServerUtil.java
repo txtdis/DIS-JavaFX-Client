@@ -9,7 +9,7 @@ import lombok.Getter;
 
 @Getter
 @Component("server")
-public class Server {
+public class ServerUtil {
 
 	@Value("#{'${server.address}'.split(',')}")
 	private List<String> addresses;
@@ -30,6 +30,10 @@ public class Server {
 
 	public String address() {
 		return addresses.get(index());
+	}
+
+	public boolean isOffSite() {
+		return location().equals("this.pc");
 	}
 
 	public String keystore() {

@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-public class Price extends EntityDecisionNeeded<Long> implements Comparable<Price> {
+public class Price extends EntityDecisionNeeded<Long> implements Comparable<Price>, StartDated {
 
 	private PricingType type;
 

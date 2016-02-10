@@ -32,8 +32,9 @@ public final class AppendContextMenu<S> {
 		table.setItems(l);
 	}
 
-	public void addMenu(TableView<S> t, Inputted<S> d) {
+	public AppendContextMenu<S> addMenu(TableView<S> t, Inputted<S> d) {
 		addMenu(t, d, null);
+		return this;
 	}
 
 	public void addMenu(TableView<S> t, Inputted<S> d, Detailed a) {
@@ -44,6 +45,12 @@ public final class AppendContextMenu<S> {
 
 	public ContextMenu getContextMenu() {
 		return menu;
+	}
+
+	private void addItemToTable() {
+		S s = dialog.getAddedItem();
+		if (s != null)
+			addItemToTable(s);
 	}
 
 	private void append() {
@@ -72,12 +79,6 @@ public final class AppendContextMenu<S> {
 	private Stage getStage() {
 		Scene s = table.getScene();
 		return (Stage) s.getWindow();
-	}
-
-	private void addItemToTable() {
-		S s = dialog.getAddedItem();
-		if (s != null)
-			addItemToTable(s);
 	}
 
 	private void setAppendMenu(Detailed a) {

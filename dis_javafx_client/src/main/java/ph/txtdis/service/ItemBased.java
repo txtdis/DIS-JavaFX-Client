@@ -1,5 +1,7 @@
 package ph.txtdis.service;
 
+import static ph.txtdis.util.Util.areEqual;
+
 import java.util.List;
 
 import ph.txtdis.dto.Item;
@@ -28,7 +30,7 @@ public interface ItemBased<T extends Keyed<Long>> {
 	}
 
 	default void confirmItemIsNotOnList(Item i) throws DuplicateException {
-		if (getDetails().stream().anyMatch(d -> d.getId().equals(i.getId())))
+		if (getDetails().stream().anyMatch(d -> areEqual(d.getId(), i.getId())))
 			throw new DuplicateException(i.getName());
 	}
 

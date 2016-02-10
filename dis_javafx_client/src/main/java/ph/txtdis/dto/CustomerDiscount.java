@@ -10,7 +10,7 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class CustomerDiscount extends EntityDecisionNeeded<Long> implements Comparable<CustomerDiscount> {
+public class CustomerDiscount extends EntityDecisionNeeded<Long> implements Comparable<CustomerDiscount>, StartDated {
 
 	private int level;
 

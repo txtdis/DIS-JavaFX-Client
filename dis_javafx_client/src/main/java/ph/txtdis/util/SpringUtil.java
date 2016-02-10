@@ -18,6 +18,8 @@ import ph.txtdis.type.UserType;
 
 public class SpringUtil {
 
+	public static String username, password;
+
 	public static UsernamePasswordAuthenticationToken authorize(User user, Authentication authenticate,
 			List<GrantedAuthority> roles) {
 		return new UsernamePasswordAuthenticationToken(user, authenticate.getCredentials(), roles);
@@ -45,7 +47,9 @@ public class SpringUtil {
 	}
 
 	public static String password() {
-		return authentication().getCredentials().toString();
+		if (password == null)
+			password = authentication().getCredentials().toString();
+		return password;
 	}
 
 	public static void setAuthentication(User user, String password, List<GrantedAuthority> roles) {
@@ -75,7 +79,9 @@ public class SpringUtil {
 	}
 
 	public static String username() {
-		return authentication().getName();
+		if (username == null)
+			username = authentication().getName();
+		return username;
 	}
 
 	private static UsernamePasswordAuthenticationToken authenticate(String password) {

@@ -27,6 +27,8 @@ public interface ChannelLimited {
 	}
 
 	default Channel nullIfAll(Channel f) {
+		if (f == null)
+			return null;
 		return f.equals(getChannelForAll()) ? null : f;
 	}
 }

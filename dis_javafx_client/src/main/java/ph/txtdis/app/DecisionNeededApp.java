@@ -25,7 +25,6 @@ import ph.txtdis.fx.dialog.AuditDialog;
 import ph.txtdis.fx.dialog.MessageDialog;
 import ph.txtdis.info.SuccessfulSaveInfo;
 import ph.txtdis.service.DecisionNeeded;
-import ph.txtdis.service.NeededDecisionDisplayed;
 import ph.txtdis.util.TypeMap;
 
 @Scope("prototype")
@@ -77,7 +76,7 @@ public class DecisionNeededApp {
 		return decisionButton.icon("decision").tooltip("Decide...").build();
 	}
 
-	public void hideDecisionNodesIf(BooleanBinding b) {
+	public void showDecisionNodesIf(BooleanBinding b) {
 		if (decisionDisplays != null) {
 			decisionDisplays.forEach(n -> n.managedProperty().bind(b));
 			decisionButton.managedProperty().bind(b);
@@ -92,7 +91,7 @@ public class DecisionNeededApp {
 		}
 	}
 
-	public void refresh(NeededDecisionDisplayed service) {
+	public void refresh(DecisionNeeded service) {
 		canBeApproved.set(service.canApprove());
 		refreshDisplays(service);
 		refreshButton(service.getIsValid());
@@ -134,7 +133,7 @@ public class DecisionNeededApp {
 			updateButton("reject", BRIGHT_RED, "Invalid");
 	}
 
-	private void refreshDisplays(NeededDecisionDisplayed service) {
+	private void refreshDisplays(DecisionNeeded service) {
 		if (decidedByDisplay == null)
 			return;
 		decidedByDisplay.setValue(service.getDecidedBy());
@@ -145,7 +144,7 @@ public class DecisionNeededApp {
 		Boolean isValid = decisionDialog.isValid();
 		String remarks = decisionDialog.getFindings();
 		a.updatePerValidity(isValid, remarks);
-		a.saveDecision();
+		a.save();
 	}
 
 	private void saveDecision(Stage s, DecisionNeeded a) {

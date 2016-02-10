@@ -1,7 +1,7 @@
 package ph.txtdis.fx.table;
 
+import static ph.txtdis.type.Type.FOURPLACE;
 import static ph.txtdis.type.Type.OTHERS;
-import static ph.txtdis.type.Type.QUANTITY;
 
 import java.math.BigDecimal;
 
@@ -34,11 +34,13 @@ public class BomTable extends AppTable<Bom> {
 	protected void addColumns() {
 		getColumns().setAll(//
 				item.ofType(OTHERS).width(180).build("Item", "part"), //
-				qty.ofType(QUANTITY).build("Quantity", "qty"));
+				qty.ofType(FOURPLACE).build("Quantity", "qty"));
 	}
 
 	@Override
 	protected void addProperties() {
 		append.addMenu(this, dialog);
+		setOnEmpty("A promo item must have one purchased part,\n"//
+				+ "and bundled requires at least two");
 	}
 }

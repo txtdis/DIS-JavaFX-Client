@@ -10,7 +10,7 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class Payment extends AbstractAuditedId<Long> implements Remarked<Long> {
+public class Payment extends EntityDecisionNeeded<Long> implements Remarked<Long> {
 
 	private BigDecimal value;
 

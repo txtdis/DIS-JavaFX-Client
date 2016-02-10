@@ -1,10 +1,7 @@
 package ph.txtdis.service;
 
 import static java.lang.Integer.valueOf;
-import static java.lang.Math.abs;
 import static java.math.RoundingMode.HALF_EVEN;
-import static java.time.DayOfWeek.MONDAY;
-import static java.time.LocalDate.now;
 import static java.time.temporal.ChronoUnit.DAYS;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
@@ -14,8 +11,7 @@ import static org.apache.log4j.Logger.getLogger;
 import static ph.txtdis.type.BillingType.DELIVERY;
 import static ph.txtdis.type.DeliveryType.PICK_UP;
 import static ph.txtdis.type.PartnerType.VENDOR;
-import static ph.txtdis.type.PaymentType.CASH;
-import static ph.txtdis.type.PaymentType.CHECK;
+import static ph.txtdis.type.ScriptType.BILLING_APPROVAL;
 import static ph.txtdis.type.UserType.AUDITOR;
 import static ph.txtdis.type.UserType.LEAD_CHECKER;
 import static ph.txtdis.type.UserType.MANAGER;
@@ -36,6 +32,7 @@ import static ph.txtdis.util.Util.areEqual;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -79,6 +76,7 @@ import ph.txtdis.dto.CreditDetail;
 import ph.txtdis.dto.Customer;
 import ph.txtdis.dto.CustomerDiscount;
 import ph.txtdis.dto.CustomerReceivable;
+import ph.txtdis.dto.EntityDecisionNeeded;
 import ph.txtdis.dto.Inventory;
 import ph.txtdis.dto.InvoiceBooklet;
 import ph.txtdis.dto.Item;
@@ -88,18 +86,22 @@ import ph.txtdis.dto.Payment;
 import ph.txtdis.dto.Price;
 import ph.txtdis.dto.PricingType;
 import ph.txtdis.dto.QtyPerUom;
+import ph.txtdis.dto.StartDated;
 import ph.txtdis.dto.VolumeDiscount;
 import ph.txtdis.exception.AlreadyBilledBookingException;
+import ph.txtdis.exception.BadCreditException;
 import ph.txtdis.exception.DateInThePastException;
 import ph.txtdis.exception.DeactivatedException;
 import ph.txtdis.exception.DifferentDiscountException;
 import ph.txtdis.exception.DuplicateException;
+import ph.txtdis.exception.ExceededCreditLimitException;
 import ph.txtdis.exception.FailedAuthenticationException;
 import ph.txtdis.exception.GapInSerialInvoiceIdException;
 import ph.txtdis.exception.InvalidDateSequenceException;
 import ph.txtdis.exception.InvalidException;
 import ph.txtdis.exception.NoServerConnectionException;
 import ph.txtdis.exception.NoVendorIdPurchasedItemException;
+import ph.txtdis.exception.NotAllowedOffSiteTransactionException;
 import ph.txtdis.exception.NotAnItemToBeSoldToCustomerException;
 import ph.txtdis.exception.NotFoundException;
 import ph.txtdis.exception.NotPickedBookingIdException;
@@ -112,13 +114,15 @@ import ph.txtdis.info.SuccessfulSaveInfo;
 import ph.txtdis.type.ModuleType;
 import ph.txtdis.type.PaymentType;
 import ph.txtdis.type.QualityType;
+import ph.txtdis.type.ScriptType;
 import ph.txtdis.type.UomType;
 import ph.txtdis.type.VolumeDiscountType;
+import ph.txtdis.util.ServerUtil;
 import ph.txtdis.util.TypeMap;
 
 @Service("salesService")
 public class BillableService implements BilledAllPickedSalesOrder, CreationTracked, Detailed, ItemBased<BillableDetail>,
-		NeededDecisionDisplayed, Reset, Serviced<Long>, ServiceWithApprovalNeeded
+		DecisionNeeded, Reset, Serviced<Long>
 {
 	private class AlreadyReceivedBookingIdException extends Exception {
 
@@ -140,15 +144,6 @@ public class BillableService implements BilledAllPickedSalesOrder, CreationTrack
 		}
 	}
 
-	private class BadCreditException extends Exception {
-
-		private static final long serialVersionUID = -6656257234900338909L;
-
-		public BadCreditException(Customer c, BigDecimal overdue) {
-			super(c + "\nhas " + formatCurrency(overdue) + " overdue");
-		}
-	}
-
 	private class DeliveredSalesOrderDateNotTheNextWorkDayException extends Exception {
 
 		private static final long serialVersionUID = 7152560141778263735L;
@@ -156,16 +151,6 @@ public class BillableService implements BilledAllPickedSalesOrder, CreationTrack
 		public DeliveredSalesOrderDateNotTheNextWorkDayException() {
 			super("To-be-delivered S/O's must be booked\n"//
 					+ "on the next work day");
-		}
-	}
-
-	private class ExceededCreditLimitException extends Exception {
-
-		private static final long serialVersionUID = -6656257234900338909L;
-
-		public ExceededCreditLimitException(Customer c, BigDecimal limit, BigDecimal excess) {
-			super(c + "\nhas exceeded its limit of\n" //
-					+ formatCurrency(limit) + " by " + formatCurrency(excess));
 		}
 	}
 
@@ -320,10 +305,19 @@ public class BillableService implements BilledAllPickedSalesOrder, CreationTrack
 	private ReadOnlyService<Billable> readOnlyService;
 
 	@Autowired
+	private HolidayService holidayService;
+
+	@Autowired
 	private RemittanceService remittanceService;
 
 	@Autowired
 	private SavingService<Billable> savingService;
+
+	@Autowired
+	private ServerUtil server;
+
+	@Autowired
+	private ScriptService scriptService;
 
 	@Autowired
 	private SpunService<Billable, Long> spunService;
@@ -380,7 +374,7 @@ public class BillableService implements BilledAllPickedSalesOrder, CreationTrack
 			throw new DuplicateException(getModuleId() + id);
 	}
 
-	public void clearPaymentData() {
+	public void clearItemReturnPaymentDataSetByItsInputDialogDuringDataEntry() {
 		setThreePartId(null, null, null);
 	}
 
@@ -496,19 +490,17 @@ public class BillableService implements BilledAllPickedSalesOrder, CreationTrack
 
 	@Override
 	public String getDecidedBy() {
-		return get().getAuditedBy();
+		return get().getDecidedBy();
 	}
 
 	@Override
 	public ZonedDateTime getDecidedOn() {
-		return get().getAuditedOn();
+		return get().getDecidedOn();
 	}
 
 	@Override
 	public List<BillableDetail> getDetails() {
-		if (get().getDetails() == null)
-			return emptyList();
-		return isAReceiving() ? nonZeroReturnedQtyBillableDetails() : nonZeroQtyBillableDetails();
+		return get().getDetails();
 	}
 
 	public BigDecimal getDiscountValue() {
@@ -558,11 +550,11 @@ public class BillableService implements BilledAllPickedSalesOrder, CreationTrack
 	}
 
 	public Long getIdNo() {
-		return isASalesReturn() || isAPurchaseReceipt() ? get().getReceivingId() : getNumId();
+		return isAPurchaseReceipt() ? get().getReceivingId() : get().getNumId();
 	}
 
 	public String getIdPrompt() {
-		if (isASalesOrder())
+		if (isASalesOrder() || isASalesReturn())
 			return "S/I(D/R)";
 		if (isABadOrder() || isAReturnOrder())
 			return "S/I";
@@ -592,11 +584,6 @@ public class BillableService implements BilledAllPickedSalesOrder, CreationTrack
 	@Override
 	public String getModule() {
 		return "billable";
-	}
-
-	public Long getNumId() {
-		Long id = get().getNumId();
-		return id == null ? null : abs(id);
 	}
 
 	public Integer getOnPurchaseDaysLevel() throws NoServerConnectionException, StoppedServerException,
@@ -675,14 +662,23 @@ public class BillableService implements BilledAllPickedSalesOrder, CreationTrack
 
 	@Override
 	public String getRemarks() {
-		String s = get().getRemarks();
-		return s == null ? "" : s;
+		return get().getRemarks();
 	}
 
 	@Override
 	@SuppressWarnings("unchecked")
 	public SavingService<Billable> getSavingService() {
 		return savingService;
+	}
+
+	@Override
+	public ScriptService getScriptService() {
+		return scriptService;
+	}
+
+	@Override
+	public <T extends EntityDecisionNeeded<Long>> ScriptType getScriptType(T d) {
+		return BILLING_APPROVAL;
 	}
 
 	@Override
@@ -756,8 +752,8 @@ public class BillableService implements BilledAllPickedSalesOrder, CreationTrack
 
 	public void invalidate() {
 		get().setIsValid(false);
-		get().setAuditedBy(username());
-		get().setAuditedOn(null);
+		get().setDecidedBy(username());
+		get().setDecidedOn(ZonedDateTime.now());
 	}
 
 	public boolean isABadOrder() {
@@ -765,15 +761,11 @@ public class BillableService implements BilledAllPickedSalesOrder, CreationTrack
 	}
 
 	public boolean isABooking() {
-		return isAnIncomingOrder() || isASalesOrder();
+		return isAPurchaseOrder() || isABadOrder() || isAReturnOrder() || isASalesOrder();
 	}
 
 	public boolean isADeliveryReport() {
 		return type == DELIVERY_REPORT;
-	}
-
-	public boolean isAnIncomingOrder() {
-		return isAPurchaseOrder() || isABadOrder() || isAReturnOrder();
 	}
 
 	public boolean isAnInvoice() {
@@ -859,8 +851,8 @@ public class BillableService implements BilledAllPickedSalesOrder, CreationTrack
 	}
 
 	@Override
-	public <T extends Keyed<Long>> void save() throws SuccessfulSaveInfo, NoServerConnectionException,
-			StoppedServerException, FailedAuthenticationException, InvalidException {
+	public void save() throws SuccessfulSaveInfo, NoServerConnectionException, StoppedServerException,
+			FailedAuthenticationException, InvalidException {
 		if (isAReceiving())
 			get().setReceivedBy(username());
 		else if (isAReturnOrder())
@@ -869,26 +861,31 @@ public class BillableService implements BilledAllPickedSalesOrder, CreationTrack
 			get().setIsRma(false);
 		else if (isADeliveryReport() || (isAnInvoice() && get().getIsValid() == null))
 			get().setBilledBy(username());
-		saveAll();
+		set(savingService.module(getModule()).save(get()));
+		scriptService.saveScripts();
+		throw new SuccessfulSaveInfo(saveInfo());
 	}
 
-	@Override
-	public void saveDecision() throws SuccessfulSaveInfo, NoServerConnectionException, StoppedServerException,
-			FailedAuthenticationException, InvalidException {
-		save();
-	}
-
-	public void saveDisposalData() {
+	public void saveDisposalData() throws NotAllowedOffSiteTransactionException {
+		if (server.isOffSite())
+			throw new NotAllowedOffSiteTransactionException();
 		get().setReceivingModifiedBy(username());
 	}
 
-	public void savePaymentData(LocalDate d) {
+	public void setItemReturnPaymentData(LocalDate d) {
 		get().setOrderDate(d);
 		get().setBilledBy(username());
 		get().setUnpaidValue(ZERO);
+		scriptService.set(ScriptType.RETURN_PAYMENT, createItemReturnPaymentScript(d));
 	}
 
-	public void saveReceiptData() {
+	private String createItemReturnPaymentScript(LocalDate d) {
+		return getId() + "|" + d + "|" + username() + "|" + ZonedDateTime.now();
+	}
+
+	public void saveItemReturnReceiptData() throws NotAllowedOffSiteTransactionException {
+		if (server.isOffSite())
+			throw new NotAllowedOffSiteTransactionException();
 		get().setReceivedBy(username());
 	}
 
@@ -902,6 +899,12 @@ public class BillableService implements BilledAllPickedSalesOrder, CreationTrack
 		}
 	}
 
+	public void setCustomerRelatedData() {
+		setCustomerData();
+		get().setDueDate(dueDate());
+		get().setDetails(null);
+	}
+
 	public void setItemUponValidation(long id) throws NotAnItemToBeSoldToCustomerException, NoServerConnectionException,
 			StoppedServerException, FailedAuthenticationException, InvalidException, DuplicateException,
 			NotFoundException, DifferentDiscountException, DeactivatedException, NoVendorIdPurchasedItemException,
@@ -912,17 +915,20 @@ public class BillableService implements BilledAllPickedSalesOrder, CreationTrack
 		}
 	}
 
-	public void setOrderDateUponValidation(LocalDate d) throws DateInThePastException, UndepositedPaymentException,
-			NotFullyPaidCashBillableException, UnbilledPickedSalesOrderException, NoServerConnectionException,
-			StoppedServerException, FailedAuthenticationException, InvalidException, RestException,
-			IncompleteOrErroneousCustomerDataException, UnauthorizedUserException {
-		if (d == null || !isNew())
-			return;
-		verifyNotInThePast(d);
-		verifyUserAuthorization();
-		verifyCustomersHaveCompleteAndCorrectData();
-		verifyAllPickedSalesOrderHaveBeenBilled(d);
-		verifyAllCashBillablesHaveBeenFullyPaid(d);
+	public void setOrderDateUponValidation(LocalDate d)
+			throws DateInThePastException, UndepositedPaymentException, NotFullyPaidCashBillableException,
+			UnbilledPickedSalesOrderException, NoServerConnectionException, StoppedServerException,
+			FailedAuthenticationException, InvalidException, RestException, IncompleteOrErroneousCustomerDataException,
+			UnauthorizedUserException, NotAllowedOffSiteTransactionException {
+		if (server.isOffSite())
+			throw new NotAllowedOffSiteTransactionException();
+		if (!isUser(MANAGER)) {
+			verifyNotInThePast(d);
+			verifyUserAuthorization();
+			// verifyCustomersHaveCompleteAndCorrectData();
+			// verifyAllPickedSalesOrderHaveBeenBilled(d);
+			// verifyAllCashBillablesHaveBeenFullyPaid(d);
+		}
 		get().setOrderDate(d);
 	}
 
@@ -947,13 +953,15 @@ public class BillableService implements BilledAllPickedSalesOrder, CreationTrack
 	}
 
 	@Override
-	public void updatePerValidity(Boolean isValid, String remarks)
-			throws SuccessfulSaveInfo, NoServerConnectionException, StoppedServerException,
-			FailedAuthenticationException, InvalidException, RestException {
-		get().setIsValid(isValid);
-		get().setRemarks(remarks);
-		if (isAnInvoice() && isValid != null && !isValid)
-			nullifyInvoiceAndPaymentData();
+	public void updatePerValidity(Boolean isValid, String remarks) {
+		if (isValid != null)
+			try {
+				if (isAnInvoice() && !isValid)
+					remittanceService.nullifyPaymentData(get());
+				DecisionNeeded.super.updatePerValidity(isValid, remarks);
+			} catch (Throwable e) {
+				e.printStackTrace();
+			}
 	}
 
 	public BillableDetail updateReceivingDetailReturnedQty(BigDecimal qty) {
@@ -971,13 +979,13 @@ public class BillableService implements BilledAllPickedSalesOrder, CreationTrack
 		computeUnpaid();
 	}
 
-	public void updateUponBookingIdValidation(long id)
-			throws NotFoundException, AlreadyReferencedBookingIdException, NoServerConnectionException,
-			StoppedServerException, FailedAuthenticationException, InvalidException, AlreadyReceivedBookingIdException,
-			NotPickedBookingIdException, InvalidDateSequenceException, NotApprovedPurchaseOrderException,
-			NotForDeliveryReportException, DeactivatedException, NoVendorIdPurchasedItemException, RestException {
-		if (id == 0)
-			return;
+	public void updateUponBookingIdValidation(long id) throws NotFoundException, AlreadyReferencedBookingIdException,
+			NoServerConnectionException, StoppedServerException, FailedAuthenticationException, InvalidException,
+			AlreadyReceivedBookingIdException, NotPickedBookingIdException, InvalidDateSequenceException,
+			NotApprovedPurchaseOrderException, NotForDeliveryReportException, DeactivatedException,
+			NoVendorIdPurchasedItemException, RestException, NotAllowedOffSiteTransactionException {
+		if (server.isOffSite())
+			throw new NotAllowedOffSiteTransactionException();
 		Billable b = validateBooking(id);
 		updateBasedOnBooking(b);
 	}
@@ -989,23 +997,28 @@ public class BillableService implements BilledAllPickedSalesOrder, CreationTrack
 			DeliveredSalesOrderDateNotTheNextWorkDayException, DeactivatedException,
 			PickedUpSalesOrderDateNotTodayException, RestException, NotAllowedToReturnBadOrderException,
 			ItemReturningCustomerIncompleteContactDetailsException, NoVendorIdPurchasedItemException,
-			OpenBadOrReturnOrderException {
+			OpenBadOrReturnOrderException, NotAllowedOffSiteTransactionException {
+		if (server.isOffSite())
+			throw new NotAllowedOffSiteTransactionException();
 		setCustomer(customerService.find(id));
 		verifyNonPickupSalesOrderDateIsNextWorkingDate();
 		verifyCurrentUserIsTheCustomerAssignedSeller();
+		// verifyAllCollectionsHaveBeenDeposited(CASH);
+		// verifyAllCollectionsHaveBeenDeposited(CHECK);
+		verifyItemReturningCustomerHasCompleteContactDetails();
+		// verifyCustomerHasNoOpenBadOrReturnOrder();
+		verifyCustomerHasBadOrderReturnAllowance();
 		verifyCustomerHasNoOverdues();
 		verifyCustomerHasNotExceededItsCreditLimit(ZERO);
-		verifyAllCollectionsHaveBeenDeposited(CASH);
-		verifyAllCollectionsHaveBeenDeposited(CHECK);
-		verifyItemReturningCustomerHasCompleteContactDetails();
-		verifyCustomerHasNoOpenBadOrReturnOrder();
-		verifyCustomerHasBadOrderReturnAllowance();
 		setCustomerRelatedData();
 	}
 
 	public void updateUponOrderNoValidation(String prefix, Long id, String suffix)
 			throws NoServerConnectionException, StoppedServerException, FailedAuthenticationException, InvalidException,
-			DuplicateException, UnissuedInvoiceIdException, GapInSerialInvoiceIdException, RestException {
+			DuplicateException, UnissuedInvoiceIdException, GapInSerialInvoiceIdException, RestException,
+			NotAllowedOffSiteTransactionException {
+		if (server.isOffSite())
+			throw new NotAllowedOffSiteTransactionException();
 		checkforDuplicates(prefix, id, suffix);
 		// verifyIdIsPartOfAnIssuedBookletImmediatelyPrecedingItsLast(prefix,
 		// id, suffix);
@@ -1018,13 +1031,8 @@ public class BillableService implements BilledAllPickedSalesOrder, CreationTrack
 		if (isUser(MANAGER))
 			return;
 		computeRemainingCredit(additionalCredit);
-		if (isNegative(remainingCredit)) {
-			Customer c = customer;
-			BigDecimal creditLimit = creditLimit();
-			BigDecimal remainingCredit = remainingCredit();
-			reset();
-			throw new ExceededCreditLimitException(c, creditLimit, remainingCredit);
-		}
+		if (isNegative(remainingCredit))
+			throwExceededCreditLimitException(customer, creditLimit(), remainingCredit());
 	}
 
 	@Override
@@ -1240,7 +1248,10 @@ public class BillableService implements BilledAllPickedSalesOrder, CreationTrack
 
 	private void confirmItemIsNotOnOtherBookingWithTheSameCustomerAndDate(Item i) throws NoServerConnectionException,
 			StoppedServerException, FailedAuthenticationException, InvalidException, DuplicateException, RestException {
-		if (isAReturnOrder() || isABadOrder() || (isASalesOrder() && (!isNew() || customer.getType() == VENDOR)))
+		if (isUser(MANAGER) //
+				|| isAReturnOrder() //
+				|| isABadOrder()//
+				|| (isASalesOrder() && (!isNew() || customer.getType() == VENDOR)))
 			return;
 		Billable b = readOnlyService.module(getModule())
 				.getOne("/item?id=" + i.getId() + "&customer=" + customer.getId() + "&date=" + orderDate());
@@ -1296,10 +1307,6 @@ public class BillableService implements BilledAllPickedSalesOrder, CreationTrack
 		currentApprovedDiscounts = getLatestApprovedDiscounts(i);
 		get().setDiscountIds(listDiscountIds());
 		return true;
-	}
-
-	private boolean dayAfterTomorrowIsNotAMonday(LocalDate d) {
-		return LocalDate.now().until(d, DAYS) == 2 && d.getDayOfWeek() != MONDAY;
 	}
 
 	private List<BigDecimal> discountValues(List<CustomerDiscount> l) {
@@ -1472,12 +1479,21 @@ public class BillableService implements BilledAllPickedSalesOrder, CreationTrack
 		return isAnInvoice() || isADeliveryReport();
 	}
 
+	private boolean isAMondayOrAHoliday(LocalDate date, long day) {
+		LocalDate newDate = date.plusDays(day);
+		return newDate.getDayOfWeek() == DayOfWeek.MONDAY || holidayService.isAHoliday(newDate);
+	}
+
 	private boolean isAnAllChannelVolumeDiscount(VolumeDiscount vd) {
 		return vd.getChannelLimit() == null;
 	}
 
 	private boolean isAPickUpSales() {
 		return customer.getRoute().getType() == PICK_UP;
+	}
+
+	private boolean isApprovedAndStartDateIsNotInTheFuture(EntityDecisionNeeded<?> p, LocalDate d) {
+		return p.getIsValid() != null && p.getIsValid() && ((StartDated) p).getStartDate().compareTo(d) <= 0;
 	}
 
 	private boolean isAuthorizedToApprove() {
@@ -1493,10 +1509,11 @@ public class BillableService implements BilledAllPickedSalesOrder, CreationTrack
 		return c.getChannel().getType() == DELIVERY ? true : allItemsReturned(b);
 	}
 
-	private boolean isNotTheNextWorkDay(LocalDate d) {
-		return d.isEqual(LocalDate.now()) //
-				|| dayAfterTomorrowIsNotAMonday(d) //
-				|| moreThanTwoDays(d);
+	private boolean isTheNextWorkDay(LocalDate date) {
+		long day = 1L;
+		while (isAMondayOrAHoliday(date, day))
+			++day;
+		return LocalDate.now().until(date, DAYS) == day;
 	}
 
 	private Long latestUsedIdInBooklet(InvoiceBooklet b) throws NoServerConnectionException, StoppedServerException,
@@ -1530,10 +1547,6 @@ public class BillableService implements BilledAllPickedSalesOrder, CreationTrack
 		return getEachLevelDiscountTextList(l);
 	}
 
-	private boolean moreThanTwoDays(LocalDate d) {
-		return LocalDate.now().until(d, DAYS) > 2;
-	}
-
 	private BigDecimal netRevenue() throws NoServerConnectionException, StoppedServerException,
 			FailedAuthenticationException, InvalidException, RestException {
 		BigDecimal sold = totalValue("billed");
@@ -1545,15 +1558,6 @@ public class BillableService implements BilledAllPickedSalesOrder, CreationTrack
 
 	private boolean nonReturnedItem(String n) {
 		return !getDetails().stream().anyMatch(d -> d.getReturnedQty() != null && n.equals(d.getItemName()));
-	}
-
-	private List<BillableDetail> nonZeroQtyBillableDetails() {
-		try {
-			return get().getDetails().stream().filter(d -> !isZero(d.getQty())).collect(toList());
-		} catch (Exception e) {
-			e.printStackTrace();
-			return emptyList();
-		}
 	}
 
 	private boolean notAllReturned(BillableDetail d) {
@@ -1581,30 +1585,6 @@ public class BillableService implements BilledAllPickedSalesOrder, CreationTrack
 		unitPrice = null;
 		vatDivisor = null;
 		volumeDiscounts = null;
-	}
-
-	private void nullifyInvoiceAndPaymentData() throws SuccessfulSaveInfo, NoServerConnectionException,
-			StoppedServerException, FailedAuthenticationException, InvalidException, RestException {
-		List<Payment> l = remittanceService.findByBilling(get());
-		if (l != null)
-			nullifyPaymentData(l);
-		get().setBilledBy(null);
-	}
-
-	private void nullifyPaymentData(List<Payment> l) throws SuccessfulSaveInfo, NoServerConnectionException,
-			StoppedServerException, FailedAuthenticationException, InvalidException {
-		l = l.stream().map(p -> nullifyPaymentData(p)).collect(toList());
-		remittanceService.save(l);
-	}
-
-	private Payment nullifyPaymentData(Payment p) {
-		remittanceService.set(p);
-		remittanceService.updatePerValidity(false, nullifyPaymentRemarks());
-		return remittanceService.get();
-	}
-
-	private String nullifyPaymentRemarks() {
-		return "[INVALID: " + username() + " - " + toDateDisplay(now()) + "] INVALID S/I(D/R) #" + getOrderNo();
 	}
 
 	private BigDecimal onHandQty() {
@@ -1656,11 +1636,10 @@ public class BillableService implements BilledAllPickedSalesOrder, CreationTrack
 		return comp != 0 ? comp : valueOf(b.getCutoff()).compareTo(valueOf(a.getCutoff()));
 	}
 
-	private void saveAll() throws SuccessfulSaveInfo, NoServerConnectionException, StoppedServerException,
-			FailedAuthenticationException, InvalidException {
-		set(savingService.module(getModule()).save(get()));
-		if (get() != null)
-			throw new SuccessfulSaveInfo(getModuleId() + getOrderNo());
+	private String saveInfo() {
+		if (getOrderNo().equals("0"))
+			return getAlternateName() + " invalidation";
+		return getModuleId() + getOrderNo();
 	}
 
 	private void saveThreePartId() {
@@ -1687,12 +1666,6 @@ public class BillableService implements BilledAllPickedSalesOrder, CreationTrack
 		get().setCustomerId(customer.getId());
 		get().setCustomerName(customerName());
 		get().setCustomerAddress(customer.getAddress());
-	}
-
-	private void setCustomerRelatedData() {
-		setCustomerData();
-		get().setDueDate(dueDate());
-		get().setDetails(null);
 	}
 
 	private void setDeliveryId(String id) {
@@ -1782,6 +1755,12 @@ public class BillableService implements BilledAllPickedSalesOrder, CreationTrack
 		return list.stream().map(r -> r.getUnpaidValue()).reduce(ZERO, (a, b) -> a.add(b));
 	}
 
+	private void throwExceededCreditLimitException(Customer c, BigDecimal creditLimit, BigDecimal remainingCredit)
+			throws ExceededCreditLimitException {
+		reset();
+		throw new ExceededCreditLimitException(c, creditLimit, remainingCredit);
+	}
+
 	private Booking toBooking(Billable a) {
 		Booking b = new Booking();
 		b.setId(a.getBookingId());
@@ -1833,10 +1812,10 @@ public class BillableService implements BilledAllPickedSalesOrder, CreationTrack
 	}
 
 	private void validateOrderDateIsNextWorkDay(LocalDate d) throws DeliveredSalesOrderDateNotTheNextWorkDayException {
-		if (isNotTheNextWorkDay(d)) {
-			reset();
-			throw new DeliveredSalesOrderDateNotTheNextWorkDayException();
-		}
+		if (isTheNextWorkDay(d))
+			return;
+		reset();
+		throw new DeliveredSalesOrderDateNotTheNextWorkDayException();
 	}
 
 	private void verifyAllCashBillablesHaveBeenFullyPaid(LocalDate d)
@@ -1845,22 +1824,22 @@ public class BillableService implements BilledAllPickedSalesOrder, CreationTrack
 		if (!isASalesOrder() || isUser(MANAGER))
 			return;
 		Billable b = getNotFullyPaidCOD(d);
-		if (b != null) {
-			reset();
-			throw new NotFullyPaidCashBillableException(b.getOrderNo());
-		}
+		if (b == null)
+			return;
+		reset();
+		throw new NotFullyPaidCashBillableException(b.getOrderNo());
 	}
 
 	private void verifyAllCollectionsHaveBeenDeposited(PaymentType t)
 			throws UndepositedPaymentException, NoServerConnectionException, StoppedServerException,
 			FailedAuthenticationException, InvalidException, RestException {
-		if (isASalesOrder()) {
-			Payment p = remittanceService.getUndepositedPayment(t, username(), orderDate());
-			if (p != null) {
-				reset();
-				throw new UndepositedPaymentException(t, p.getId());
-			}
-		}
+		if (!isASalesOrder() || isUser(MANAGER))
+			return;
+		Payment p = remittanceService.getUndepositedPayment(t, username(), orderDate());
+		if (p == null)
+			return;
+		reset();
+		throw new UndepositedPaymentException(t, p.getId());
 	}
 
 	private void verifyAllPickedSalesOrderHaveBeenBilled(LocalDate d)
@@ -2028,7 +2007,7 @@ public class BillableService implements BilledAllPickedSalesOrder, CreationTrack
 
 	private void verifyNonPickupSalesOrderDateIsNextWorkingDate()
 			throws DeliveredSalesOrderDateNotTheNextWorkDayException, PickedUpSalesOrderDateNotTodayException {
-		if (!isASalesOrder())
+		if (!isASalesOrder() || isUser(MANAGER))
 			return;
 		LocalDate d = get().getOrderDate();
 		if (isAPickUpSales())
@@ -2056,7 +2035,7 @@ public class BillableService implements BilledAllPickedSalesOrder, CreationTrack
 			return;
 		if (!isUser(SELLER) && (isASalesOrder() || isABadOrder() || isAReturnOrder()))
 			throw new UnauthorizedUserException("Sellers only");
-		if (!(isUser(STORE_KEEPER) && isUser(LEAD_CHECKER))
+		if ((!isUser(STORE_KEEPER) && !isUser(LEAD_CHECKER))
 				&& (isASalesReturn() || isAPurchaseOrder() || isAPurchaseReceipt()))
 			throw new UnauthorizedUserException("Storekeepers and Checkers only");
 	}

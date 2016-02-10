@@ -12,7 +12,7 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class Billable extends AbstractAuditedId<Long> implements Remarked<Long> {
+public class Billable extends EntityDecisionNeeded<Long> implements Remarked<Long> {
 
 	private BigDecimal badOrderAllowanceValue, unpaidValue, totalValue, grossValue;
 
@@ -28,7 +28,7 @@ public class Billable extends AbstractAuditedId<Long> implements Remarked<Long> 
 
 	private Long numId, bookingId, customerId, receivingId;
 
-	private String prefix, suffix, customerName, customerAddress, customerLocation, route, remarks, billedBy, printedBy,
+	private String prefix, suffix, customerName, customerAddress, customerLocation, route, billedBy, printedBy,
 			receivedBy, receivingModifiedBy, truck;
 
 	private ZonedDateTime billedOn, printedOn, receivedOn, receivingModifiedOn;
